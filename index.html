@@ -329,8 +329,10 @@ body[data-theme="fx-aurora"]{
 #petStage{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .pet-shadow{fill:#1d2340;opacity:.18}
 .fab-fallback{
-  display:block;width:74px;height:74px;margin:26px auto 0;
-  border-radius:22px;object-fit:cover;box-shadow:0 10px 26px rgba(31,35,51,.28);
+  display:block;width:104px;height:138px;margin:12px auto 0;
+  object-fit:contain;
+  filter:drop-shadow(0 8px 16px rgba(31,35,51,.22));
+  transition:opacity .26s ease;
 }
 .ai-fab.enter #petStage{animation:petIn .9s cubic-bezier(.2,.9,.3,1.2) both}
 @keyframes petIn{from{opacity:0;transform:translateY(34px)}to{opacity:1;transform:none}}
@@ -669,7 +671,7 @@ body[data-theme="fx-aurora"]{
     <g id="petG"></g>
     <g id="petFx"></g>
   </svg>
-  <img id="fabFallback" class="fab-fallback hidden" src="assets/xiaoyun/03.jpg" alt="小云" onerror="this.style.visibility='hidden'">
+  <img id="fabFallback" class="fab-fallback hidden" src="assets/whale/whale/poster.webp" alt="小云" onerror="this.style.visibility='hidden'">
 </button>
 
 <div id="aiPanel" class="ai-panel hidden">
@@ -3371,8 +3373,8 @@ function petPt(e){
 }
 async function initPet(){
   const fb=$("#fabFallback");
-  /* 3D 贴图有 67 张，公网上要拉十几秒；先把静态形象露出来，别让桌宠位空着 */
-  if(fb)fb.classList.remove("hidden");
+  /* 3D 还没好时先显示同一形象的静态立绘，几秒后再淡出换成会动的 */
+  if(fb){fb.classList.remove("hidden");fb.style.opacity="1";}
   try{
     if(!window.WebGL2RenderingContext&&!window.WebGLRenderingContext)throw new Error("no webgl");
     const [{createPet},{createWhaleFigure},{makeAtlasLoader}]=await Promise.all([
@@ -3406,12 +3408,15 @@ async function initPet(){
     fab.addEventListener("pointerleave",()=>{if(fabGrabbed){up();}});
     petLast=performance.now();
     petRaf=requestAnimationFrame(petLoop);
-    /* 3D 就绪，撤掉静态占位 */
-    if(fb)fb.classList.add("hidden");
+    /* 3D 就绪：静态立绘淡出，动起来的形象淡入 */
+    if(fb){
+      fb.style.opacity="0";
+      setTimeout(()=>fb.classList.add("hidden"),280);
+    }
     $("#petStage")?.classList.add("pet-live");
   }catch(e){
     $("#petStage")?.remove();
-    if(fb)fb.classList.remove("hidden");
+    if(fb){fb.classList.remove("hidden");fb.style.opacity="1";}
   }
 }
 function petLoop(now){
@@ -3676,9 +3681,10 @@ window.addEventListener("resize",()=>{if(fxTheme){fxResize();fxInit();}});
 function boot(){
   setTheme(db.theme||"");
   applyAvatars();
-  /* 3D 贴图有 67 张，等首屏先画出来再开始拉，别跟关键资源抢带宽 */
-  if(window.requestIdleCallback)requestIdleCallback(()=>initPet(),{timeout:2000});
-  else setTimeout(initPet,1200);
+  /* 先把同一形象的静态立绘挂出来，首屏立刻有东西看 */
+  {const fb0=$("#fabFallback");if(fb0){fb0.classList.remove("hidden");fb0.style.opacity="1";}}
+  /* 贴图已合并成单张图集（0.15MB），不用再等空闲，稍让出一帧就开始拉 */
+  setTimeout(initPet,80);
   $("#todayLine").textContent=dateCN();
   $("#topDate").textContent=shortDate();
   $("#nCet4").textContent=WORDS.cet4.length;
