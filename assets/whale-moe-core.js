@@ -638,8 +638,11 @@
   /* ================= growth / keywords / dialogue ================= */
 
   var GROWTH = Object.freeze({
+    // LEVEL_STEP 上游是 500：摸头一次 +2 好感，要摸 250 次才升一级，
+    // 对一个用来陪背单词的桌宠太慢了 —— 界面上的 Lv 长期停在 1，
+    // 会让人以为存档没生效。降到 200，日常互动三五天能看到升级。
     MOOD_MAX: 100, AFFINITY_MAX: 10000, SATIETY_MAX: 100,
-    LEVEL_STEP: 500, SATIETY_DECAY_PER_MIN: 0.15
+    LEVEL_STEP: 200, SATIETY_DECAY_PER_MIN: 0.15
   });
 
   var DEFAULT_GROWTH = Object.freeze({

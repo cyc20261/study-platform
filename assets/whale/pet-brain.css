@@ -122,6 +122,15 @@
 .pp-quest.done{opacity:.72}
 
 .pp-achv{display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:7px}
+.pp-tools{display:flex;gap:8px}
+.pp-tool{
+  flex:1;border:1px solid var(--line,#e8eaf3);background:var(--hover-soft,#f7f8fd);
+  color:inherit;border-radius:11px;padding:9px 10px;cursor:pointer;
+  font:inherit;font-size:12.5px;font-weight:700;transition:transform .14s ease,background .14s ease;
+}
+.pp-tool:hover{background:var(--seg-bg,#f1f2f8);transform:translateY(-1px)}
+.pp-tool:active{transform:translateY(0) scale(.985)}
+.pp-hint{font-size:11.5px;line-height:1.6;color:var(--muted,#7a8099);margin:8px 0 2px}
 .pp-ach{
   aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:1px;

@@ -25,6 +25,8 @@
     word: function () {},
     spark: function () {},
     toast: function () {},
+    exportSave: function () {},
+    importSave: function () {},
     openChat: function () {},
     baseDate: null
   };
@@ -646,15 +648,26 @@
       '<div class="pp-quests">' + (qHtml || '<div class="pp-empty">今天还没有任务</div>') + '</div>' +
       '<div class="pp-sec">成就 ' + (g.achievements || []).length + ' / ' + ACH_LIST.length + '</div>' +
       '<div class="pp-achv">' + achHtml + '</div>' +
+      '<div class="pp-sec">存档</div>' +
+      '<div class="pp-tools">' +
+      '<button class="pp-tool" data-act="export">⬇️ 导出存档</button>' +
+      '<button class="pp-tool" data-act="import">⬆️ 导入存档</button>' +
+      '</div>' +
+      '<div class="pp-hint">等级、好感、成就都存在这台浏览器的本地，清缓存或换设备会断档。换之前导出一份，新设备上导入就能接上。</div>' +
       '</div>';
 
     el.querySelector('.pp-x').addEventListener('click', closePanel);
     el.querySelectorAll('.pq-btn').forEach(function (b) {
       b.addEventListener('click', function () { claim(b.dataset.q); });
     });
+    el.querySelectorAll('.pp-tool').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (b.dataset.act === 'export') { closePanel(); H.exportSave(); }
+        else { closePanel(); H.importSave(); }
+      });
+    });
     document.body.appendChild(el);
     S.panelEl = el;
-    void need;
   }
 
   function claim(id) {
