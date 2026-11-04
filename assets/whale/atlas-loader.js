@@ -38,9 +38,13 @@ export async function makeAtlasLoader(dir) {
       }),
       decodeToImage(dir + 'atlas.webp'),
     ]);
-    if (m && m.frames && im && im.width) {
+    if (m && m.frames && im && im.width && im.height === m.h && im.width === m.w) {
       meta = m;
       atlas = im;
+    } else if (m && im) {
+      // 坐标表和图片对不上（例如图重建过但 json 是旧的），宁可慢也不能画错
+      console.warn('[atlas] 尺寸不符 json=%sx%s img=%sx%s，回退逐张加载',
+        m.w, m.h, im.width, im.height);
     }
   } catch (e) {
     // 图集不可用时静默退化，别让桌宠整个挂掉
