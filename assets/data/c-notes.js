@@ -680,12 +680,13 @@ int main(void)
     printf("这次读到 %c\\n", c);
 
     // 循环读输入时必须清缓冲，否则非法字符会让死循环
-    int x;
+    int x, ch;
     while (1) {
         printf("输入一个数（输入 q 退出）：");
         if (scanf("%d", &x) == 1) break;
-        if (getchar() == 'q') return 0;
-        while (getchar() != '\\n') { }   // 清掉这一行剩下的垃圾
+        ch = getchar();                       // 先取走那个坏字符
+        if (ch == 'q' || ch == EOF) return 0; // EOF 也要能退出
+        while (ch != '\\n' && ch != EOF) ch = getchar();  // 清掉本行剩余
         printf("不是合法整数，重来\\n");
     }
     printf("你输入了 %d\\n", x);
@@ -696,7 +697,8 @@ out:`输入数字：12
 再输入一个字符：a
 这次读到 a`,
 tips:["记住一个口诀：%c 和 %[ 前面加空格，%d/%f/%s 会自动跳过空白。",
-"混用 scanf 和 getchar/fgets 时，务必先清缓冲区。"]},
+"混用 scanf 和 getchar/fgets 时，务必先清缓冲区。",
+"清缓冲的循环一定要同时判 EOF：输入被重定向或用户按 Ctrl+Z/Ctrl+D 后，getchar() 永远返回 -1，while (getchar() != '\\n') 就成了死循环 —— 这是新手代码卡死的头号原因。"]},
 
 {t:"18 getchar / putchar：逐字符处理的基础",
 d:"getchar 一次读一个字符，返回 int 而不是 char —— 因为要用 -1（EOF）表示「读完了」。",
@@ -757,7 +759,7 @@ int main(void)
     char line[128];
 
     printf("输入两个整数（如 3 4）：");
-    if (!fgets(line, sizeof line, stdin)) return 1;
+    if (!fgets(line, sizeof line, stdin)) return 0;   // 没有输入就直接结束，不算出错
 
     line[strcspn(line, "\\n")] = '\\0';   // 去掉换行
 
@@ -800,7 +802,7 @@ int main(void)
 {
     int score;
     printf("输入分数：");
-    if (scanf("%d", &score) != 1) return 1;
+    if (scanf("%d", &score) != 1) return 0;   // 没有输入就直接结束
 
     if (score < 0 || score > 100) {
         printf("分数不合法\\n");
@@ -901,7 +903,7 @@ int main(void)
     double a, b;
     char op;
     printf("输入式子（如 3 + 4）：");
-    if (scanf("%lf %c %lf", &a, &op, &b) != 3) return 1;
+    if (scanf("%lf %c %lf", &a, &op, &b) != 3) return 0;   // 没有输入就直接结束
 
     switch (op) {
         case '+': printf("%.2f\\n", a + b); break;
@@ -1013,7 +1015,9 @@ int main(void)
     do {
         printf("请输入 1~100 的数：");
         if (scanf("%d", &n) != 1) {
-            while (getchar() != '\\n') { }   // 清掉非法输入
+            int ch;
+            while ((ch = getchar()) != '\\n' && ch != EOF) { }  // 清掉非法输入
+            if (ch == EOF) return 0;   // 输入结束就退出，别在这儿空转
             n = 0;
         }
     } while (n < 1 || n > 100);
@@ -2626,13 +2630,13 @@ int main(void)
     free(heap);
     return 0;
 }`,
-out:`代码段（函数地址）: 0x000000014000xxxx
-只读常量          : 0x000000014000xxxx
-已初始化全局      : 0x00007ff6xxxxxxxx
-未初始化全局      : 0x00007ff6xxxxxxxx
-静态局部          : 0x00007ff6xxxxxxxx
-堆                : 0x000001xxxxxxxxxx
-栈                : 0x000000xxxxxxxxxx
+out:`代码段（函数地址）: 00007ff6xxxxxxxx
+只读常量          : 00007ff6xxxxxxxx
+已初始化全局      : 00007ff6xxxxxxxx
+未初始化全局      : 00007ff6xxxxxxxx
+静态局部          : 00007ff6xxxxxxxx
+堆                : 000001xxxxxxxxxx
+栈                : 000000xxxxxxxxxx
 g_zero 默认值 = 0`,
 tips:["函数里别定义巨大数组（如 int buf[1000000]），会直接爆栈，改用 malloc 或 static。",
 "局部变量的地址在函数返回后失效，绝不能返回它的地址。"]},
@@ -2958,10 +2962,10 @@ int main(void)
     printf("编译于 %s %s\\n", __DATE__, __TIME__);
     return 0;
 }`,
-out:`[main.c:10 main] 程序启动
-[main.c:6 do_work] 开始处理 x=42
-[main.c:6 do_work] 开始处理 x=-1
-[main.c:7 do_work] 参数异常
+out:`[main.c:14 main] 程序启动
+[main.c:8 do_work] 开始处理 x=42
+[main.c:8 do_work] 开始处理 x=-1
+[main.c:9 do_work] 参数异常
 编译于 Nov  4 2026 21:30:00`,
 tips:["##__VA_ARGS__ 是 GCC 扩展，用来处理「没有可变参数时会多一个逗号」的问题。",
 "链接报 multiple definition 时，先查是不是两个 .c 里定义了同名非 static 函数。"]},
@@ -3385,12 +3389,14 @@ int main(void)
     return 0;
 }`,
 out:`没有存档，录入示例数据
-姓名          分数
-Tom             92
-Wang            88
-Li              78
-Zhao            66
+姓名     分数
+Tom           92
+Wang          88
+Li            78
+Zhao          66
 平均分 81.0，最高分 92`,
 tips:["文件名用宏定义，方便以后统一改。",
-"读写文件都要判返回值，不然失败了程序还在傻跑，问题很难发现。"]}
+"读写文件都要判返回值，不然失败了程序还在傻跑，问题很难发现。",
+"%-10s 是按字节补空格的，一个汉字占 3 字节，所以表头「姓名」看起来会比下面少两格 —— 中文表格想要对齐，得自己按显示宽度算或干脆用制表符。",
+"再运行一次会打印「从文件读回 4 条记录」——二进制文件不带格式自描述，改了结构体字段就必须换文件名或加版本号，否则 fread 回来全是乱码。"]}
 ]);
