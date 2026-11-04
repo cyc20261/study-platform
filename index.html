@@ -6,6 +6,14 @@
 <title>我的学习平台 · 四六级 + C语言</title>
 <link rel="icon" type="image/jpeg" href="assets/xiaoyun/03.jpg">
 <link rel="stylesheet" href="assets/whale/pet-brain.css">
+<!-- 3D 桌宠的模块链是串行 import（figure.js 又要 rig.js），公网上这一串能占好几秒。
+     提前并行预取，进入页面时就和首屏资源同时下载。 -->
+<link rel="modulepreload" href="assets/whale/kit/body.js">
+<link rel="modulepreload" href="assets/whale/kit/rig.js">
+<link rel="modulepreload" href="assets/whale/whale/figure.js">
+<link rel="modulepreload" href="assets/whale/atlas-loader.js">
+<link rel="preload" as="image" href="assets/whale/whale/atlas.webp">
+<link rel="preload" as="image" href="assets/whale/whale/poster.webp">
 <style>
 /* ========= 主题体系（玻璃拟态 · 来自云笺风格） ========= */
 :root{ --radius:16px }
