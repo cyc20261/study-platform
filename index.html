@@ -334,6 +334,8 @@ body[data-theme="fx-aurora"]{
 }
 .ai-fab.enter #petStage{animation:petIn .9s cubic-bezier(.2,.9,.3,1.2) both}
 @keyframes petIn{from{opacity:0;transform:translateY(34px)}to{opacity:1;transform:none}}
+#petStage.pet-live{animation:petLive .5s ease both}
+@keyframes petLive{from{opacity:0}to{opacity:1}}
 .xy-spark{
   position:absolute;font-size:14px;line-height:1;pointer-events:none;z-index:48;
   animation:sparkUp .95s ease-out forwards;
@@ -3368,6 +3370,9 @@ function petPt(e){
   return{x:e.clientX-r.left,y:e.clientY-r.top};
 }
 async function initPet(){
+  const fb=$("#fabFallback");
+  /* 3D 贴图有 67 张，公网上要拉十几秒；先把静态形象露出来，别让桌宠位空着 */
+  if(fb)fb.classList.remove("hidden");
   try{
     if(!window.WebGL2RenderingContext&&!window.WebGLRenderingContext)throw new Error("no webgl");
     const [{createPet},{createWhaleFigure}]=await Promise.all([
@@ -3398,9 +3403,12 @@ async function initPet(){
     fab.addEventListener("pointerleave",()=>{if(fabGrabbed){up();}});
     petLast=performance.now();
     petRaf=requestAnimationFrame(petLoop);
+    /* 3D 就绪，撤掉静态占位 */
+    if(fb)fb.classList.add("hidden");
+    $("#petStage")?.classList.add("pet-live");
   }catch(e){
     $("#petStage")?.remove();
-    $("#fabFallback")?.classList.remove("hidden");
+    if(fb)fb.classList.remove("hidden");
   }
 }
 function petLoop(now){
@@ -3665,7 +3673,9 @@ window.addEventListener("resize",()=>{if(fxTheme){fxResize();fxInit();}});
 function boot(){
   setTheme(db.theme||"");
   applyAvatars();
-  initPet();
+  /* 3D 贴图有 67 张，等首屏先画出来再开始拉，别跟关键资源抢带宽 */
+  if(window.requestIdleCallback)requestIdleCallback(()=>initPet(),{timeout:2000});
+  else setTimeout(initPet,1200);
   $("#todayLine").textContent=dateCN();
   $("#topDate").textContent=shortDate();
   $("#nCet4").textContent=WORDS.cet4.length;
