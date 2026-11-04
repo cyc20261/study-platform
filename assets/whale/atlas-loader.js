@@ -41,6 +41,14 @@ export async function makeAtlasLoader(dir) {
     if (m && m.frames && im && im.width && im.height === m.h && im.width === m.w) {
       meta = m;
       atlas = im;
+      // figure.js 画眼睛/嘴/眉用的是 g.drawImage(img, x, y) —— 尺寸取自贴图本身，
+      // 而位置是按原图像素坐标给的。帧一旦被缩小存放，五官就会只画一半大、整体错位，
+      // 看上去像眼睛没了只剩两条睫毛。所以坐标表声明过缩放就别用。
+      if (m.scale != null && m.scale !== 1) {
+        console.warn('[atlas] 坐标表声明 scale=%s（非 1:1），回退逐张加载', m.scale);
+        meta = null;
+        atlas = null;
+      }
     } else if (m && im) {
       // 坐标表和图片对不上（例如图重建过但 json 是旧的），宁可慢也不能画错
       console.warn('[atlas] 尺寸不符 json=%sx%s img=%sx%s，回退逐张加载',
