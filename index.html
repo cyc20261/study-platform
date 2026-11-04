@@ -3375,11 +3375,14 @@ async function initPet(){
   if(fb)fb.classList.remove("hidden");
   try{
     if(!window.WebGL2RenderingContext&&!window.WebGLRenderingContext)throw new Error("no webgl");
-    const [{createPet},{createWhaleFigure}]=await Promise.all([
+    const [{createPet},{createWhaleFigure},{makeAtlasLoader}]=await Promise.all([
       import("./assets/whale/kit/body.js"),
       import("./assets/whale/whale/figure.js"),
+      import("./assets/whale/atlas-loader.js"),
     ]);
-    const figure=await createWhaleFigure();
+    /* 贴图合并成一张图集：原来 53 个独立 PNG 在公网要排队 30 秒以上 */
+    const loadImage=await makeAtlasLoader("./assets/whale/whale/");
+    const figure=await createWhaleFigure(undefined,{asset:p=>p,loadImage});
     petCtl=createPet({petG:$("#petG"),shadowEl:$("#petShadow"),fxG:$("#petFx")},{
       figure,roam:"off",enter:"drop",
       bounds:()=>{
