@@ -1,0 +1,3719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的学习平台 · 四六级 + C语言</title>
+<link rel="icon" type="image/jpeg" href="assets/xiaoyun/03.jpg">
+<link rel="stylesheet" href="assets/whale/pet-brain.css">
+<style>
+/* ========= 主题体系（玻璃拟态 · 来自云笺风格） ========= */
+:root{ --radius:16px }
+body{
+  --bg-grad:linear-gradient(160deg,#f6f6fd 0%,#f4f5fb 45%,#eef0fa 100%);
+  --card:#ffffff; --ink:#1f2333; --muted:#7a8099; --line:#e8eaf3;
+  --accent:#6366f1; --accent-2:#8b5cf6; --accent-soft:#eef0ff;
+  --seg-bg:#f1f2f8; --seg-active:#ffffff;
+  --topbar:rgba(255,255,255,.88); --hover-soft:#f7f8fd;
+  --code-bg:#f1f2f8; --code-ink:#4f46e5;
+  --ok:#16a34a; --ok-soft:#dcfce7; --bad:#e5484d; --bad-soft:#fee2e2;
+  --shadow:0 2px 12px rgba(31,35,51,.06);
+}
+body[data-theme="sakura"]{ --bg-grad:linear-gradient(160deg,#fdf0f6 0%,#f8ebf4 45%,#eff0fb 100%); --accent:#ec4899; --accent-2:#a855f7; --accent-soft:#fdeef8; --code-ink:#db2777 }
+body[data-theme="sky"]{ --bg-grad:linear-gradient(160deg,#eaf5fe 0%,#edf1fd 50%,#f3f4fc 100%); --accent:#0284c7; --accent-2:#6366f1; --accent-soft:#e6f3fd; --code-ink:#0284c7 }
+body[data-theme="mint"]{ --bg-grad:linear-gradient(160deg,#e9f9f2 0%,#effaf3 50%,#f0f6f8 100%); --accent:#0d9f6e; --accent-2:#0ea5e9; --accent-soft:#e5f7f0; --code-ink:#0d9f6e }
+body[data-theme="sunset"]{ --bg-grad:linear-gradient(160deg,#fff5ec 0%,#ffeadf 50%,#fdeef0 100%); --accent:#f97316; --accent-2:#ec4899; --accent-soft:#feefe6; --code-ink:#ea580c }
+body[data-theme="starry"],body[data-theme="midnight"]{
+  --card:#262a45; --ink:#e9ebff; --muted:#9aa0c6; --line:#3a3f66;
+  --seg-bg:#31355a; --seg-active:#3d4270; --topbar:rgba(30,33,58,.86);
+  --hover-soft:#2e3253; --code-bg:#31355a; --code-ink:#a5b4fc;
+  --accent-soft:rgba(139,92,246,.18); --shadow:0 2px 14px rgba(0,0,0,.35);
+}
+body[data-theme="starry"]{ --bg-grad:linear-gradient(160deg,#15162b 0%,#1c1d3a 55%,#232150 100%); --accent:#8b5cf6; --accent-2:#6366f1 }
+body[data-theme="midnight"]{ --bg-grad:linear-gradient(160deg,#0e1626 0%,#14203a 55%,#1a2b4d 100%); --accent:#38bdf8; --accent-2:#818cf8 }
+
+/* ========= 全局 ========= */
+*{margin:0;padding:0;box-sizing:border-box}
+button,input,select,textarea{font-family:inherit}
+button{cursor:pointer}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+  font-size:15px;color:var(--ink);min-height:100vh;
+  background:var(--bg-grad) fixed;transition:background .3s ease;
+}
+.topbar,.card,.tabs{
+  background:var(--card);
+  background:color-mix(in srgb,var(--card) 78%,transparent);
+  backdrop-filter:blur(20px) saturate(1.45);
+  -webkit-backdrop-filter:blur(20px) saturate(1.45);
+}
+.topbar,.card,.tabs{border:1px solid var(--line);border:1px solid color-mix(in srgb,var(--line) 60%,transparent)}
+.topbar{border-radius:0}
+
+/* ========= 玻璃顶栏 ========= */
+.topbar{
+  position:sticky;top:0;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:12px 26px;
+  backdrop-filter:blur(16px) saturate(1.4);-webkit-backdrop-filter:blur(16px) saturate(1.4);
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  display:flex;align-items:center;justify-content:center;font-size:22px;
+  box-shadow:0 4px 12px rgba(31,35,51,.22);
+}
+.brand-text h1{font-size:19px;font-weight:700;letter-spacing:.5px}
+.brand-text p{font-size:12px;color:var(--muted);margin-top:1px}
+.topbar-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.status{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);margin-right:2px}
+.status .dot{width:8px;height:8px;border-radius:50%;background:#22c07a;box-shadow:0 0 6px rgba(34,192,122,.7)}
+.mode-quick{
+  border:1px solid var(--line);border-radius:10px;padding:7px 10px;
+  font-size:13px;font-weight:600;color:var(--ink);background:var(--card);
+  outline:none;cursor:pointer;max-width:210px;
+}
+.mode-quick:focus{border-color:var(--accent)}
+.balance-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);
+  padding:7px 14px;font-size:12.5px;font-weight:600;
+  transition:border-color .15s,color .15s,transform .15s;
+}
+.balance-chip:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+
+/* ========= 主体 ========= */
+.container{max-width:1080px;margin:0 auto;padding:20px 24px 46px}
+
+.tabs{
+  display:flex;gap:6px;padding:6px;border-radius:14px;box-shadow:var(--shadow);
+  margin-bottom:16px;overflow-x:auto;
+}
+.tab{
+  flex:1;border:none;background:none;border-radius:10px;
+  padding:11px 10px;font-size:14.5px;color:var(--muted);font-weight:500;
+  white-space:nowrap;transition:all .15s;
+}
+.tab:hover{color:var(--ink);background:var(--hover-soft)}
+.tab.active{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;font-weight:600;box-shadow:0 3px 10px rgba(0,0,0,.18);
+}
+section.tab{display:none;animation:fade .25s ease}
+section.tab.show{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.card{
+  border-radius:var(--radius);box-shadow:var(--shadow);
+  padding:18px;margin-bottom:16px;
+  display:flex;flex-direction:column;
+}
+.card h2{font-size:17px;margin-bottom:12px}
+.card h2 small{color:var(--muted);font-weight:400;font-size:12px;margin-left:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.stat{background:var(--card);border-radius:14px;padding:16px;box-shadow:0 1px 3px rgba(31,35,51,.05)}
+.stat .num{font-size:26px;font-weight:700;color:var(--accent)}
+.stat .name{font-size:12px;color:var(--muted);margin-top:4px}
+.muted{color:var(--muted)}
+
+/* ========= 按钮 ========= */
+.btn,table .btn{
+  border:none;border-radius:10px;padding:9px 18px;font-size:14px;font-weight:600;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
+  transition:opacity .15s,transform .15s;
+}
+.btn:hover{opacity:.9;transform:translateY(-1px)}
+.btn.ghost{
+  border:1px solid var(--line);border-radius:10px;
+  background:var(--card);color:var(--ink);font-weight:500;
+}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent);opacity:1}
+.btn.ok{background:linear-gradient(135deg,#16a34a,#22c07a)}
+.btn.bad{background:linear-gradient(135deg,#e5484d,#f97316)}
+.btn.small{padding:7px 13px;font-size:13px;border-radius:8px}
+.btn.wide{width:100%}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.sep{height:1px;background:var(--line);margin:14px 0}
+.bar{height:8px;background:var(--seg-bg);border-radius:99px;overflow:hidden;margin:10px 0}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));border-radius:99px;transition:.3s;width:0}
+a.tx{color:var(--accent);cursor:pointer;text-decoration:none;font-size:13px}
+
+/* ========= 单词卡 ========= */
+.wordbox{text-align:center;padding:32px 16px}
+.wordbox .w{font-size:34px;font-weight:700;letter-spacing:.5px}
+.wordbox .p{color:var(--muted);margin-top:6px;font-size:15px}
+.wordbox .m{
+  margin:18px auto 0;max-width:460px;padding:14px;border-radius:12px;
+  background:var(--accent-soft);color:var(--accent);font-size:16px;display:none;font-weight:600;
+}
+.wordbox .m.show{display:block}
+.wordbox .hidden-tip{
+  margin-top:18px;color:var(--muted);border:1px dashed var(--line);border-radius:12px;
+  padding:14px;font-size:13px;
+}
+.empty{color:var(--muted);text-align:center;padding:18px 0}
+
+.segmented{display:inline-flex;background:var(--seg-bg);border-radius:10px;padding:3px;gap:2px}
+.segmented button{
+  border:none;background:none;border-radius:8px;
+  padding:7px 18px;font-size:13.5px;color:var(--muted);transition:all .15s;
+}
+.segmented button:hover{color:var(--ink)}
+.segmented button.on{background:var(--seg-active);color:var(--accent);font-weight:600;box-shadow:0 1px 4px rgba(31,35,51,.1)}
+
+.chip-pill{
+  display:inline-block;background:var(--accent-soft);color:var(--accent);
+  border-radius:999px;font-size:12px;font-weight:600;padding:5px 12px;margin:3px 4px 0 0;
+}
+
+/* ========= 等级区分：四级 / 六级 ========= */
+.lvtag{
+  display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.3px;
+  padding:3px 9px;border-radius:7px;line-height:1.6;vertical-align:middle;
+  border:1px solid transparent;white-space:nowrap;
+}
+.lvtag.t4{background:var(--accent-soft);color:var(--accent);border-color:var(--accent-soft)}
+.lvtag.t6{background:rgba(139,92,246,.12);color:var(--accent-2);border-color:rgba(139,92,246,.28)}
+@supports (background:color-mix(in srgb,red 10%,transparent)){
+  .lvtag.t4{border-color:color-mix(in srgb,var(--accent) 30%,transparent)}
+  .lvtag.t6{background:color-mix(in srgb,var(--accent-2) 13%,transparent);border-color:color-mix(in srgb,var(--accent-2) 32%,transparent)}
+}
+.wordbox .wt{margin-bottom:10px}
+.lvrow{padding:11px 0;border-bottom:1px dashed var(--line)}
+.lvrow:last-child{border-bottom:none}
+.lvrow .top{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;flex-wrap:wrap}
+.lvrow .top .n{margin-left:auto;font-weight:500;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.lvrow .bar{margin:9px 0 3px}
+.lvrow .sub{font-size:12px;color:var(--muted)}
+.lvhead{display:flex;align-items:center;gap:8px;margin:16px 0 2px;font-size:12.5px;font-weight:700;color:var(--muted);letter-spacing:.3px}
+.lvhead:first-child{margin-top:0}
+.lvhead::after{content:"";flex:1;height:1px;background:var(--line)}
+#wordSearch{
+  width:100%;padding:10px 14px;border:1px solid var(--line);border-radius:10px;
+  font-size:14px;outline:none;background:var(--card);color:var(--ink);
+}
+#wordSearch:focus{border-color:var(--accent)}
+.srch-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.srch-item:last-child{border-bottom:none}
+.srch-item .sw{font-weight:700;min-width:104px}
+.srch-item .sp{color:var(--muted);font-size:12.5px;min-width:118px}
+.srch-item .sm{flex:1;min-width:0}
+@media(max-width:640px){
+  .srch-item{flex-wrap:wrap;gap:3px 10px}
+  .srch-item .sw,.srch-item .sp{min-width:auto}
+  .srch-item .sm{flex:1 1 100%}
+}
+
+/* ========= 测验 ========= */
+.list-item{
+  display:flex;justify-content:space-between;gap:10px;align-items:center;
+  padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px;
+}
+.list-item:last-child{border-bottom:none}
+.opt{
+  display:block;width:100%;text-align:left;margin:8px 0;padding:12px 14px;
+  border:1px solid var(--line);border-radius:10px;background:var(--card);
+  cursor:pointer;font-size:14px;transition:all .15s;
+}
+.opt:hover{border-color:var(--accent);color:var(--accent)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft);color:var(--ink)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft);color:var(--ink)}
+.opt:disabled{cursor:default}
+body[data-theme="starry"] .opt.right,body[data-theme="midnight"] .opt.right{background:rgba(34,192,122,.16);border-color:#22c07a}
+body[data-theme="starry"] .opt.wrong,body[data-theme="midnight"] .opt.wrong{background:rgba(229,72,77,.16);border-color:#f4777b}
+
+/* ========= C 语言笔记 ========= */
+details{
+  border:1px solid var(--line);border-radius:14px;padding:0;margin-bottom:10px;
+  background:var(--card);box-shadow:0 1px 3px rgba(31,35,51,.04);
+}
+details summary{cursor:pointer;padding:13px 16px;font-size:15px;font-weight:600;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::before{content:"▸ ";color:var(--accent)}
+details[open] summary::before{content:"▾ "}
+details .code{
+  margin:0 14px 14px;background:var(--code-bg);color:var(--code-ink);border-radius:10px;
+  padding:14px;font-family:Consolas,Monaco,monospace;font-size:13px;line-height:1.6;
+  overflow-x:auto;white-space:pre;
+}
+details .desc{padding:0 16px 12px;color:var(--muted);font-size:13.5px;line-height:1.8}
+
+/* ========= 番茄钟 ========= */
+.timerbox{text-align:center;padding:28px 10px 22px}
+.timerbox .time{font-size:56px;font-weight:700;font-variant-numeric:tabular-nums}
+.pomo-lab{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.pomo-min{width:62px;padding:6px 8px;text-align:center;border:1px solid var(--line);border-radius:8px;font-size:14px;outline:none;background:var(--card);color:var(--ink)}
+.pomo-min:focus{border-color:var(--accent)}
+
+/* ========= 待办 ========= */
+#todoInput{
+  flex:1;min-width:200px;padding:10px 14px;border:1px solid var(--line);
+  border-radius:10px;font-size:14px;outline:none;background:var(--card);color:var(--ink);
+}
+#todoInput:focus{border-color:var(--accent)}
+.todo-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.todo-item.done label{text-decoration:line-through;color:var(--muted)}
+.todo-item input{width:17px;height:17px;accent-color:var(--accent);cursor:pointer}
+.todo-item .del{margin-left:auto;border:none;background:none;color:var(--muted);cursor:pointer;font-size:16px}
+.todo-item .del:hover{color:var(--bad)}
+.checkin{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.checkin .big{font-size:22px;font-weight:700;color:var(--accent)}
+
+#toast{
+  position:fixed;left:50%;bottom:34px;transform:translateX(-50%);
+  background:#1f2333;color:#fff;padding:10px 18px;border-radius:999px;font-size:14px;
+  opacity:0;pointer-events:none;transition:.25s;z-index:99;
+}
+#toast.show{opacity:1}
+
+/* ========= 壁纸主题层（assets/wallpapers） ========= */
+.hidden{display:none!important}
+#bgLayer{
+  position:fixed;inset:0;z-index:-1;
+  background-position:center;background-size:cover;background-repeat:no-repeat;
+  opacity:var(--wp-opacity,.45);transition:opacity .25s ease;pointer-events:none;
+}
+body:not([data-theme^="photo"]) #bgLayer{display:none}
+body[data-theme="photo-sakura"] #bgLayer{background-image:url(assets/wallpapers/wp1_hd.jpg)}
+body[data-theme="photo-window"] #bgLayer{background-image:url(assets/wallpapers/wp2_hd.jpg)}
+body[data-theme="photo-star"]   #bgLayer{background-image:url(assets/wallpapers/wp3_hd.jpg)}
+body[data-theme="photo-kimono"] #bgLayer{background-image:url(assets/wallpapers/wp4_hd.jpg)}
+body[data-theme="photo-train"]  #bgLayer{background-image:url(assets/wallpapers/wp5_hd.jpg)}
+body[data-theme="photo-splash"] #bgLayer{background-image:url(assets/wallpapers/wp6_hd.jpg)}
+body[data-theme="photo-sea"]    #bgLayer{background-image:url(assets/wallpapers/wp7_hd.jpg)}
+body[data-theme^="photo"]{
+  --wp-opacity:.92;
+  --card:#ffffff;--ink:#1f2333;--muted:#6f7688;--line:rgba(255,255,255,.55);
+  --topbar:rgba(255,255,255,.72);--hover-soft:rgba(255,255,255,.45);
+  --seg-bg:rgba(255,255,255,.6);--seg-active:#ffffff;--code-bg:rgba(255,255,255,.78);
+  --shadow:0 2px 14px rgba(31,35,51,.16);
+}
+body[data-theme^="photo"] .topbar,
+body[data-theme^="photo"] .card,
+body[data-theme^="photo"] .tabs{background:#ffffff;background:color-mix(in srgb,#ffffff 56%,transparent)}
+body[data-theme^="photo"] .card,
+body[data-theme^="photo"] .tabs{border-color:rgba(255,255,255,.65);backdrop-filter:blur(22px) saturate(1.6);-webkit-backdrop-filter:blur(22px) saturate(1.6)}
+.logo{overflow:hidden}
+.logo img{display:block;width:100%;height:100%;object-fit:cover}
+.logo svg{display:block;width:100%;height:100%}
+
+/* ========= 动态壁纸主题（Canvas 引擎，见脚本 FX 部分） ========= */
+#fxCanvas{position:fixed;inset:0;z-index:-1;display:none;pointer-events:none}
+body[data-theme^="fx"] #fxCanvas{display:block}
+body[data-theme="fx-star"]{
+  --bg-grad:linear-gradient(160deg,#0b1026 0%,#151a3d 55%,#221545 100%);
+  --card:#262a45;--ink:#e9ebff;--muted:#9aa0c6;--line:#3a3f66;
+  --seg-bg:#31355a;--seg-active:#3d4270;--topbar:rgba(30,33,58,.86);
+  --hover-soft:#2e3253;--code-bg:#31355a;--code-ink:#a5b4fc;
+  --accent-soft:rgba(139,92,246,.18);--shadow:0 2px 14px rgba(0,0,0,.35);
+  --accent:#8b5cf6;--accent-2:#6366f1;
+}
+body[data-theme="fx-sakura"]{
+  --bg-grad:linear-gradient(160deg,#fde9f4 0%,#f8e9f6 50%,#eee9fb 100%);
+  --accent:#ec4899;--accent-2:#a855f7;--accent-soft:#fdeef8;--code-ink:#db2777;
+}
+body[data-theme="fx-aurora"]{
+  --bg-grad:linear-gradient(160deg,#e9f7f1 0%,#e9effc 50%,#f4ebfa 100%);
+  --accent:#0d9f6e;--accent-2:#6366f1;--accent-soft:#e5f7f0;--code-ink:#0d9f6e;
+}
+
+/* ========= 鲸鱼娘小云（模型：Pal-AI-Lab/Coopanion，GPL-3.0） ========= */
+.ai-fab{
+  position:fixed;right:16px;bottom:0;z-index:45;
+  width:124px;height:156px;border:none;background:none;padding:0;
+  overflow:visible;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+#petStage{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.pet-shadow{fill:#1d2340;opacity:.18}
+.fab-fallback{
+  display:block;width:74px;height:74px;margin:26px auto 0;
+  border-radius:22px;object-fit:cover;box-shadow:0 10px 26px rgba(31,35,51,.28);
+}
+.ai-fab.enter #petStage{animation:petIn .9s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes petIn{from{opacity:0;transform:translateY(34px)}to{opacity:1;transform:none}}
+.xy-spark{
+  position:absolute;font-size:14px;line-height:1;pointer-events:none;z-index:48;
+  animation:sparkUp .95s ease-out forwards;
+}
+@keyframes sparkUp{from{opacity:1;transform:translate(0,0) scale(.5) rotate(0)}to{opacity:0;transform:translate(var(--dx,0),-52px) scale(1.2) rotate(var(--rot,40deg))}}
+.ai-fab-bubble{
+  position:absolute;top:-34px;left:50%;transform:translateX(-50%);
+  background:#fff;border:2px solid var(--accent);border-radius:999px;
+  padding:3px 10px;font-size:14px;line-height:1.4;white-space:nowrap;
+  box-shadow:0 4px 14px rgba(31,35,51,.18);
+  animation:bubblePop .28s ease;pointer-events:none;z-index:47;
+}
+@keyframes bubblePop{from{opacity:0;transform:translateX(-50%) translateY(6px) scale(.6)}to{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}}
+.ai-panel{
+  position:fixed;right:28px;bottom:96px;z-index:46;
+  width:370px;max-width:calc(100vw - 40px);height:540px;max-height:72vh;
+  background:var(--card);border-radius:18px;
+  box-shadow:0 20px 60px rgba(15,18,35,.3);
+  display:flex;flex-direction:column;overflow:hidden;
+  animation:aiSlideUp .22s ease;
+}
+@keyframes aiSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.ai-head{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.ai-head-avatar{
+  width:38px;height:38px;border-radius:12px;flex-shrink:0;overflow:hidden;
+  border:2px solid var(--accent-soft);
+}
+.ai-head-avatar img,.ai-head-avatar canvas{width:100%;height:100%;object-fit:cover}
+.ai-head.talking .ai-head-avatar{animation:xyTalkSm .5s ease-in-out infinite}
+@keyframes xyTalkSm{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.08)}}
+.ai-head-btn{
+  border:1px solid var(--line);background:var(--card);border-radius:999px;
+  padding:3px 10px;font-size:11.5px;color:var(--ink);flex-shrink:0;
+}
+.ai-head-btn:hover{border-color:var(--accent);color:var(--accent)}
+.ai-head-text{flex:1;min-width:0}
+.ai-head-title{font-size:15px;font-weight:700}
+.ai-sub{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.ai-tips{padding:10px 12px 4px;max-height:168px;overflow-y:auto;flex-shrink:0}
+.tip-card{
+  display:flex;align-items:flex-start;gap:7px;
+  background:var(--seg-bg);border-radius:10px;
+  padding:8px 10px;margin-bottom:8px;
+  font-size:12.5px;line-height:1.65;color:var(--ink);
+}
+.tip-act{
+  border:none;background:none;color:var(--accent);font-weight:700;
+  font-size:12px;white-space:nowrap;padding:0 2px;flex-shrink:0;
+}
+.tip-act:hover{text-decoration:underline}
+.ai-chat{flex:1;overflow-y:auto;padding:12px 14px 6px}
+.ai-msg{max-width:86%;padding:9px 13px;border-radius:13px;font-size:13.5px;line-height:1.75;margin-bottom:10px;word-break:break-word}
+.ai-msg.ai{display:flex;align-items:flex-end;gap:7px;background:none;padding:0;max-width:92%}
+.ai-msg-avatar{
+  width:27px;height:27px;border-radius:50%;flex-shrink:0;
+  border:1.5px solid var(--line);background:#fff;align-self:flex-end;margin-bottom:2px;overflow:hidden;
+}
+.ai-msg-avatar svg{display:block;width:100%;height:100%}
+.ai-bubble{background:var(--seg-bg);color:var(--ink);border-radius:13px;border-top-left-radius:4px;padding:9px 13px;white-space:pre-wrap}
+.ai-msg.user{
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));
+  color:#fff;margin-left:auto;border-top-right-radius:4px;
+}
+.ai-inputrow{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+#aiInput{flex:1;min-width:0;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13.5px;outline:none;background:var(--card);color:var(--ink)}
+#aiInput:focus{border-color:var(--accent)}
+@media(max-width:640px){
+  .ai-panel{right:12px;left:12px;width:auto;bottom:98px;height:min(62vh,540px)}
+  .ai-fab{right:14px;bottom:10px;width:70px;height:84px}
+}
+
+/* ========= 终端演示机 ========= */
+.tty{
+  background:#0b1220;color:#c9d6ff;border-radius:12px;
+  font-family:Consolas,Monaco,"Courier New",monospace;font-size:13px;line-height:1.6;
+  padding:12px;height:280px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;
+}
+.tty .cmd{color:#8fa3cf}
+.tty .err{color:#f4777b}
+.tty .dim{color:#5f6f95}
+.tty .okk{color:#4ade80}
+.tty-inrow{display:flex;gap:8px;align-items:center;margin-top:10px}
+.tty-prompt{color:var(--accent);font-family:Consolas,Monaco,monospace;font-size:13px;flex-shrink:0;font-weight:600}
+#ttyInput{
+  flex:1;min-width:0;background:#0b1220;color:#c9d6ff;
+  border:1px solid rgba(255,255,255,.16);border-radius:10px;
+  padding:9px 12px;font-family:Consolas,Monaco,monospace;font-size:13px;outline:none;
+}
+#ttyInput:focus{border-color:var(--accent)}
+</style>
+</head>
+<body data-theme="">
+
+<div id="bgLayer" aria-hidden="true"></div>
+<canvas id="fxCanvas" aria-hidden="true"></canvas>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo"><span id="logoAvatar"></span></div>
+    <div class="brand-text">
+      <h1>我的学习平台</h1>
+      <p>英语四六级 · C 语言 · 番茄钟 · 待办</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <span class="status"><i class="dot"></i><span id="topDate"></span></span>
+    <button class="balance-chip" type="button" onclick="switchTab('dashboard')" title="连续打卡，点击查看详情">🔥 <span id="topStreakN">0</span> 天</button>
+    <select id="themeQuick" class="mode-quick" title="切换主题外观">
+      <option value="">🪄 默认 · 淡雅紫</option>
+      <option value="sakura">🌸 樱花</option>
+      <option value="sky">🌤️ 晴空</option>
+      <option value="mint">🌿 薄荷</option>
+      <option value="sunset">🌅 落日</option>
+      <option value="starry">🌌 星夜</option>
+      <option value="midnight">🌙 子夜</option>
+      <optgroup label="🖼️ 插画壁纸">
+      <option value="photo-sakura">樱花季</option>
+      <option value="photo-window">窗边日常</option>
+      <option value="photo-star">星河入梦</option>
+      <option value="photo-kimono">花窗和服</option>
+      <option value="photo-train">黄昏电车</option>
+      <option value="photo-splash">夏日水花</option>
+      <option value="photo-sea">海风少女</option>
+      </optgroup>
+      <optgroup label="✨ 动态壁纸 · 60fps">
+      <option value="fx-star">🌌 星空 · 流转</option>
+      <option value="fx-sakura">🌸 樱花 · 飘落</option>
+      <option value="fx-aurora">🌈 极光 · 流彩</option>
+      </optgroup>
+    </select>
+  </div>
+</header>
+
+<main class="container">
+
+  <nav class="tabs" id="navTabs">
+    <button class="tab active" data-tab="dashboard">🏠 仪表盘</button>
+    <button class="tab" data-tab="words">🔤 四六级单词</button>
+    <button class="tab" data-tab="review">📒 生词本</button>
+    <button class="tab" data-tab="quiz">✍️ 测验</button>
+    <button class="tab" data-tab="clang">💻 C 语言</button>
+    <button class="tab" data-tab="linux">🐧 Linux 命令</button>
+    <button class="tab" data-tab="timer">⏱️ 番茄钟</button>
+    <button class="tab" data-tab="todo">✅ 待办</button>
+  </nav>
+
+  <section class="tab show" id="tab-dashboard">
+    <div class="card">
+      <div class="checkin">
+        <div>
+          <div id="todayLine" class="muted" style="margin-bottom:6px"></div>
+          <div class="big">🔥 连续打卡 <span id="stStreak">0</span> 天</div>
+        </div>
+        <button class="btn" onclick="checkIn()" style="margin-left:auto">📌 今日打卡</button>
+      </div>
+    </div>
+    <div class="grid" style="margin-bottom:16px">
+      <div class="stat"><div class="num" id="stWordsKnown">0</div><div class="name">已掌握单词</div></div>
+      <div class="stat"><div class="num" id="stDaily">0</div><div class="name">今日单词 · 目标 20</div></div>
+      <div class="stat"><div class="num" id="stWordsHard">0</div><div class="name">生词本词汇</div></div>
+      <div class="stat"><div class="num" id="stPomo">0</div><div class="name">今日番茄钟</div></div>
+      <div class="stat"><div class="num" id="stTodo">0</div><div class="name">待办未完成</div></div>
+    </div>
+    <div class="card">
+      <h2>📊 四六级进度 <small>两级分开统计，互不影响</small></h2>
+      <div id="lvProgress"></div>
+    </div>
+    <div class="card">
+      <h2>📝 最近测验 <small>在「测验」页面开始新的测验</small></h2>
+      <div id="recentQuiz"><p class="empty">还没有测验记录，快来试试吧</p></div>
+    </div>
+    <div class="card">
+      <h2>🎯 每日计划建议</h2>
+      <div>
+        <span class="chip-pill">背 20 个单词</span>
+        <span class="chip-pill">单词测验 1 组</span>
+        <span class="chip-pill">学 1 个 C 知识点并敲代码</span>
+        <span class="chip-pill">完成 2 个番茄钟</span>
+        <span class="chip-pill">学几个 Linux 命令</span>
+        <span class="chip-pill">睡前复习生词本</span>
+      </div>
+      <p class="muted" style="margin-top:12px;font-size:13px;line-height:1.8">
+        建议：坚持每天打卡 + 番茄钟计时，把「不认识」的单词放进生词本反复看，C 语言跟着注释里的例题在 VS Code 里敲一遍加深印象。
+      </p>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-words">
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div class="segmented">
+          <button id="btnCet4" class="on" onclick="setLevel('cet4')">四级 <span id="nCet4">0</span> 词</button>
+          <button id="btnCet6" onclick="setLevel('cet6')">六级 <span id="nCet6">0</span> 词</button>
+        </div>
+        <a class="tx" onclick="resetLevel()">重置本等级进度</a>
+      </div>
+      <div class="bar"><i id="wprog"></i></div>
+      <div class="muted" style="font-size:13px" id="wprogtext"></div>
+    </div>
+    <div class="card wordbox" id="wordCard"></div>
+    <div class="row" style="justify-content:center" id="wordBtns"></div>
+    <div class="card">
+      <h2>🔍 词库速查 <small id="libCount"></small></h2>
+      <input id="wordSearch" placeholder="输入英文或中文查词，如 abandon / 放弃" oninput="renderSearch()">
+      <div id="searchResult" style="margin-top:6px"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-review">
+    <div class="card">
+      <h2>📒 生词本 <small id="reviewCount">四级、六级分开记录，各自复习</small></h2>
+      <div id="reviewList"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-quiz">
+    <div class="card">
+      <h2>选择测验类型</h2>
+      <p class="muted" style="font-size:12.5px;margin-bottom:8px">词汇：四级与六级各自出题、各自选项，绝不混入对方词库</p>
+      <div class="row" id="quizTypeRow">
+        <button class="btn" data-qtype="vocab4" onclick="startQuiz('vocab4')">🔤 四级词汇测验（10题）</button>
+        <button class="btn ghost" data-qtype="vocab6" onclick="startQuiz('vocab6')">🔤 六级词汇测验（10题）</button>
+        <button class="btn ghost" data-qtype="vocabmix" onclick="startQuiz('vocabmix')">🎲 四六级混合（10题）</button>
+      </div>
+      <div class="sep" style="margin:12px 0"></div>
+      <p class="muted" style="font-size:12.5px;margin-bottom:8px">编程与系统</p>
+      <div class="row" id="quizTypeRow2">
+        <button class="btn ghost" data-qtype="c" onclick="startQuiz('c')">💻 C 语言测验（10题）</button>
+        <button class="btn ghost" data-qtype="linux" onclick="startQuiz('linux')">🐧 Linux 命令测验（10题）</button>
+      </div>
+    </div>
+    <div class="card" id="quizBox" style="display:none"></div>
+  </section>
+
+  <section class="tab" id="tab-clang">
+    <div class="card">
+      <h2>💻 C 语言知识点 <small>点开笔记学习，例题建议在 VS Code 里亲手敲一遍</small></h2>
+    </div>
+    <div id="clangList"></div>
+  </section>
+
+  <section class="tab" id="tab-linux">
+    <div class="card">
+      <h2>🐧 Linux 命令实战 <small>点开学习；小云可以在聊天里快捷打开</small></h2>
+      <p class="muted" style="font-size:13px">
+        学习方法：今天 3 个命令 → 在你的 Ubuntu 终端里照着敲 → 第二天用 <b>Tab 补全</b>和 <b>↑ 历史</b>复习。常用就这几个，两周就熟。
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>🖥️ 终端演示机 <small>模拟环境随便试，刷新即恢复；先输 help 看看能干什么</small></h2>
+      <div class="row" id="ttyPresets" style="margin-bottom:10px"></div>
+      <div class="tty" id="ttyOut"></div>
+      <div class="tty-inrow">
+        <span class="tty-prompt" id="ttyPrompt">cyc@learn:~/practice$</span>
+        <input id="ttyInput" spellcheck="false" onkeydown="if(event.key==='Enter')runTty()">
+        <button class="btn small ghost" onclick="clearTty()">清屏</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🌍 优质 GitHub/Linux 学习资源 <small>点「打开」跳转原仓库</small></h2>
+      <div class="list-item">
+        <span><b>命令行的艺术</b>（The Art of Command Line · GitHub 5w+ star）<br>
+        <span class="muted" style="font-size:12.5px">下面「进阶篇」部分条目改编自此文（CC BY-SA 4.0），原文超全，值得通读一遍</span></span>
+        <a class="btn small ghost" href="https://github.com/jlevy/the-art-of-command-line/blob/master/README-zh.md" target="_blank" rel="noopener">打开</a>
+      </div>
+      <div class="list-item">
+        <span><b>linux-command</b>（Linux 命令词典 · 中文交互式查询手册）</span>
+        <a class="btn small ghost" href="https://github.com/jaywcjlove/linux-command" target="_blank" rel="noopener">打开</a>
+      </div>
+      <div class="list-item">
+        <span><b>阮一峰 · Linux 命令行教程</b>（免费开源中文教程，新手友好）</span>
+        <a class="btn small ghost" href="https://wangdoc.com/linux/" target="_blank" rel="noopener">打开</a>
+      </div>
+      <div class="list-item">
+        <span><b>awesome-shell</b>（命令行工具大全目录）</span>
+        <a class="btn small ghost" href="https://github.com/alebcay/awesome-shell" target="_blank" rel="noopener">打开</a>
+      </div>
+      <div class="list-item">
+        <span><b>tldr</b>（简化版 man 手册：每个命令给 3 个最常用例子）</span>
+        <a class="btn small ghost" href="https://github.com/tldr-pages/tldr" target="_blank" rel="noopener">打开</a>
+      </div>
+      <div class="list-item">
+        <span><b>shellcheck</b>（写 shell 脚本前先帮体检一遍的工具）</span>
+        <a class="btn small ghost" href="https://github.com/koalaman/shellcheck" target="_blank" rel="noopener">打开</a>
+      </div>
+    </div>
+
+    <div id="linuxList"></div>
+  </section>
+
+  <section class="tab" id="tab-timer">
+    <div class="card timerbox">
+      <div class="segmented">
+        <button id="pmWork" class="on" onclick="setPomoMode('work')">专注 25 分钟</button>
+        <button id="pmRest" onclick="setPomoMode('rest')">休息 5 分钟</button>
+      </div>
+      <div class="row" style="justify-content:center;margin-top:12px">
+        <label class="pomo-lab">专注 <input id="pWorkMin" class="pomo-min" type="number" min="1" max="180" value="25"> 分钟</label>
+        <label class="pomo-lab">休息 <input id="pRestMin" class="pomo-min" type="number" min="1" max="60" value="5"> 分钟</label>
+        <button class="btn small ghost" onclick="applyPomoLen()">⏱ 应用</button>
+      </div>
+      <div class="time" id="pTime" style="margin-top:18px">25:00</div>
+      <div class="row" style="justify-content:center;margin-top:20px">
+        <button class="btn" id="pStart" onclick="togglePomo()">▶ 开始</button>
+        <button class="btn ghost" onclick="resetPomo()">↺ 重置</button>
+      </div>
+      <p class="muted" style="margin-top:18px;font-size:13px">
+        今日完成 <b id="pToday">0</b> 个 · 累计 <b id="pTotal">0</b> 个
+      </p>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-todo">
+    <div class="card">
+      <h2>✅ 待办清单</h2>
+      <div class="row">
+        <input id="todoInput" placeholder="添加学习任务，例如：背诵 20 个四级单词" onkeydown="if(event.key==='Enter')addTodo()">
+        <button class="btn" onclick="addTodo()">＋ 添加</button>
+      </div>
+      <div id="todoList" style="margin-top:8px"></div>
+    </div>
+  </section>
+
+</main>
+
+<button id="aiFab" class="ai-fab enter" title="AI 小助手「小云」·点我可以拖动她玩" onclick="petFabClick(event)">
+  <svg id="petStage" aria-hidden="true">
+    <ellipse id="petShadow" class="pet-shadow" cx="0" cy="0" rx="0" ry="0"/>
+    <g id="petG"></g>
+    <g id="petFx"></g>
+  </svg>
+  <img id="fabFallback" class="fab-fallback hidden" src="assets/xiaoyun/03.jpg" alt="小云" onerror="this.style.visibility='hidden'">
+</button>
+
+<div id="aiPanel" class="ai-panel hidden">
+  <div class="ai-head" id="aiHead">
+    <span id="aiHeadAvatar" class="ai-head-avatar" aria-hidden="true"></span>
+    <div class="ai-head-text">
+      <div class="ai-head-title">学习小助手「小云」</div>
+      <span class="ai-sub">本地助手 · 陪你学四六级和 C 语言</span>
+    </div>
+    <button class="ai-head-btn" onclick="toggleAi()">✕</button>
+  </div>
+  <div class="ai-tips" id="aiTips"></div>
+  <div class="ai-chat" id="aiChat"></div>
+  <div class="ai-inputrow">
+    <input id="aiInput" onkeydown="if(event.key==='Enter')sendAi()" placeholder="和小云说点什么，比如：背单词 / 开番茄钟 / C语言指针">
+    <button class="btn small" onclick="sendAi()">发送</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="assets/whale-moe-core.js"></script>
+<script src="assets/whale/pet-brain.js"></script>
+<script>
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+
+/* ===== 词库：四级 / 六级各自独立成表，互不重复 =====
+   背诵、测验、生词本、统计全部按等级隔离。
+   共 1664 词（四级 1171 · 六级 493） */
+const WORDS={
+cet4:[
+{w:"abandon",p:"/əˈbændən/",m:"v. 放弃；抛弃"},
+{w:"ability",p:"/əˈbɪləti/",m:"n. 能力；才能"},
+{w:"abroad",p:"/əˈbrɔːd/",m:"adv. 在国外；到国外"},
+{w:"absence",p:"/ˈæbsəns/",m:"n. 缺席；缺乏"},
+{w:"absolute",p:"/ˈæbsəluːt/",m:"adj. 绝对的；完全的"},
+{w:"absorb",p:"/əbˈzɔːb/",m:"v. 吸收；使专心"},
+{w:"abstract",p:"/ˈæbstrækt/",m:"adj. 抽象的 n. 摘要"},
+{w:"abuse",p:"/əˈbjuːs/",m:"n./v. 滥用；虐待"},
+{w:"academic",p:"/ˌækəˈdemɪk/",m:"adj. 学术的；学院的"},
+{w:"accent",p:"/ˈæksent/",m:"n. 口音；重音"},
+{w:"access",p:"/ˈækses/",m:"n. 通道；v. 访问"},
+{w:"accident",p:"/ˈæksɪdənt/",m:"n. 事故；意外"},
+{w:"accompany",p:"/əˈkʌmpəni/",m:"v. 陪伴；伴随"},
+{w:"accomplish",p:"/əˈkʌmplɪʃ/",m:"v. 完成；实现"},
+{w:"account",p:"/əˈkaʊnt/",m:"n. 账户；描述 v. 解释"},
+{w:"accurate",p:"/ˈækjərət/",m:"adj. 准确的；精确的"},
+{w:"accuse",p:"/əˈkjuːz/",m:"v. 指责；控告"},
+{w:"achieve",p:"/əˈtʃiːv/",m:"v. 实现；达到"},
+{w:"acquire",p:"/əˈkwaɪə(r)/",m:"v. 获得；学到"},
+{w:"actual",p:"/ˈæktʃuəl/",m:"adj. 实际的；真实的"},
+{w:"adapt",p:"/əˈdæpt/",m:"v. 适应；改编"},
+{w:"adequate",p:"/ˈædɪkwət/",m:"adj. 足够的；适当的"},
+{w:"adjust",p:"/əˈdʒʌst/",m:"v. 调整；适应"},
+{w:"admire",p:"/ədˈmaɪə(r)/",m:"v. 钦佩；欣赏"},
+{w:"admit",p:"/ədˈmɪt/",m:"v. 承认；准许进入"},
+{w:"adopt",p:"/əˈdɒpt/",m:"v. 采纳；收养"},
+{w:"advance",p:"/ədˈvɑːns/",m:"v./n. 前进；进步"},
+{w:"advantage",p:"/ədˈvɑːntɪdʒ/",m:"n. 优势；好处"},
+{w:"adventure",p:"/ədˈventʃə(r)/",m:"n. 冒险；奇遇"},
+{w:"advertise",p:"/ˈædvətaɪz/",m:"v. 做广告；宣传"},
+{w:"affair",p:"/əˈfeə(r)/",m:"n. 事务；事件"},
+{w:"affect",p:"/əˈfekt/",m:"v. 影响；感动"},
+{w:"afford",p:"/əˈfɔːd/",m:"v. 负担得起；提供"},
+{w:"agency",p:"/ˈeɪdʒənsi/",m:"n. 代理机构"},
+{w:"agent",p:"/ˈeɪdʒənt/",m:"n. 代理人；经纪人"},
+{w:"aggressive",p:"/əˈɡresɪv/",m:"adj. 好斗的；积极进取的"},
+{w:"agriculture",p:"/ˈæɡrɪkʌltʃə(r)/",m:"n. 农业"},
+{w:"alarm",p:"/əˈlɑːm/",m:"n. 警报；惊恐"},
+{w:"alcohol",p:"/ˈælkəhɒl/",m:"n. 酒精；酒"},
+{w:"alter",p:"/ˈɔːltə(r)/",m:"v. 改变；修改"},
+{w:"alternative",p:"/ɔːlˈtɜːnətɪv/",m:"n. 替代品 adj. 可供选择的"},
+{w:"amaze",p:"/əˈmeɪz/",m:"v. 使惊奇"},
+{w:"ambition",p:"/æmˈbɪʃn/",m:"n. 雄心；抱负"},
+{w:"amount",p:"/əˈmaʊnt/",m:"n. 数量；总额"},
+{w:"analyse",p:"/ˈænəlaɪz/",m:"v. 分析"},
+{w:"ancient",p:"/ˈeɪnʃənt/",m:"adj. 古代的；古老的"},
+{w:"angle",p:"/ˈæŋɡl/",m:"n. 角度；观点"},
+{w:"announce",p:"/əˈnaʊns/",m:"v. 宣布；通告"},
+{w:"annoy",p:"/əˈnɔɪ/",m:"v. 使恼怒；打扰"},
+{w:"annual",p:"/ˈænjuəl/",m:"adj. 每年的 n. 年刊"},
+{w:"anxious",p:"/ˈæŋkʃəs/",m:"adj. 焦虑的；渴望的"},
+{w:"apologize",p:"/əˈpɒlədʒaɪz/",m:"v. 道歉"},
+{w:"apparent",p:"/əˈpærənt/",m:"adj. 明显的；表面上的"},
+{w:"appeal",p:"/əˈpiːl/",m:"v./n. 呼吁；吸引力"},
+{w:"appetite",p:"/ˈæpɪtaɪt/",m:"n. 食欲；欲望"},
+{w:"apply",p:"/əˈplaɪ/",m:"v. 申请；应用"},
+{w:"appointment",p:"/əˈpɔɪntmənt/",m:"n. 约会；任命"},
+{w:"appreciate",p:"/əˈpriːʃieɪt/",m:"v. 感激；欣赏"},
+{w:"approach",p:"/əˈprəʊtʃ/",m:"n. 方法；v. 接近"},
+{w:"appropriate",p:"/əˈprəʊpriət/",m:"adj. 恰当的；合适的"},
+{w:"approve",p:"/əˈpruːv/",m:"v. 批准；赞成"},
+{w:"approximately",p:"/əˈprɒksɪmətli/",m:"adv. 大约；近似地"},
+{w:"architecture",p:"/ˈɑːkɪtektʃə(r)/",m:"n. 建筑学；建筑风格"},
+{w:"argue",p:"/ˈɑːɡjuː/",m:"v. 争论；主张"},
+{w:"arise",p:"/əˈraɪz/",m:"v. 出现；发生"},
+{w:"arrange",p:"/əˈreɪndʒ/",m:"v. 安排；整理"},
+{w:"arrest",p:"/əˈrest/",m:"v./n. 逮捕；阻止"},
+{w:"artificial",p:"/ˌɑːtɪˈfɪʃl/",m:"adj. 人工的；虚假的"},
+{w:"aspect",p:"/ˈæspekt/",m:"n. 方面；外观"},
+{w:"assign",p:"/əˈsaɪn/",m:"v. 分配；指派"},
+{w:"assist",p:"/əˈsɪst/",m:"v. 帮助；协助"},
+{w:"associate",p:"/əˈsəʊʃieɪt/",m:"v. 联想；交往"},
+{w:"assume",p:"/əˈsjuːm/",m:"v. 假定；承担"},
+{w:"assure",p:"/əˈʃʊə(r)/",m:"v. 使确信；保证"},
+{w:"astonish",p:"/əˈstɒnɪʃ/",m:"v. 使惊讶"},
+{w:"athlete",p:"/ˈæθliːt/",m:"n. 运动员"},
+{w:"atmosphere",p:"/ˈætməsfɪə(r)/",m:"n. 大气；气氛"},
+{w:"attach",p:"/əˈtætʃ/",m:"v. 系上；附加"},
+{w:"attempt",p:"/əˈtempt/",m:"v./n. 尝试；企图"},
+{w:"attend",p:"/əˈtend/",m:"v. 出席；照料"},
+{w:"attitude",p:"/ˈætɪtjuːd/",m:"n. 态度；看法"},
+{w:"attract",p:"/əˈtrækt/",m:"v. 吸引；引起"},
+{w:"audience",p:"/ˈɔːdiəns/",m:"n. 观众；听众"},
+{w:"authority",p:"/ɔːˈθɒrəti/",m:"n. 权威；当局"},
+{w:"automatic",p:"/ˌɔːtəˈmætɪk/",m:"adj. 自动的；无意识的"},
+{w:"available",p:"/əˈveɪləbl/",m:"adj. 可获得的；有空的"},
+{w:"average",p:"/ˈævərɪdʒ/",m:"adj. 平均的 n. 平均数"},
+{w:"avoid",p:"/əˈvɔɪd/",m:"v. 避免；躲开"},
+{w:"aware",p:"/əˈweə(r)/",m:"adj. 意识到的；知道的"},
+{w:"awful",p:"/ˈɔːfl/",m:"adj. 糟糕的；可怕的"},
+{w:"balance",p:"/ˈbæləns/",m:"n./v. 平衡；结余"},
+{w:"ban",p:"/bæn/",m:"v./n. 禁止；禁令"},
+{w:"bargain",p:"/ˈbɑːɡən/",m:"n. 便宜货 v. 讨价还价"},
+{w:"barrier",p:"/ˈbæriə(r)/",m:"n. 障碍；栅栏"},
+{w:"basis",p:"/ˈbeɪsɪs/",m:"n. 基础；根据"},
+{w:"battle",p:"/ˈbætl/",m:"n./v. 战斗；斗争"},
+{w:"behave",p:"/bɪˈheɪv/",m:"v. 表现；举止"},
+{w:"behaviour",p:"/bɪˈheɪvjə(r)/",m:"n. 行为；举止"},
+{w:"belief",p:"/bɪˈliːf/",m:"n. 信念；信仰"},
+{w:"beneficial",p:"/ˌbenɪˈfɪʃl/",m:"adj. 有益的；有利的"},
+{w:"benefit",p:"/ˈbenɪfɪt/",m:"n. 利益 v. 有益于"},
+{w:"beyond",p:"/bɪˈjɒnd/",m:"prep. 超出；在……之外"},
+{w:"bind",p:"/baɪnd/",m:"v. 捆绑；约束"},
+{w:"biology",p:"/baɪˈɒlədʒi/",m:"n. 生物学"},
+{w:"blame",p:"/bleɪm/",m:"v./n. 责备；归咎"},
+{w:"blank",p:"/blæŋk/",m:"adj. 空白的 n. 空白"},
+{w:"bloom",p:"/bluːm/",m:"v. 开花 n. 花朵"},
+{w:"boast",p:"/bəʊst/",m:"v. 吹嘘；以拥有……而自豪"},
+{w:"bold",p:"/bəʊld/",m:"adj. 大胆的；粗体的"},
+{w:"boom",p:"/buːm/",m:"n./v. 繁荣；激增"},
+{w:"border",p:"/ˈbɔːdə(r)/",m:"n. 边界；边境"},
+{w:"bother",p:"/ˈbɒðə(r)/",m:"v. 打扰；费心"},
+{w:"brief",p:"/briːf/",m:"adj. 简短的 n. 摘要"},
+{w:"brilliant",p:"/ˈbrɪliənt/",m:"adj. 杰出的；明亮的"},
+{w:"broadcast",p:"/ˈbrɔːdkɑːst/",m:"v./n. 广播；播送"},
+{w:"budget",p:"/ˈbʌdʒɪt/",m:"n. 预算 v. 编预算"},
+{w:"burden",p:"/ˈbɜːdn/",m:"n. 负担 v. 使负担"},
+{w:"bureau",p:"/ˈbjʊərəʊ/",m:"n. 局；办事处"},
+{w:"campaign",p:"/kæmˈpeɪn/",m:"n. 运动；活动；战役"},
+{w:"campus",p:"/ˈkæmpəs/",m:"n. 校园"},
+{w:"cancel",p:"/ˈkænsl/",m:"v. 取消；撤销"},
+{w:"candidate",p:"/ˈkændɪdət/",m:"n. 候选人；考生"},
+{w:"capable",p:"/ˈkeɪpəbl/",m:"adj. 有能力的；能干的"},
+{w:"capacity",p:"/kəˈpæsəti/",m:"n. 容量；能力"},
+{w:"capital",p:"/ˈkæpɪtl/",m:"n. 首都；资本 adj. 主要的"},
+{w:"capture",p:"/ˈkæptʃə(r)/",m:"v. 捕获；夺取"},
+{w:"career",p:"/kəˈrɪə(r)/",m:"n. 职业；生涯"},
+{w:"casual",p:"/ˈkæʒuəl/",m:"adj. 随意的；临时的"},
+{w:"category",p:"/ˈkætəɡəri/",m:"n. 类别；范畴"},
+{w:"celebrate",p:"/ˈselɪbreɪt/",m:"v. 庆祝；赞美"},
+{w:"ceremony",p:"/ˈserəməni/",m:"n. 典礼；仪式"},
+{w:"certificate",p:"/səˈtɪfɪkət/",m:"n. 证书；证明"},
+{w:"challenge",p:"/ˈtʃælɪndʒ/",m:"n. 挑战 v. 挑战；质疑"},
+{w:"channel",p:"/ˈtʃænl/",m:"n. 频道；渠道"},
+{w:"chapter",p:"/ˈtʃæptə(r)/",m:"n. 章节；篇章"},
+{w:"character",p:"/ˈkærəktə(r)/",m:"n. 性格；人物；字符"},
+{w:"characteristic",p:"/ˌkærəktəˈrɪstɪk/",m:"n. 特征 adj. 典型的"},
+{w:"charge",p:"/tʃɑːdʒ/",m:"v. 收费；指控 n. 费用"},
+{w:"charity",p:"/ˈtʃærəti/",m:"n. 慈善；慈善机构"},
+{w:"chemical",p:"/ˈkemɪkl/",m:"adj. 化学的 n. 化学品"},
+{w:"circumstance",p:"/ˈsɜːkəmstəns/",m:"n. 环境；情况"},
+{w:"civil",p:"/ˈsɪvl/",m:"adj. 公民的；民用的"},
+{w:"claim",p:"/kleɪm/",m:"v. 声称；索取 n. 要求"},
+{w:"classify",p:"/ˈklæsɪfaɪ/",m:"v. 分类；归类"},
+{w:"client",p:"/ˈklaɪənt/",m:"n. 客户；委托人"},
+{w:"climate",p:"/ˈklaɪmət/",m:"n. 气候；风气"},
+{w:"clue",p:"/kluː/",m:"n. 线索；提示"},
+{w:"coach",p:"/kəʊtʃ/",m:"n. 教练；长途客车 v. 训练"},
+{w:"collapse",p:"/kəˈlæps/",m:"v./n. 倒塌；崩溃"},
+{w:"colleague",p:"/ˈkɒliːɡ/",m:"n. 同事"},
+{w:"combine",p:"/kəmˈbaɪn/",m:"v. 结合；联合"},
+{w:"comment",p:"/ˈkɒment/",m:"n./v. 评论；意见"},
+{w:"commercial",p:"/kəˈmɜːʃl/",m:"adj. 商业的 n. 广告"},
+{w:"commit",p:"/kəˈmɪt/",m:"v. 犯（错误）；承诺；投入"},
+{w:"committee",p:"/kəˈmɪti/",m:"n. 委员会"},
+{w:"communicate",p:"/kəˈmjuːnɪkeɪt/",m:"v. 交流；沟通"},
+{w:"community",p:"/kəˈmjuːnəti/",m:"n. 社区；群体"},
+{w:"compare",p:"/kəmˈpeə(r)/",m:"v. 比较；相比"},
+{w:"compete",p:"/kəmˈpiːt/",m:"v. 竞争；比赛"},
+{w:"competition",p:"/ˌkɒmpəˈtɪʃn/",m:"n. 竞争；比赛"},
+{w:"complain",p:"/kəmˈpleɪn/",m:"v. 抱怨；投诉"},
+{w:"complex",p:"/ˈkɒmpleks/",m:"adj. 复杂的 n. 综合体"},
+{w:"complicated",p:"/ˈkɒmplɪkeɪtɪd/",m:"adj. 复杂的；难懂的"},
+{w:"compose",p:"/kəmˈpəʊz/",m:"v. 组成；创作"},
+{w:"comprehensive",p:"/ˌkɒmprɪˈhensɪv/",m:"adj. 全面的；综合的"},
+{w:"concentrate",p:"/ˈkɒnsntreɪt/",m:"v. 集中；全神贯注"},
+{w:"concept",p:"/ˈkɒnsept/",m:"n. 概念；观念"},
+{w:"concern",p:"/kənˈsɜːn/",m:"n. 关心；忧虑 v. 涉及"},
+{w:"conclude",p:"/kənˈkluːd/",m:"v. 断定；结束"},
+{w:"concrete",p:"/ˈkɒŋkriːt/",m:"adj. 具体的 n. 混凝土"},
+{w:"condition",p:"/kənˈdɪʃn/",m:"n. 条件；状况"},
+{w:"conduct",p:"/kənˈdʌkt/",m:"v. 进行；指挥 n. 行为"},
+{w:"conference",p:"/ˈkɒnfərəns/",m:"n. 会议；讨论会"},
+{w:"confidence",p:"/ˈkɒnfɪdəns/",m:"n. 信心；信任"},
+{w:"confirm",p:"/kənˈfɜːm/",m:"v. 证实；确认"},
+{w:"conflict",p:"/ˈkɒnflɪkt/",m:"n./v. 冲突；抵触"},
+{w:"confuse",p:"/kənˈfjuːz/",m:"v. 使困惑；混淆"},
+{w:"connect",p:"/kəˈnekt/",m:"v. 连接；联系"},
+{w:"conscious",p:"/ˈkɒnʃəs/",m:"adj. 有意识的；觉察到的"},
+{w:"consequence",p:"/ˈkɒnsɪkwəns/",m:"n. 结果；后果"},
+{w:"conservative",p:"/kənˈsɜːvətɪv/",m:"adj. 保守的 n. 保守者"},
+{w:"considerable",p:"/kənˈsɪdərəbl/",m:"adj. 相当大的；可观的"},
+{w:"consist",p:"/kənˈsɪst/",m:"v. 由……组成；在于"},
+{w:"constant",p:"/ˈkɒnstənt/",m:"adj. 不断的；恒定的"},
+{w:"construct",p:"/kənˈstrʌkt/",m:"v. 建造；构建"},
+{w:"consult",p:"/kənˈsʌlt/",m:"v. 咨询；查阅"},
+{w:"consume",p:"/kənˈsjuːm/",m:"v. 消费；消耗"},
+{w:"contact",p:"/ˈkɒntækt/",m:"n./v. 联系；接触"},
+{w:"contain",p:"/kənˈteɪn/",m:"v. 包含；容纳"},
+{w:"contract",p:"/ˈkɒntrækt/",m:"n. 合同 v. 收缩"},
+{w:"contrast",p:"/ˈkɒntrɑːst/",m:"n./v. 对比；对照"},
+{w:"contribute",p:"/kənˈtrɪbjuːt/",m:"v. 贡献；投稿；导致"},
+{w:"convenient",p:"/kənˈviːniənt/",m:"adj. 方便的；便利的"},
+{w:"convention",p:"/kənˈvenʃn/",m:"n. 大会；惯例"},
+{w:"conventional",p:"/kənˈvenʃənl/",m:"adj. 传统的；常规的"},
+{w:"convince",p:"/kənˈvɪns/",m:"v. 使确信；说服"},
+{w:"cooperate",p:"/kəʊˈɒpəreɪt/",m:"v. 合作；配合"},
+{w:"cope",p:"/kəʊp/",m:"v. 应付；处理"},
+{w:"core",p:"/kɔː(r)/",m:"n. 核心；果核 adj. 核心的"},
+{w:"courage",p:"/ˈkʌrɪdʒ/",m:"n. 勇气；胆量"},
+{w:"credit",p:"/ˈkredɪt/",m:"n. 信用；学分；赞扬"},
+{w:"crisis",p:"/ˈkraɪsɪs/",m:"n. 危机；紧要关头"},
+{w:"critical",p:"/ˈkrɪtɪkl/",m:"adj. 关键的；批评的"},
+{w:"criticize",p:"/ˈkrɪtɪsaɪz/",m:"v. 批评；评论"},
+{w:"culture",p:"/ˈkʌltʃə(r)/",m:"n. 文化；培养"},
+{w:"curious",p:"/ˈkjʊəriəs/",m:"adj. 好奇的；奇怪的"},
+{w:"current",p:"/ˈkʌrənt/",m:"adj. 当前的 n. 水流；电流"},
+{w:"custom",p:"/ˈkʌstəm/",m:"n. 习俗；惯例"},
+{w:"customer",p:"/ˈkʌstəmə(r)/",m:"n. 顾客；客户"},
+{w:"cycle",p:"/ˈsaɪkl/",m:"n. 循环；周期 v. 骑自行车"},
+{w:"damage",p:"/ˈdæmɪdʒ/",m:"n./v. 损害；破坏"},
+{w:"dare",p:"/deə(r)/",m:"v. 敢；胆敢"},
+{w:"data",p:"/ˈdeɪtə/",m:"n. 数据；资料"},
+{w:"deadline",p:"/ˈdedlaɪn/",m:"n. 截止日期；最后期限"},
+{w:"debate",p:"/dɪˈbeɪt/",m:"n./v. 辩论；争论"},
+{w:"debt",p:"/det/",m:"n. 债务；欠款"},
+{w:"decade",p:"/ˈdekeɪd/",m:"n. 十年"},
+{w:"decline",p:"/dɪˈklaɪn/",m:"v. 下降；谢绝 n. 衰退"},
+{w:"decorate",p:"/ˈdekəreɪt/",m:"v. 装饰；布置"},
+{w:"decrease",p:"/dɪˈkriːs/",m:"v./n. 减少；降低"},
+{w:"defeat",p:"/dɪˈfiːt/",m:"v./n. 击败；失败"},
+{w:"defend",p:"/dɪˈfend/",m:"v. 保卫；辩护"},
+{w:"define",p:"/dɪˈfaɪn/",m:"v. 定义；界定"},
+{w:"definite",p:"/ˈdefɪnət/",m:"adj. 明确的；肯定的"},
+{w:"delay",p:"/dɪˈleɪ/",m:"v./n. 延迟；耽搁"},
+{w:"deliver",p:"/dɪˈlɪvə(r)/",m:"v. 递送；发表；分娩"},
+{w:"demand",p:"/dɪˈmɑːnd/",m:"n./v. 要求；需求"},
+{w:"democracy",p:"/dɪˈmɒkrəsi/",m:"n. 民主；民主制"},
+{w:"demonstrate",p:"/ˈdemənstreɪt/",m:"v. 证明；演示；示威"},
+{w:"deny",p:"/dɪˈnaɪ/",m:"v. 否认；拒绝给予"},
+{w:"department",p:"/dɪˈpɑːtmənt/",m:"n. 部门；系"},
+{w:"depend",p:"/dɪˈpend/",m:"v. 依靠；取决于"},
+{w:"deposit",p:"/dɪˈpɒzɪt/",m:"n. 存款；押金 v. 存放"},
+{w:"depress",p:"/dɪˈpres/",m:"v. 使沮丧；压低"},
+{w:"depth",p:"/depθ/",m:"n. 深度；深处"},
+{w:"describe",p:"/dɪˈskraɪb/",m:"v. 描述；形容"},
+{w:"deserve",p:"/dɪˈzɜːv/",m:"v. 应得；值得"},
+{w:"design",p:"/dɪˈzaɪn/",m:"n./v. 设计；构思"},
+{w:"desire",p:"/dɪˈzaɪə(r)/",m:"n./v. 渴望；欲望"},
+{w:"despite",p:"/dɪˈspaɪt/",m:"prep. 尽管；不管"},
+{w:"destroy",p:"/dɪˈstrɔɪ/",m:"v. 破坏；摧毁"},
+{w:"detail",p:"/ˈdiːteɪl/",m:"n. 细节；详情"},
+{w:"detect",p:"/dɪˈtekt/",m:"v. 察觉；探测"},
+{w:"determine",p:"/dɪˈtɜːmɪn/",m:"v. 决定；确定"},
+{w:"device",p:"/dɪˈvaɪs/",m:"n. 装置；设备"},
+{w:"devote",p:"/dɪˈvəʊt/",m:"v. 致力于；献身"},
+{w:"differ",p:"/ˈdɪfə(r)/",m:"v. 不同；相异"},
+{w:"digital",p:"/ˈdɪdʒɪtl/",m:"adj. 数字的；数码的"},
+{w:"direct",p:"/dəˈrekt/",m:"adj. 直接的 v. 指导；导演"},
+{w:"disappoint",p:"/ˌdɪsəˈpɔɪnt/",m:"v. 使失望"},
+{w:"disaster",p:"/dɪˈzɑːstə(r)/",m:"n. 灾难；不幸"},
+{w:"discipline",p:"/ˈdɪsəplɪn/",m:"n. 纪律；学科 v. 训练"},
+{w:"discount",p:"/ˈdɪskaʊnt/",m:"n. 折扣 v. 打折"},
+{w:"discover",p:"/dɪˈskʌvə(r)/",m:"v. 发现；发觉"},
+{w:"disease",p:"/dɪˈziːz/",m:"n. 疾病"},
+{w:"distance",p:"/ˈdɪstəns/",m:"n. 距离；远方"},
+{w:"distinguish",p:"/dɪˈstɪŋɡwɪʃ/",m:"v. 区分；辨别"},
+{w:"distribute",p:"/dɪˈstrɪbjuːt/",m:"v. 分发；分布"},
+{w:"district",p:"/ˈdɪstrɪkt/",m:"n. 地区；行政区"},
+{w:"disturb",p:"/dɪˈstɜːb/",m:"v. 打扰；扰乱"},
+{w:"divide",p:"/dɪˈvaɪd/",m:"v. 分开；除"},
+{w:"document",p:"/ˈdɒkjumənt/",m:"n. 文件；文献"},
+{w:"domestic",p:"/dəˈmestɪk/",m:"adj. 国内的；家庭的"},
+{w:"donate",p:"/dəʊˈneɪt/",m:"v. 捐赠；捐献"},
+{w:"doubt",p:"/daʊt/",m:"n./v. 怀疑；疑问"},
+{w:"draft",p:"/drɑːft/",m:"n. 草稿 v. 起草"},
+{w:"dramatic",p:"/drəˈmætɪk/",m:"adj. 戏剧性的；巨大的"},
+{w:"drug",p:"/drʌɡ/",m:"n. 药；毒品"},
+{w:"due",p:"/djuː/",m:"adj. 到期的；应支付的"},
+{w:"dull",p:"/dʌl/",m:"adj. 乏味的；阴沉的"},
+{w:"duty",p:"/ˈdjuːti/",m:"n. 责任；职责；关税"},
+{w:"eager",p:"/ˈiːɡə(r)/",m:"adj. 渴望的；热切的"},
+{w:"earn",p:"/ɜːn/",m:"v. 赚得；获得"},
+{w:"economy",p:"/ɪˈkɒnəmi/",m:"n. 经济；节约"},
+{w:"edge",p:"/edʒ/",m:"n. 边缘；优势"},
+{w:"edition",p:"/ɪˈdɪʃn/",m:"n. 版本；版次"},
+{w:"educate",p:"/ˈedʒukeɪt/",m:"v. 教育；培养"},
+{w:"effect",p:"/ɪˈfekt/",m:"n. 影响；效果"},
+{w:"efficient",p:"/ɪˈfɪʃnt/",m:"adj. 高效的；有能力的"},
+{w:"effort",p:"/ˈefət/",m:"n. 努力；尝试"},
+{w:"elderly",p:"/ˈeldəli/",m:"adj. 年长的"},
+{w:"elect",p:"/ɪˈlekt/",m:"v. 选举；选择"},
+{w:"electric",p:"/ɪˈlektrɪk/",m:"adj. 电的；用电的"},
+{w:"element",p:"/ˈelɪmənt/",m:"n. 元素；要素"},
+{w:"eliminate",p:"/ɪˈlɪmɪneɪt/",m:"v. 消除；淘汰"},
+{w:"embarrass",p:"/ɪmˈbærəs/",m:"v. 使窘迫；使尴尬"},
+{w:"emerge",p:"/iˈmɜːdʒ/",m:"v. 出现；显露"},
+{w:"emergency",p:"/iˈmɜːdʒənsi/",m:"n. 紧急情况；突发事件"},
+{w:"emotion",p:"/ɪˈməʊʃn/",m:"n. 情感；情绪"},
+{w:"emphasis",p:"/ˈemfəsɪs/",m:"n. 强调；重点"},
+{w:"emphasize",p:"/ˈemfəsaɪz/",m:"v. 强调；着重"},
+{w:"employ",p:"/ɪmˈplɔɪ/",m:"v. 雇用；使用"},
+{w:"enable",p:"/ɪˈneɪbl/",m:"v. 使能够；使可行"},
+{w:"encounter",p:"/ɪnˈkaʊntə(r)/",m:"v./n. 遭遇；偶遇"},
+{w:"encourage",p:"/ɪnˈkʌrɪdʒ/",m:"v. 鼓励；促进"},
+{w:"endure",p:"/ɪnˈdjʊə(r)/",m:"v. 忍受；持续"},
+{w:"energy",p:"/ˈenədʒi/",m:"n. 能量；精力"},
+{w:"engage",p:"/ɪnˈɡeɪdʒ/",m:"v. 从事；吸引；订婚"},
+{w:"engine",p:"/ˈendʒɪn/",m:"n. 发动机；引擎"},
+{w:"enormous",p:"/ɪˈnɔːməs/",m:"adj. 巨大的；庞大的"},
+{w:"ensure",p:"/ɪnˈʃʊə(r)/",m:"v. 确保；保证"},
+{w:"entertain",p:"/ˌentəˈteɪn/",m:"v. 娱乐；招待"},
+{w:"enthusiasm",p:"/ɪnˈθjuːziæzəm/",m:"n. 热情；热忱"},
+{w:"entire",p:"/ɪnˈtaɪə(r)/",m:"adj. 全部的；完整的"},
+{w:"environment",p:"/ɪnˈvaɪrənmənt/",m:"n. 环境；周围状况"},
+{w:"equal",p:"/ˈiːkwəl/",m:"adj. 相等的 v. 等于"},
+{w:"equipment",p:"/ɪˈkwɪpmənt/",m:"n. 设备；装备"},
+{w:"error",p:"/ˈerə(r)/",m:"n. 错误；误差"},
+{w:"escape",p:"/ɪˈskeɪp/",m:"v./n. 逃跑；逃避"},
+{w:"essential",p:"/ɪˈsenʃl/",m:"adj. 必要的；本质的"},
+{w:"establish",p:"/ɪˈstæblɪʃ/",m:"v. 建立；确立"},
+{w:"estimate",p:"/ˈestɪmeɪt/",m:"v./n. 估计；评价"},
+{w:"evaluate",p:"/ɪˈvæljueɪt/",m:"v. 评价；评估"},
+{w:"eventually",p:"/ɪˈventʃuəli/",m:"adv. 最终；终于"},
+{w:"evidence",p:"/ˈevɪdəns/",m:"n. 证据；迹象"},
+{w:"evil",p:"/ˈiːvl/",m:"adj. 邪恶的 n. 邪恶"},
+{w:"exaggerate",p:"/ɪɡˈzædʒəreɪt/",m:"v. 夸大；夸张"},
+{w:"examine",p:"/ɪɡˈzæmɪn/",m:"v. 检查；审查"},
+{w:"exceed",p:"/ɪkˈsiːd/",m:"v. 超过；超出"},
+{w:"excellent",p:"/ˈeksələnt/",m:"adj. 优秀的；极好的"},
+{w:"exchange",p:"/ɪksˈtʃeɪndʒ/",m:"n./v. 交换；兑换"},
+{w:"excite",p:"/ɪkˈsaɪt/",m:"v. 使兴奋；激起"},
+{w:"exclude",p:"/ɪkˈskluːd/",m:"v. 排除；把……排除在外"},
+{w:"excuse",p:"/ɪkˈskjuːs/",m:"n. 借口 v. 原谅"},
+{w:"exhaust",p:"/ɪɡˈzɔːst/",m:"v. 使筋疲力尽；耗尽"},
+{w:"exhibit",p:"/ɪɡˈzɪbɪt/",m:"v. 展出 n. 展品"},
+{w:"exist",p:"/ɪɡˈzɪst/",m:"v. 存在；生存"},
+{w:"expand",p:"/ɪkˈspænd/",m:"v. 扩大；膨胀"},
+{w:"expect",p:"/ɪkˈspekt/",m:"v. 期待；预料"},
+{w:"expense",p:"/ɪkˈspens/",m:"n. 花费；代价"},
+{w:"experiment",p:"/ɪkˈsperɪmənt/",m:"n./v. 实验；试验"},
+{w:"expert",p:"/ˈekspɜːt/",m:"n. 专家 adj. 熟练的"},
+{w:"explain",p:"/ɪkˈspleɪn/",m:"v. 解释；说明"},
+{w:"explore",p:"/ɪkˈsplɔː(r)/",m:"v. 探索；勘探"},
+{w:"export",p:"/ɪkˈspɔːt/",m:"v./n. 出口；输出"},
+{w:"expose",p:"/ɪkˈspəʊz/",m:"v. 暴露；揭露"},
+{w:"express",p:"/ɪkˈspres/",m:"v. 表达 n. 快车 adj. 明确的"},
+{w:"extend",p:"/ɪkˈstend/",m:"v. 延伸；扩展"},
+{w:"extent",p:"/ɪkˈstent/",m:"n. 程度；范围"},
+{w:"external",p:"/ɪkˈstɜːnl/",m:"adj. 外部的；外来的"},
+{w:"extraordinary",p:"/ɪkˈstrɔːdnri/",m:"adj. 非凡的；异常的"},
+{w:"extreme",p:"/ɪkˈstriːm/",m:"adj. 极端的 n. 极端"},
+{w:"facility",p:"/fəˈsɪləti/",m:"n. 设施；能力"},
+{w:"factor",p:"/ˈfæktə(r)/",m:"n. 因素；要素"},
+{w:"fade",p:"/feɪd/",m:"v. 褪色；逐渐消失"},
+{w:"fail",p:"/feɪl/",m:"v. 失败；不及格"},
+{w:"faint",p:"/feɪnt/",m:"adj. 微弱的 v. 晕倒"},
+{w:"fair",p:"/feə(r)/",m:"adj. 公平的；相当的 n. 集市"},
+{w:"faith",p:"/feɪθ/",m:"n. 信任；信仰"},
+{w:"fake",p:"/feɪk/",m:"adj. 假的 n. 赝品"},
+{w:"familiar",p:"/fəˈmɪliə(r)/",m:"adj. 熟悉的；常见的"},
+{w:"fancy",p:"/ˈfænsi/",m:"adj. 花哨的 v. 想象；喜爱"},
+{w:"fare",p:"/feə(r)/",m:"n. 车费；票价"},
+{w:"fascinate",p:"/ˈfæsɪneɪt/",m:"v. 迷住；使着迷"},
+{w:"fashion",p:"/ˈfæʃn/",m:"n. 时尚；方式"},
+{w:"fasten",p:"/ˈfɑːsn/",m:"v. 系紧；固定"},
+{w:"fatal",p:"/ˈfeɪtl/",m:"adj. 致命的；重大的"},
+{w:"fate",p:"/feɪt/",m:"n. 命运；结局"},
+{w:"fault",p:"/fɔːlt/",m:"n. 过错；缺点"},
+{w:"favour",p:"/ˈfeɪvə(r)/",m:"n. 恩惠；赞同 v. 支持"},
+{w:"feature",p:"/ˈfiːtʃə(r)/",m:"n. 特征；特色 v. 以……为特色"},
+{w:"federal",p:"/ˈfedərəl/",m:"adj. 联邦的；联邦制的"},
+{w:"fee",p:"/fiː/",m:"n. 费用；酬金"},
+{w:"feedback",p:"/ˈfiːdbæk/",m:"n. 反馈；回应"},
+{w:"fellow",p:"/ˈfeləʊ/",m:"n. 家伙；同伴 adj. 同伴的"},
+{w:"fierce",p:"/fɪəs/",m:"adj. 凶猛的；激烈的"},
+{w:"figure",p:"/ˈfɪɡə(r)/",m:"n. 数字；人物；身材 v. 认为"},
+{w:"file",p:"/faɪl/",m:"n. 文件；档案 v. 归档"},
+{w:"finance",p:"/ˈfaɪnæns/",m:"n. 财政；金融 v. 资助"},
+{w:"firm",p:"/fɜːm/",m:"n. 公司 adj. 坚定的"},
+{w:"flash",p:"/flæʃ/",m:"v./n. 闪光；闪现"},
+{w:"flat",p:"/flæt/",m:"adj. 平的 n. 公寓"},
+{w:"flavour",p:"/ˈfleɪvə(r)/",m:"n. 味道；风味"},
+{w:"flee",p:"/fliː/",m:"v. 逃走；逃离"},
+{w:"flexible",p:"/ˈfleksəbl/",m:"adj. 灵活的；可弯曲的"},
+{w:"float",p:"/fləʊt/",m:"v. 漂浮；浮动"},
+{w:"flow",p:"/fləʊ/",m:"v./n. 流动；流量"},
+{w:"fluent",p:"/ˈfluːənt/",m:"adj. 流利的；流畅的"},
+{w:"focus",p:"/ˈfəʊkəs/",m:"v. 集中 n. 焦点"},
+{w:"fold",p:"/fəʊld/",m:"v. 折叠 n. 褶"},
+{w:"folk",p:"/fəʊk/",m:"n. 人们 adj. 民间的"},
+{w:"forbid",p:"/fəˈbɪd/",m:"v. 禁止；不许"},
+{w:"force",p:"/fɔːs/",m:"n. 力量；武力 v. 强迫"},
+{w:"forecast",p:"/ˈfɔːkɑːst/",m:"n./v. 预报；预测"},
+{w:"foreign",p:"/ˈfɒrən/",m:"adj. 外国的；陌生的"},
+{w:"formal",p:"/ˈfɔːml/",m:"adj. 正式的；正规的"},
+{w:"former",p:"/ˈfɔːmə(r)/",m:"adj. 以前的；前者的"},
+{w:"fortune",p:"/ˈfɔːtʃuːn/",m:"n. 财富；运气"},
+{w:"forum",p:"/ˈfɔːrəm/",m:"n. 论坛；讨论会"},
+{w:"foundation",p:"/faʊnˈdeɪʃn/",m:"n. 基础；基金会"},
+{w:"frame",p:"/freɪm/",m:"n. 框架；结构 v. 构建"},
+{w:"frequent",p:"/ˈfriːkwənt/",m:"adj. 频繁的；经常的"},
+{w:"frighten",p:"/ˈfraɪtn/",m:"v. 使惊吓；使害怕"},
+{w:"frontier",p:"/ˈfrʌntɪə(r)/",m:"n. 边境；前沿"},
+{w:"fuel",p:"/ˈfjuːəl/",m:"n. 燃料 v. 加燃料"},
+{w:"function",p:"/ˈfʌŋkʃn/",m:"n. 功能；函数 v. 运作"},
+{w:"fund",p:"/fʌnd/",m:"n. 基金；资金 v. 资助"},
+{w:"fundamental",p:"/ˌfʌndəˈmentl/",m:"adj. 基本的；根本的"},
+{w:"funeral",p:"/ˈfjuːnərəl/",m:"n. 葬礼"},
+{w:"furniture",p:"/ˈfɜːnɪtʃə(r)/",m:"n. 家具"},
+{w:"furthermore",p:"/ˌfɜːðəˈmɔː(r)/",m:"adv. 此外；而且"},
+{w:"gain",p:"/ɡeɪn/",m:"v./n. 获得；增加"},
+{w:"gap",p:"/ɡæp/",m:"n. 差距；缺口"},
+{w:"garbage",p:"/ˈɡɑːbɪdʒ/",m:"n. 垃圾；废物"},
+{w:"gaze",p:"/ɡeɪz/",m:"v./n. 凝视；注视"},
+{w:"gear",p:"/ɡɪə(r)/",m:"n. 齿轮；装备"},
+{w:"gender",p:"/ˈdʒendə(r)/",m:"n. 性别"},
+{w:"generate",p:"/ˈdʒenəreɪt/",m:"v. 产生；生成"},
+{w:"generation",p:"/ˌdʒenəˈreɪʃn/",m:"n. 一代人；产生"},
+{w:"generous",p:"/ˈdʒenərəs/",m:"adj. 慷慨的；大方的"},
+{w:"genius",p:"/ˈdʒiːniəs/",m:"n. 天才；天赋"},
+{w:"genuine",p:"/ˈdʒenjuɪn/",m:"adj. 真正的；真诚的"},
+{w:"gesture",p:"/ˈdʒestʃə(r)/",m:"n. 手势；姿态"},
+{w:"glance",p:"/ɡlɑːns/",m:"v./n. 一瞥；扫视"},
+{w:"global",p:"/ˈɡləʊbl/",m:"adj. 全球的；全面的"},
+{w:"glory",p:"/ˈɡlɔːri/",m:"n. 荣耀；辉煌"},
+{w:"glow",p:"/ɡləʊ/",m:"v./n. 发光；发热"},
+{w:"govern",p:"/ˈɡʌvn/",m:"v. 统治；管理"},
+{w:"grab",p:"/ɡræb/",m:"v. 抓住；夺取"},
+{w:"grace",p:"/ɡreɪs/",m:"n. 优雅；恩惠"},
+{w:"gradual",p:"/ˈɡrædʒuəl/",m:"adj. 逐渐的；渐进的"},
+{w:"gradually",p:"/ˈɡrædʒuəli/",m:"adv. 逐渐地；逐步地"},
+{w:"graduate",p:"/ˈɡrædʒuət/",m:"n. 毕业生 v. 毕业"},
+{w:"grain",p:"/ɡreɪn/",m:"n. 谷物；颗粒"},
+{w:"grant",p:"/ɡrɑːnt/",m:"v. 授予；同意 n. 拨款"},
+{w:"grasp",p:"/ɡrɑːsp/",m:"v./n. 抓住；理解"},
+{w:"grateful",p:"/ˈɡreɪtfl/",m:"adj. 感激的；感谢的"},
+{w:"gratitude",p:"/ˈɡrætɪtjuːd/",m:"n. 感激；感谢"},
+{w:"grave",p:"/ɡreɪv/",m:"n. 坟墓 adj. 严重的"},
+{w:"greet",p:"/ɡriːt/",m:"v. 问候；迎接"},
+{w:"guarantee",p:"/ˌɡærənˈtiː/",m:"v./n. 保证；担保"},
+{w:"guard",p:"/ɡɑːd/",m:"n. 警卫 v. 守卫"},
+{w:"guidance",p:"/ˈɡaɪdns/",m:"n. 指导；引导"},
+{w:"guilty",p:"/ˈɡɪlti/",m:"adj. 有罪的；内疚的"},
+{w:"habit",p:"/ˈhæbɪt/",m:"n. 习惯；习性"},
+{w:"handle",p:"/ˈhændl/",m:"v. 处理；操作 n. 把手"},
+{w:"hang",p:"/hæŋ/",m:"v. 悬挂；绞死"},
+{w:"harbour",p:"/ˈhɑːbə(r)/",m:"n. 港口 v. 怀有"},
+{w:"harm",p:"/hɑːm/",m:"n./v. 伤害；损害"},
+{w:"harmony",p:"/ˈhɑːməni/",m:"n. 和谐；融洽"},
+{w:"harvest",p:"/ˈhɑːvɪst/",m:"n./v. 收获；收割"},
+{w:"haste",p:"/heɪst/",m:"n. 匆忙；仓促"},
+{w:"heal",p:"/hiːl/",m:"v. 治愈；愈合"},
+{w:"heap",p:"/hiːp/",m:"n. 堆 v. 堆积"},
+{w:"heat",p:"/hiːt/",m:"n. 热；热度 v. 加热"},
+{w:"height",p:"/haɪt/",m:"n. 高度；身高"},
+{w:"hesitate",p:"/ˈhezɪteɪt/",m:"v. 犹豫；踌躇"},
+{w:"highlight",p:"/ˈhaɪlaɪt/",m:"v. 突出 n. 亮点"},
+{w:"hint",p:"/hɪnt/",m:"n. 暗示；提示 v. 暗示"},
+{w:"hire",p:"/ˈhaɪə(r)/",m:"v. 雇用；租用"},
+{w:"historic",p:"/hɪˈstɒrɪk/",m:"adj. 历史上著名的；有历史意义的"},
+{w:"hobby",p:"/ˈhɒbi/",m:"n. 爱好；业余消遣"},
+{w:"hollow",p:"/ˈhɒləʊ/",m:"adj. 空心的；空洞的"},
+{w:"honest",p:"/ˈɒnɪst/",m:"adj. 诚实的；正直的"},
+{w:"horizon",p:"/həˈraɪzn/",m:"n. 地平线；眼界"},
+{w:"horrible",p:"/ˈhɒrəbl/",m:"adj. 可怕的；糟糕的"},
+{w:"host",p:"/həʊst/",m:"n. 主人；主持人 v. 主办"},
+{w:"household",p:"/ˈhaʊshəʊld/",m:"n. 家庭 adj. 家用的"},
+{w:"housing",p:"/ˈhaʊzɪŋ/",m:"n. 住房；住房供给"},
+{w:"humble",p:"/ˈhʌmbl/",m:"adj. 谦逊的；卑微的"},
+{w:"humid",p:"/ˈhjuːmɪd/",m:"adj. 潮湿的；湿润的"},
+{w:"humour",p:"/ˈhjuːmə(r)/",m:"n. 幽默；幽默感"},
+{w:"hunger",p:"/ˈhʌŋɡə(r)/",m:"n. 饥饿；渴望"},
+{w:"hunt",p:"/hʌnt/",m:"v./n. 打猎；搜寻"},
+{w:"hurry",p:"/ˈhʌri/",m:"v./n. 匆忙；赶快"},
+{w:"hurt",p:"/hɜːt/",m:"v. 伤害；疼痛"},
+{w:"ideal",p:"/aɪˈdiːəl/",m:"adj. 理想的 n. 理想"},
+{w:"identify",p:"/aɪˈdentɪfaɪ/",m:"v. 识别；确认"},
+{w:"identity",p:"/aɪˈdentəti/",m:"n. 身份；特征"},
+{w:"ignore",p:"/ɪɡˈnɔː(r)/",m:"v. 忽视；不理会"},
+{w:"illegal",p:"/ɪˈliːɡl/",m:"adj. 非法的；违法的"},
+{w:"illustrate",p:"/ˈɪləstreɪt/",m:"v. 说明；举例说明"},
+{w:"image",p:"/ˈɪmɪdʒ/",m:"n. 形象；图像"},
+{w:"imagine",p:"/ɪˈmædʒɪn/",m:"v. 想象；设想"},
+{w:"imitate",p:"/ˈɪmɪteɪt/",m:"v. 模仿；仿效"},
+{w:"immediate",p:"/ɪˈmiːdiət/",m:"adj. 立即的；直接的"},
+{w:"impact",p:"/ˈɪmpækt/",m:"n./v. 影响；冲击"},
+{w:"impatient",p:"/ɪmˈpeɪʃnt/",m:"adj. 不耐烦的；急躁的"},
+{w:"imply",p:"/ɪmˈplaɪ/",m:"v. 暗示；意味着"},
+{w:"import",p:"/ɪmˈpɔːt/",m:"v./n. 进口；输入"},
+{w:"impose",p:"/ɪmˈpəʊz/",m:"v. 强加；征收"},
+{w:"impress",p:"/ɪmˈpres/",m:"v. 使印象深刻；印上"},
+{w:"improve",p:"/ɪmˈpruːv/",m:"v. 改进；提高"},
+{w:"incident",p:"/ˈɪnsɪdənt/",m:"n. 事件；事故"},
+{w:"include",p:"/ɪnˈkluːd/",m:"v. 包括；包含"},
+{w:"income",p:"/ˈɪnkʌm/",m:"n. 收入；所得"},
+{w:"increase",p:"/ɪnˈkriːs/",m:"v./n. 增加；增长"},
+{w:"incredible",p:"/ɪnˈkredəbl/",m:"adj. 难以置信的；极好的"},
+{w:"indicate",p:"/ˈɪndɪkeɪt/",m:"v. 表明；指示"},
+{w:"individual",p:"/ˌɪndɪˈvɪdʒuəl/",m:"n. 个人 adj. 个别的"},
+{w:"industry",p:"/ˈɪndəstri/",m:"n. 工业；行业"},
+{w:"infect",p:"/ɪnˈfekt/",m:"v. 传染；感染"},
+{w:"influence",p:"/ˈɪnfluəns/",m:"n. 影响；势力 v. 影响"},
+{w:"inform",p:"/ɪnˈfɔːm/",m:"v. 通知；告知"},
+{w:"ingredient",p:"/ɪnˈɡriːdiənt/",m:"n. 成分；配料"},
+{w:"initial",p:"/ɪˈnɪʃl/",m:"adj. 最初的 n. 首字母"},
+{w:"injure",p:"/ˈɪndʒə(r)/",m:"v. 伤害；损害"},
+{w:"innocent",p:"/ˈɪnəsnt/",m:"adj. 无辜的；天真的"},
+{w:"insect",p:"/ˈɪnsekt/",m:"n. 昆虫"},
+{w:"insist",p:"/ɪnˈsɪst/",m:"v. 坚持；坚决要求"},
+{w:"inspect",p:"/ɪnˈspekt/",m:"v. 检查；视察"},
+{w:"inspire",p:"/ɪnˈspaɪə(r)/",m:"v. 激励；启发"},
+{w:"install",p:"/ɪnˈstɔːl/",m:"v. 安装；任命"},
+{w:"instance",p:"/ˈɪnstəns/",m:"n. 实例；例子"},
+{w:"instant",p:"/ˈɪnstənt/",m:"adj. 立即的 n. 瞬间"},
+{w:"institute",p:"/ˈɪnstɪtjuːt/",m:"n. 学会；研究所 v. 设立"},
+{w:"institution",p:"/ˌɪnstɪˈtjuːʃn/",m:"n. 机构；制度"},
+{w:"instruct",p:"/ɪnˈstrʌkt/",m:"v. 指导；命令"},
+{w:"instrument",p:"/ˈɪnstrəmənt/",m:"n. 仪器；乐器；工具"},
+{w:"insult",p:"/ɪnˈsʌlt/",m:"v./n. 侮辱；辱骂"},
+{w:"insurance",p:"/ɪnˈʃʊərəns/",m:"n. 保险；保险费"},
+{w:"intelligent",p:"/ɪnˈtelɪdʒənt/",m:"adj. 聪明的；智能的"},
+{w:"intend",p:"/ɪnˈtend/",m:"v. 打算；意图"},
+{w:"intense",p:"/ɪnˈtens/",m:"adj. 强烈的；紧张的"},
+{w:"intention",p:"/ɪnˈtenʃn/",m:"n. 意图；目的"},
+{w:"internal",p:"/ɪnˈtɜːnl/",m:"adj. 内部的；国内的"},
+{w:"interpret",p:"/ɪnˈtɜːprɪt/",m:"v. 解释；口译"},
+{w:"interrupt",p:"/ˌɪntəˈrʌpt/",m:"v. 打断；中断"},
+{w:"interval",p:"/ˈɪntəvl/",m:"n. 间隔；间歇"},
+{w:"interview",p:"/ˈɪntəvjuː/",m:"n./v. 面试；采访"},
+{w:"introduce",p:"/ˌɪntrəˈdjuːs/",m:"v. 介绍；引进"},
+{w:"invade",p:"/ɪnˈveɪd/",m:"v. 侵略；侵犯"},
+{w:"invent",p:"/ɪnˈvent/",m:"v. 发明；虚构"},
+{w:"invest",p:"/ɪnˈvest/",m:"v. 投资；投入"},
+{w:"investigate",p:"/ɪnˈvestɪɡeɪt/",m:"v. 调查；研究"},
+{w:"invite",p:"/ɪnˈvaɪt/",m:"v. 邀请；招致"},
+{w:"involve",p:"/ɪnˈvɒlv/",m:"v. 涉及；使参与"},
+{w:"issue",p:"/ˈɪʃuː/",m:"n. 问题；期号 v. 发布"},
+{w:"item",p:"/ˈaɪtəm/",m:"n. 项目；物品"},
+{w:"jail",p:"/dʒeɪl/",m:"n. 监狱 v. 监禁"},
+{w:"jealous",p:"/ˈdʒeləs/",m:"adj. 嫉妒的；吃醋的"},
+{w:"jewel",p:"/ˈdʒuːəl/",m:"n. 宝石；珠宝"},
+{w:"joint",p:"/dʒɔɪnt/",m:"adj. 共同的 n. 关节"},
+{w:"joke",p:"/dʒəʊk/",m:"n./v. 玩笑；开玩笑"},
+{w:"journal",p:"/ˈdʒɜːnl/",m:"n. 期刊；日志"},
+{w:"journalist",p:"/ˈdʒɜːnəlɪst/",m:"n. 记者；新闻工作者"},
+{w:"journey",p:"/ˈdʒɜːni/",m:"n. 旅行；旅程"},
+{w:"judge",p:"/dʒʌdʒ/",m:"n. 法官 v. 判断；评判"},
+{w:"judgement",p:"/ˈdʒʌdʒmənt/",m:"n. 判断；意见"},
+{w:"junior",p:"/ˈdʒuːniə(r)/",m:"adj. 较年幼的；初级的"},
+{w:"justice",p:"/ˈdʒʌstɪs/",m:"n. 正义；司法"},
+{w:"justify",p:"/ˈdʒʌstɪfaɪ/",m:"v. 证明……正当；为……辩护"},
+{w:"keen",p:"/kiːn/",m:"adj. 渴望的；敏锐的"},
+{w:"kettle",p:"/ˈketl/",m:"n. 水壶"},
+{w:"keyboard",p:"/ˈkiːbɔːd/",m:"n. 键盘"},
+{w:"knowledge",p:"/ˈnɒlɪdʒ/",m:"n. 知识；学问"},
+{w:"label",p:"/ˈleɪbl/",m:"n. 标签 v. 标注"},
+{w:"labour",p:"/ˈleɪbə(r)/",m:"n. 劳动；劳工 v. 劳动"},
+{w:"lack",p:"/læk/",m:"n./v. 缺乏；不足"},
+{w:"ladder",p:"/ˈlædə(r)/",m:"n. 梯子；阶梯"},
+{w:"landscape",p:"/ˈlændskeɪp/",m:"n. 风景；景观"},
+{w:"largely",p:"/ˈlɑːdʒli/",m:"adv. 主要地；大部分"},
+{w:"launch",p:"/lɔːntʃ/",m:"v. 发射；发起 n. 发射"},
+{w:"layer",p:"/ˈleɪə(r)/",m:"n. 层；阶层"},
+{w:"leak",p:"/liːk/",m:"v. 泄漏 n. 漏洞"},
+{w:"lean",p:"/liːn/",m:"v. 倾斜；依靠 adj. 瘦的"},
+{w:"leap",p:"/liːp/",m:"v./n. 跳跃；剧增"},
+{w:"lecture",p:"/ˈlektʃə(r)/",m:"n./v. 讲座；演讲"},
+{w:"legal",p:"/ˈliːɡl/",m:"adj. 法律的；合法的"},
+{w:"legend",p:"/ˈledʒənd/",m:"n. 传说；传奇人物"},
+{w:"leisure",p:"/ˈleʒə(r)/",m:"n. 空闲；休闲"},
+{w:"lend",p:"/lend/",m:"v. 借出；提供"},
+{w:"length",p:"/leŋθ/",m:"n. 长度；篇幅"},
+{w:"liberal",p:"/ˈlɪbərəl/",m:"adj. 开明的；自由的"},
+{w:"license",p:"/ˈlaɪsns/",m:"n. 执照 v. 许可"},
+{w:"likely",p:"/ˈlaɪkli/",m:"adj. 可能的 adv. 很可能"},
+{w:"limit",p:"/ˈlɪmɪt/",m:"n. 限度 v. 限制"},
+{w:"link",p:"/lɪŋk/",m:"n. 联系 v. 连接"},
+{w:"liquid",p:"/ˈlɪkwɪd/",m:"n. 液体 adj. 液体的"},
+{w:"literature",p:"/ˈlɪtrətʃə(r)/",m:"n. 文学；文献"},
+{w:"loan",p:"/ləʊn/",m:"n. 贷款 v. 借出"},
+{w:"local",p:"/ˈləʊkl/",m:"adj. 当地的；局部的"},
+{w:"locate",p:"/ləʊˈkeɪt/",m:"v. 位于；找出"},
+{w:"logic",p:"/ˈlɒdʒɪk/",m:"n. 逻辑；道理"},
+{w:"loose",p:"/luːs/",m:"adj. 松的；宽松的"},
+{w:"loyal",p:"/ˈlɔɪəl/",m:"adj. 忠诚的；忠实的"},
+{w:"luck",p:"/lʌk/",m:"n. 运气；好运"},
+{w:"luxury",p:"/ˈlʌkʃəri/",m:"n. 奢侈；奢侈品"},
+{w:"machine",p:"/məˈʃiːn/",m:"n. 机器；机械"},
+{w:"magic",p:"/ˈmædʒɪk/",m:"n. 魔法 adj. 神奇的"},
+{w:"magnetic",p:"/mæɡˈnetɪk/",m:"adj. 磁的；有吸引力的"},
+{w:"maintain",p:"/meɪnˈteɪn/",m:"v. 维持；保养；主张"},
+{w:"major",p:"/ˈmeɪdʒə(r)/",m:"adj. 主要的 n. 专业"},
+{w:"majority",p:"/məˈdʒɒrəti/",m:"n. 多数；大多数"},
+{w:"manage",p:"/ˈmænɪdʒ/",m:"v. 管理；设法做到"},
+{w:"manner",p:"/ˈmænə(r)/",m:"n. 方式；举止"},
+{w:"manual",p:"/ˈmænjuəl/",m:"adj. 手工的 n. 手册"},
+{w:"manufacture",p:"/ˌmænjuˈfæktʃə(r)/",m:"v./n. 制造；生产"},
+{w:"margin",p:"/ˈmɑːdʒɪn/",m:"n. 边缘；差额；页边"},
+{w:"marine",p:"/məˈriːn/",m:"adj. 海洋的 n. 海军陆战队员"},
+{w:"mark",p:"/mɑːk/",m:"n. 记号；分数 v. 标记"},
+{w:"market",p:"/ˈmɑːkɪt/",m:"n. 市场 v. 推销"},
+{w:"marriage",p:"/ˈmærɪdʒ/",m:"n. 婚姻；婚礼"},
+{w:"mass",p:"/mæs/",m:"n. 大量；群众 adj. 大规模的"},
+{w:"massive",p:"/ˈmæsɪv/",m:"adj. 巨大的；大量的"},
+{w:"master",p:"/ˈmɑːstə(r)/",m:"n. 主人；硕士 v. 掌握"},
+{w:"match",p:"/mætʃ/",m:"n. 比赛；火柴 v. 匹配"},
+{w:"material",p:"/məˈtɪəriəl/",m:"n. 材料 adj. 物质的"},
+{w:"mature",p:"/məˈtʃʊə(r)/",m:"adj. 成熟的 v. 成熟"},
+{w:"maximum",p:"/ˈmæksɪməm/",m:"n./adj. 最大（的）；最高（的）"},
+{w:"means",p:"/miːnz/",m:"n. 方法；手段；财富"},
+{w:"measure",p:"/ˈmeʒə(r)/",m:"v. 测量 n. 措施"},
+{w:"mechanic",p:"/məˈkænɪk/",m:"n. 机械师；技工"},
+{w:"media",p:"/ˈmiːdiə/",m:"n. 媒体；传媒"},
+{w:"medical",p:"/ˈmedɪkl/",m:"adj. 医学的；医疗的"},
+{w:"medium",p:"/ˈmiːdiəm/",m:"n. 媒介 adj. 中等的"},
+{w:"melt",p:"/melt/",m:"v. 融化；熔化"},
+{w:"memory",p:"/ˈmeməri/",m:"n. 记忆；回忆；内存"},
+{w:"mental",p:"/ˈmentl/",m:"adj. 精神的；智力的"},
+{w:"mention",p:"/ˈmenʃn/",m:"v./n. 提到；提及"},
+{w:"menu",p:"/ˈmenjuː/",m:"n. 菜单"},
+{w:"merchant",p:"/ˈmɜːtʃənt/",m:"n. 商人 adj. 商业的"},
+{w:"mercy",p:"/ˈmɜːsi/",m:"n. 仁慈；宽恕"},
+{w:"mere",p:"/mɪə(r)/",m:"adj. 仅仅的；纯粹的"},
+{w:"merely",p:"/ˈmɪəli/",m:"adv. 仅仅；只不过"},
+{w:"merit",p:"/ˈmerɪt/",m:"n. 优点；功绩 v. 值得"},
+{w:"message",p:"/ˈmesɪdʒ/",m:"n. 消息；信息"},
+{w:"method",p:"/ˈmeθəd/",m:"n. 方法；办法"},
+{w:"microwave",p:"/ˈmaɪkrəweɪv/",m:"n. 微波；微波炉"},
+{w:"mild",p:"/maɪld/",m:"adj. 温和的；轻微的"},
+{w:"military",p:"/ˈmɪlətri/",m:"adj. 军事的 n. 军队"},
+{w:"minimum",p:"/ˈmɪnɪməm/",m:"n./adj. 最小量（的）"},
+{w:"minister",p:"/ˈmɪnɪstə(r)/",m:"n. 部长；牧师"},
+{w:"minority",p:"/maɪˈnɒrəti/",m:"n. 少数；少数民族"},
+{w:"minute",p:"/ˈmɪnɪt/",m:"n. 分钟 adj. 微小的"},
+{w:"miracle",p:"/ˈmɪrəkl/",m:"n. 奇迹；令人惊奇的事"},
+{w:"mirror",p:"/ˈmɪrə(r)/",m:"n. 镜子 v. 反映"},
+{w:"miserable",p:"/ˈmɪzrəbl/",m:"adj. 痛苦的；悲惨的"},
+{w:"mislead",p:"/ˌmɪsˈliːd/",m:"v. 误导；使误入歧途"},
+{w:"missile",p:"/ˈmɪsaɪl/",m:"n. 导弹；发射物"},
+{w:"mission",p:"/ˈmɪʃn/",m:"n. 使命；任务"},
+{w:"mixture",p:"/ˈmɪkstʃə(r)/",m:"n. 混合物；混合"},
+{w:"mobile",p:"/ˈməʊbaɪl/",m:"adj. 可移动的 n. 手机"},
+{w:"mode",p:"/məʊd/",m:"n. 方式；模式"},
+{w:"moderate",p:"/ˈmɒdərət/",m:"adj. 适度的；温和的"},
+{w:"modify",p:"/ˈmɒdɪfaɪ/",m:"v. 修改；调整"},
+{w:"moist",p:"/mɔɪst/",m:"adj. 潮湿的；湿润的"},
+{w:"monitor",p:"/ˈmɒnɪtə(r)/",m:"v. 监控 n. 显示器"},
+{w:"mood",p:"/muːd/",m:"n. 心情；情绪"},
+{w:"moral",p:"/ˈmɒrəl/",m:"adj. 道德的 n. 寓意"},
+{w:"moreover",p:"/mɔːrˈəʊvə(r)/",m:"adv. 此外；而且"},
+{w:"motivate",p:"/ˈməʊtɪveɪt/",m:"v. 激励；促使"},
+{w:"motive",p:"/ˈməʊtɪv/",m:"n. 动机；目的"},
+{w:"mount",p:"/maʊnt/",m:"v. 登上；增加；安装"},
+{w:"movement",p:"/ˈmuːvmənt/",m:"n. 运动；动作"},
+{w:"multiple",p:"/ˈmʌltɪpl/",m:"adj. 多重的 n. 倍数"},
+{w:"murder",p:"/ˈmɜːdə(r)/",m:"n./v. 谋杀"},
+{w:"mutual",p:"/ˈmjuːtʃuəl/",m:"adj. 相互的；共同的"},
+{w:"mystery",p:"/ˈmɪstri/",m:"n. 神秘；谜"},
+{w:"myth",p:"/mɪθ/",m:"n. 神话；错误观念"},
+{w:"naked",p:"/ˈneɪkɪd/",m:"adj. 裸体的；无遮蔽的"},
+{w:"narrow",p:"/ˈnærəʊ/",m:"adj. 狭窄的；狭隘的"},
+{w:"native",p:"/ˈneɪtɪv/",m:"adj. 本地的；天生的 n. 本地人"},
+{w:"navy",p:"/ˈneɪvi/",m:"n. 海军"},
+{w:"nearby",p:"/ˌnɪəˈbaɪ/",m:"adj. 附近的 adv. 在附近"},
+{w:"necessary",p:"/ˈnesəsəri/",m:"adj. 必要的；必然的"},
+{w:"negative",p:"/ˈneɡətɪv/",m:"adj. 消极的；否定的"},
+{w:"neglect",p:"/nɪˈɡlekt/",m:"v./n. 忽视；疏忽"},
+{w:"negotiate",p:"/nɪˈɡəʊʃieɪt/",m:"v. 谈判；协商"},
+{w:"nerve",p:"/nɜːv/",m:"n. 神经；勇气"},
+{w:"neutral",p:"/ˈnjuːtrəl/",m:"adj. 中立的；中性的"},
+{w:"nevertheless",p:"/ˌnevəðəˈles/",m:"adv. 然而；尽管如此"},
+{w:"noble",p:"/ˈnəʊbl/",m:"adj. 高尚的；贵族的"},
+{w:"nod",p:"/nɒd/",m:"v./n. 点头"},
+{w:"nonsense",p:"/ˈnɒnsns/",m:"n. 胡说；废话"},
+{w:"normal",p:"/ˈnɔːml/",m:"adj. 正常的；标准的"},
+{w:"notice",p:"/ˈnəʊtɪs/",m:"n. 通知；注意 v. 注意到"},
+{w:"notion",p:"/ˈnəʊʃn/",m:"n. 观念；想法"},
+{w:"novel",p:"/ˈnɒvl/",m:"n. 小说 adj. 新奇的"},
+{w:"nowadays",p:"/ˈnaʊədeɪz/",m:"adv. 如今；现在"},
+{w:"nuclear",p:"/ˈnjuːkliə(r)/",m:"adj. 核的；核心的"},
+{w:"numerous",p:"/ˈnjuːmərəs/",m:"adj. 众多的；许多的"},
+{w:"nurse",p:"/nɜːs/",m:"n. 护士 v. 护理"},
+{w:"nutrition",p:"/njuˈtrɪʃn/",m:"n. 营养；营养学"},
+{w:"obey",p:"/əˈbeɪ/",m:"v. 服从；遵守"},
+{w:"object",p:"/ˈɒbdʒɪkt/",m:"n. 物体；目标 v. 反对"},
+{w:"objective",p:"/əbˈdʒektɪv/",m:"n. 目标 adj. 客观的"},
+{w:"observe",p:"/əbˈzɜːv/",m:"v. 观察；遵守"},
+{w:"obtain",p:"/əbˈteɪn/",m:"v. 获得；得到"},
+{w:"obvious",p:"/ˈɒbviəs/",m:"adj. 明显的；显而易见的"},
+{w:"occasion",p:"/əˈkeɪʒn/",m:"n. 场合；时机"},
+{w:"occupy",p:"/ˈɒkjupaɪ/",m:"v. 占据；占用"},
+{w:"occur",p:"/əˈkɜː(r)/",m:"v. 发生；出现"},
+{w:"odd",p:"/ɒd/",m:"adj. 奇怪的；奇数的"},
+{w:"offend",p:"/əˈfend/",m:"v. 冒犯；得罪"},
+{w:"offer",p:"/ˈɒfə(r)/",m:"v./n. 提供；提议"},
+{w:"official",p:"/əˈfɪʃl/",m:"adj. 官方的 n. 官员"},
+{w:"operate",p:"/ˈɒpəreɪt/",m:"v. 操作；经营；动手术"},
+{w:"opinion",p:"/əˈpɪnjən/",m:"n. 意见；看法"},
+{w:"opportunity",p:"/ˌɒpəˈtjuːnəti/",m:"n. 机会；时机"},
+{w:"oppose",p:"/əˈpəʊz/",m:"v. 反对；对抗"},
+{w:"opposite",p:"/ˈɒpəzɪt/",m:"adj. 相反的 n. 对立面"},
+{w:"optimistic",p:"/ˌɒptɪˈmɪstɪk/",m:"adj. 乐观的"},
+{w:"option",p:"/ˈɒpʃn/",m:"n. 选择；选项"},
+{w:"orbit",p:"/ˈɔːbɪt/",m:"n. 轨道 v. 沿轨道运行"},
+{w:"ordinary",p:"/ˈɔːdnri/",m:"adj. 普通的；平常的"},
+{w:"organize",p:"/ˈɔːɡənaɪz/",m:"v. 组织；安排"},
+{w:"origin",p:"/ˈɒrɪdʒɪn/",m:"n. 起源；出身"},
+{w:"otherwise",p:"/ˈʌðəwaɪz/",m:"adv. 否则；另外"},
+{w:"outcome",p:"/ˈaʊtkʌm/",m:"n. 结果；成果"},
+{w:"outline",p:"/ˈaʊtlaɪn/",m:"n. 提纲；轮廓 v. 概述"},
+{w:"output",p:"/ˈaʊtpʊt/",m:"n. 产量；输出"},
+{w:"outstanding",p:"/aʊtˈstændɪŋ/",m:"adj. 杰出的；未解决的"},
+{w:"overall",p:"/ˌəʊvərˈɔːl/",m:"adj. 总体的 adv. 总的来说"},
+{w:"overcome",p:"/ˌəʊvəˈkʌm/",m:"v. 克服；战胜"},
+{w:"overlook",p:"/ˌəʊvəˈlʊk/",m:"v. 忽略；俯瞰"},
+{w:"overseas",p:"/ˌəʊvəˈsiːz/",m:"adj. 海外的 adv. 在海外"},
+{w:"owe",p:"/əʊ/",m:"v. 欠；归功于"},
+{w:"oxygen",p:"/ˈɒksɪdʒən/",m:"n. 氧气"},
+{w:"pace",p:"/peɪs/",m:"n. 步伐；速度 v. 踱步"},
+{w:"package",p:"/ˈpækɪdʒ/",m:"n. 包裹；一揽子计划"},
+{w:"panel",p:"/ˈpænl/",m:"n. 面板；专家组"},
+{w:"panic",p:"/ˈpænɪk/",m:"n./v. 恐慌；惊慌"},
+{w:"parallel",p:"/ˈpærəlel/",m:"adj. 平行的；类似的 n. 相似之处"},
+{w:"participant",p:"/pɑːˈtɪsɪpənt/",m:"n. 参与者；参加者"},
+{w:"participate",p:"/pɑːˈtɪsɪpeɪt/",m:"v. 参加；参与"},
+{w:"particular",p:"/pəˈtɪkjələ(r)/",m:"adj. 特定的；特别的"},
+{w:"passion",p:"/ˈpæʃn/",m:"n. 激情；热情"},
+{w:"passive",p:"/ˈpæsɪv/",m:"adj. 被动的；消极的"},
+{w:"patience",p:"/ˈpeɪʃns/",m:"n. 耐心；忍耐"},
+{w:"pattern",p:"/ˈpætn/",m:"n. 模式；图案"},
+{w:"pause",p:"/pɔːz/",m:"v./n. 暂停；停顿"},
+{w:"peak",p:"/piːk/",m:"n. 顶峰；山峰 adj. 高峰的"},
+{w:"penalty",p:"/ˈpenəlti/",m:"n. 处罚；罚款"},
+{w:"perceive",p:"/pəˈsiːv/",m:"v. 察觉；理解"},
+{w:"perform",p:"/pəˈfɔːm/",m:"v. 执行；表演"},
+{w:"permanent",p:"/ˈpɜːmənənt/",m:"adj. 永久的；长期的"},
+{w:"permit",p:"/pəˈmɪt/",m:"v. 允许 n. 许可证"},
+{w:"personnel",p:"/ˌpɜːsəˈnel/",m:"n. 人员；人事部门"},
+{w:"persuade",p:"/pəˈsweɪd/",m:"v. 说服；劝说"},
+{w:"phase",p:"/feɪz/",m:"n. 阶段；时期"},
+{w:"phenomenon",p:"/fəˈnɒmɪnən/",m:"n. 现象；非凡的人"},
+{w:"philosophy",p:"/fəˈlɒsəfi/",m:"n. 哲学；人生观"},
+{w:"physical",p:"/ˈfɪzɪkl/",m:"adj. 身体的；物理的"},
+{w:"pioneer",p:"/ˌpaɪəˈnɪə(r)/",m:"n. 先驱；开拓者 v. 开创"},
+{w:"plain",p:"/pleɪn/",m:"adj. 简单的；朴素的 n. 平原"},
+{w:"platform",p:"/ˈplætfɔːm/",m:"n. 平台；站台"},
+{w:"pleasant",p:"/ˈpleznt/",m:"adj. 令人愉快的；宜人的"},
+{w:"plenty",p:"/ˈplenti/",m:"n. 大量；充足"},
+{w:"policy",p:"/ˈpɒləsi/",m:"n. 政策；方针"},
+{w:"pollute",p:"/pəˈluːt/",m:"v. 污染；玷污"},
+{w:"popular",p:"/ˈpɒpjələ(r)/",m:"adj. 流行的；受欢迎的"},
+{w:"population",p:"/ˌpɒpjuˈleɪʃn/",m:"n. 人口；种群"},
+{w:"portion",p:"/ˈpɔːʃn/",m:"n. 部分；一份"},
+{w:"position",p:"/pəˈzɪʃn/",m:"n. 位置；职位；立场"},
+{w:"positive",p:"/ˈpɒzətɪv/",m:"adj. 积极的；肯定的"},
+{w:"possess",p:"/pəˈzes/",m:"v. 拥有；具有"},
+{w:"potential",p:"/pəˈtenʃl/",m:"adj. 潜在的 n. 潜力"},
+{w:"poverty",p:"/ˈpɒvəti/",m:"n. 贫穷；贫乏"},
+{w:"practical",p:"/ˈpræktɪkl/",m:"adj. 实际的；实用的"},
+{w:"praise",p:"/preɪz/",m:"v./n. 赞扬；称赞"},
+{w:"precious",p:"/ˈpreʃəs/",m:"adj. 珍贵的；宝贵的"},
+{w:"precise",p:"/prɪˈsaɪs/",m:"adj. 精确的；准确的"},
+{w:"predict",p:"/prɪˈdɪkt/",m:"v. 预测；预言"},
+{w:"prefer",p:"/prɪˈfɜː(r)/",m:"v. 更喜欢；宁愿"},
+{w:"pregnant",p:"/ˈpreɡnənt/",m:"adj. 怀孕的；意味深长的"},
+{w:"prejudice",p:"/ˈpredʒudɪs/",m:"n. 偏见；成见"},
+{w:"prepare",p:"/prɪˈpeə(r)/",m:"v. 准备；预备"},
+{w:"presence",p:"/ˈprezns/",m:"n. 出席；存在"},
+{w:"preserve",p:"/prɪˈzɜːv/",m:"v. 保存；保护"},
+{w:"pressure",p:"/ˈpreʃə(r)/",m:"n. 压力；压强"},
+{w:"pretend",p:"/prɪˈtend/",m:"v. 假装；装作"},
+{w:"prevent",p:"/prɪˈvent/",m:"v. 阻止；预防"},
+{w:"previous",p:"/ˈpriːviəs/",m:"adj. 以前的；先前的"},
+{w:"primary",p:"/ˈpraɪməri/",m:"adj. 主要的；初级的"},
+{w:"principle",p:"/ˈprɪnsəpl/",m:"n. 原则；原理"},
+{w:"prior",p:"/ˈpraɪə(r)/",m:"adj. 先前的；优先的"},
+{w:"priority",p:"/praɪˈɒrəti/",m:"n. 优先；优先事项"},
+{w:"private",p:"/ˈpraɪvət/",m:"adj. 私人的；私密的"},
+{w:"privilege",p:"/ˈprɪvəlɪdʒ/",m:"n. 特权；荣幸"},
+{w:"procedure",p:"/prəˈsiːdʒə(r)/",m:"n. 程序；步骤"},
+{w:"process",p:"/ˈprəʊses/",m:"n. 过程 v. 加工；处理"},
+{w:"profession",p:"/prəˈfeʃn/",m:"n. 职业；专业"},
+{w:"profile",p:"/ˈprəʊfaɪl/",m:"n. 简介；轮廓"},
+{w:"profit",p:"/ˈprɒfɪt/",m:"n. 利润 v. 获益"},
+{w:"progress",p:"/ˈprəʊɡres/",m:"n./v. 进步；进展"},
+{w:"prohibit",p:"/prəˈhɪbɪt/",m:"v. 禁止；阻止"},
+{w:"project",p:"/ˈprɒdʒekt/",m:"n. 项目 v. 投影；预计"},
+{w:"promote",p:"/prəˈməʊt/",m:"v. 促进；提升；推销"},
+{w:"prompt",p:"/prɒmpt/",m:"adj. 及时的 v. 促使"},
+{w:"proper",p:"/ˈprɒpə(r)/",m:"adj. 适当的；正确的"},
+{w:"property",p:"/ˈprɒpəti/",m:"n. 财产；房产；性质"},
+{w:"proportion",p:"/prəˈpɔːʃn/",m:"n. 比例；部分"},
+{w:"propose",p:"/prəˈpəʊz/",m:"v. 提议；求婚"},
+{w:"prospect",p:"/ˈprɒspekt/",m:"n. 前景；可能性"},
+{w:"protest",p:"/ˈprəʊtest/",m:"n./v. 抗议；反对"},
+{w:"proud",p:"/praʊd/",m:"adj. 自豪的；骄傲的"},
+{w:"provide",p:"/prəˈvaɪd/",m:"v. 提供；规定"},
+{w:"province",p:"/ˈprɒvɪns/",m:"n. 省；领域"},
+{w:"psychological",p:"/ˌsaɪkəˈlɒdʒɪkl/",m:"adj. 心理的；心理学的"},
+{w:"publish",p:"/ˈpʌblɪʃ/",m:"v. 出版；发布"},
+{w:"punctual",p:"/ˈpʌŋktʃuəl/",m:"adj. 守时的；准时的"},
+{w:"punish",p:"/ˈpʌnɪʃ/",m:"v. 惩罚；处罚"},
+{w:"purchase",p:"/ˈpɜːtʃəs/",m:"v./n. 购买"},
+{w:"purpose",p:"/ˈpɜːpəs/",m:"n. 目的；意图"},
+{w:"pursue",p:"/pəˈsjuː/",m:"v. 追求；从事"},
+{w:"puzzle",p:"/ˈpʌzl/",m:"n. 谜；难题 v. 使困惑"},
+{w:"qualify",p:"/ˈkwɒlɪfaɪ/",m:"v. 取得资格；使合格"},
+{w:"quality",p:"/ˈkwɒləti/",m:"n. 质量；品质"},
+{w:"quantity",p:"/ˈkwɒntəti/",m:"n. 数量；大量"},
+{w:"quarrel",p:"/ˈkwɒrəl/",m:"n./v. 争吵；吵架"},
+{w:"quarter",p:"/ˈkwɔːtə(r)/",m:"n. 四分之一；季度"},
+{w:"queue",p:"/kjuː/",m:"n. 队列 v. 排队"},
+{w:"quit",p:"/kwɪt/",m:"v. 停止；辞职"},
+{w:"quote",p:"/kwəʊt/",m:"v. 引用；报价"},
+{w:"race",p:"/reɪs/",m:"n. 比赛；种族 v. 竞赛"},
+{w:"radiation",p:"/ˌreɪdiˈeɪʃn/",m:"n. 辐射；放射物"},
+{w:"rail",p:"/reɪl/",m:"n. 铁轨；栏杆"},
+{w:"random",p:"/ˈrændəm/",m:"adj. 随机的；任意的"},
+{w:"range",p:"/reɪndʒ/",m:"n. 范围；山脉 v. 变化"},
+{w:"rank",p:"/ræŋk/",m:"n. 等级；排名 v. 名列"},
+{w:"rapid",p:"/ˈræpɪd/",m:"adj. 快速的；迅速的"},
+{w:"rare",p:"/reə(r)/",m:"adj. 稀有的；罕见的"},
+{w:"rate",p:"/reɪt/",m:"n. 比率；速度 v. 评价"},
+{w:"rather",p:"/ˈrɑːðə(r)/",m:"adv. 相当；宁愿"},
+{w:"ratio",p:"/ˈreɪʃiəʊ/",m:"n. 比率；比例"},
+{w:"rational",p:"/ˈræʃnəl/",m:"adj. 理性的；合理的"},
+{w:"raw",p:"/rɔː/",m:"adj. 生的；未加工的"},
+{w:"react",p:"/riˈækt/",m:"v. 反应；反对"},
+{w:"realistic",p:"/ˌriːəˈlɪstɪk/",m:"adj. 现实的；逼真的"},
+{w:"reality",p:"/riˈæləti/",m:"n. 现实；真实"},
+{w:"realize",p:"/ˈriːəlaɪz/",m:"v. 意识到；实现"},
+{w:"reasonable",p:"/ˈriːznəbl/",m:"adj. 合理的；公道的"},
+{w:"recall",p:"/rɪˈkɔːl/",m:"v. 回忆起；召回"},
+{w:"receipt",p:"/rɪˈsiːt/",m:"n. 收据；接收"},
+{w:"receive",p:"/rɪˈsiːv/",m:"v. 收到；接待"},
+{w:"recent",p:"/ˈriːsnt/",m:"adj. 最近的；近来的"},
+{w:"reception",p:"/rɪˈsepʃn/",m:"n. 接待；欢迎会"},
+{w:"recipe",p:"/ˈresəpi/",m:"n. 食谱；诀窍"},
+{w:"recognize",p:"/ˈrekəɡnaɪz/",m:"v. 认出；承认"},
+{w:"recommend",p:"/ˌrekəˈmend/",m:"v. 推荐；建议"},
+{w:"recover",p:"/rɪˈkʌvə(r)/",m:"v. 恢复；找回"},
+{w:"recruit",p:"/rɪˈkruːt/",m:"v. 招募 n. 新成员"},
+{w:"reduce",p:"/rɪˈdjuːs/",m:"v. 减少；降低"},
+{w:"refer",p:"/rɪˈfɜː(r)/",m:"v. 提到；参考"},
+{w:"reflect",p:"/rɪˈflekt/",m:"v. 反映；反射；思考"},
+{w:"reform",p:"/rɪˈfɔːm/",m:"n./v. 改革；改良"},
+{w:"refuse",p:"/rɪˈfjuːz/",m:"v. 拒绝；回绝"},
+{w:"regard",p:"/rɪˈɡɑːd/",m:"v. 认为；看待 n. 尊重"},
+{w:"region",p:"/ˈriːdʒən/",m:"n. 地区；区域"},
+{w:"register",p:"/ˈredʒɪstə(r)/",m:"v. 登记；注册 n. 登记表"},
+{w:"regret",p:"/rɪˈɡret/",m:"v./n. 后悔；遗憾"},
+{w:"regular",p:"/ˈreɡjələ(r)/",m:"adj. 规律的；定期的"},
+{w:"regulate",p:"/ˈreɡjuleɪt/",m:"v. 调节；管理"},
+{w:"reject",p:"/rɪˈdʒekt/",m:"v. 拒绝；驳回"},
+{w:"relate",p:"/rɪˈleɪt/",m:"v. 联系；讲述"},
+{w:"relative",p:"/ˈrelətɪv/",m:"n. 亲戚 adj. 相对的"},
+{w:"relax",p:"/rɪˈlæks/",m:"v. 放松；缓和"},
+{w:"release",p:"/rɪˈliːs/",m:"v./n. 释放；发布"},
+{w:"relevant",p:"/ˈreləvənt/",m:"adj. 相关的；切题的"},
+{w:"reliable",p:"/rɪˈlaɪəbl/",m:"adj. 可靠的；可信赖的"},
+{w:"relief",p:"/rɪˈliːf/",m:"n. 缓解；宽慰"},
+{w:"relieve",p:"/rɪˈliːv/",m:"v. 减轻；解除"},
+{w:"religion",p:"/rɪˈlɪdʒən/",m:"n. 宗教；信仰"},
+{w:"reluctant",p:"/rɪˈlʌktənt/",m:"adj. 不情愿的；勉强的"},
+{w:"rely",p:"/rɪˈlaɪ/",m:"v. 依赖；信赖"},
+{w:"remain",p:"/rɪˈmeɪn/",m:"v. 保持；剩下"},
+{w:"remark",p:"/rɪˈmɑːk/",m:"n./v. 评论；谈论"},
+{w:"remarkable",p:"/rɪˈmɑːkəbl/",m:"adj. 显著的；非凡的"},
+{w:"remind",p:"/rɪˈmaɪnd/",m:"v. 提醒；使想起"},
+{w:"remote",p:"/rɪˈməʊt/",m:"adj. 遥远的；偏僻的"},
+{w:"remove",p:"/rɪˈmuːv/",m:"v. 移除；去掉"},
+{w:"rent",p:"/rent/",m:"n. 租金 v. 出租"},
+{w:"repair",p:"/rɪˈpeə(r)/",m:"v./n. 修理；修复"},
+{w:"replace",p:"/rɪˈpleɪs/",m:"v. 取代；替换"},
+{w:"represent",p:"/ˌreprɪˈzent/",m:"v. 代表；表现"},
+{w:"reputation",p:"/ˌrepjuˈteɪʃn/",m:"n. 名誉；声望"},
+{w:"request",p:"/rɪˈkwest/",m:"n./v. 请求；要求"},
+{w:"require",p:"/rɪˈkwaɪə(r)/",m:"v. 需要；要求"},
+{w:"rescue",p:"/ˈreskjuː/",m:"v./n. 营救；救援"},
+{w:"research",p:"/rɪˈsɜːtʃ/",m:"n./v. 研究；调查"},
+{w:"reserve",p:"/rɪˈzɜːv/",m:"v. 预订；保留 n. 储备"},
+{w:"resident",p:"/ˈrezɪdənt/",m:"n. 居民 adj. 居住的"},
+{w:"resist",p:"/rɪˈzɪst/",m:"v. 抵抗；忍住"},
+{w:"resolve",p:"/rɪˈzɒlv/",m:"v. 解决；决心"},
+{w:"resource",p:"/rɪˈsɔːs/",m:"n. 资源；财力"},
+{w:"respect",p:"/rɪˈspekt/",m:"n./v. 尊重；方面"},
+{w:"respond",p:"/rɪˈspɒnd/",m:"v. 回应；反应"},
+{w:"response",p:"/rɪˈspɒns/",m:"n. 回答；响应"},
+{w:"responsible",p:"/rɪˈspɒnsəbl/",m:"adj. 有责任的；可靠的"},
+{w:"restore",p:"/rɪˈstɔː(r)/",m:"v. 恢复；修复"},
+{w:"restrict",p:"/rɪˈstrɪkt/",m:"v. 限制；约束"},
+{w:"result",p:"/rɪˈzʌlt/",m:"n. 结果 v. 导致"},
+{w:"resume",p:"/rɪˈzjuːm/",m:"v. 重新开始；n. 简历"},
+{w:"retire",p:"/rɪˈtaɪə(r)/",m:"v. 退休；撤退"},
+{w:"reveal",p:"/rɪˈviːl/",m:"v. 揭示；露出"},
+{w:"reverse",p:"/rɪˈvɜːs/",m:"v. 颠倒；倒退 adj. 相反的"},
+{w:"review",p:"/rɪˈvjuː/",m:"n./v. 复习；评论；审查"},
+{w:"revise",p:"/rɪˈvaɪz/",m:"v. 修订；复习"},
+{w:"revolution",p:"/ˌrevəˈluːʃn/",m:"n. 革命；变革"},
+{w:"reward",p:"/rɪˈwɔːd/",m:"n. 奖赏 v. 奖励"},
+{w:"ridiculous",p:"/rɪˈdɪkjələs/",m:"adj. 荒谬的；可笑的"},
+{w:"risk",p:"/rɪsk/",m:"n./v. 风险；冒险"},
+{w:"roast",p:"/rəʊst/",m:"v. 烤 adj. 烤制的"},
+{w:"robot",p:"/ˈrəʊbɒt/",m:"n. 机器人"},
+{w:"romantic",p:"/rəʊˈmæntɪk/",m:"adj. 浪漫的；传奇的"},
+{w:"rough",p:"/rʌf/",m:"adj. 粗糙的；大致的"},
+{w:"route",p:"/ruːt/",m:"n. 路线；途径"},
+{w:"routine",p:"/ruːˈtiːn/",m:"n. 常规 adj. 例行的"},
+{w:"royal",p:"/ˈrɔɪəl/",m:"adj. 王室的；高贵的"},
+{w:"rural",p:"/ˈrʊərəl/",m:"adj. 农村的；乡下的"},
+{w:"rush",p:"/rʌʃ/",m:"v./n. 冲；匆忙"},
+{w:"sacrifice",p:"/ˈsækrɪfaɪs/",m:"n./v. 牺牲；献祭"},
+{w:"sake",p:"/seɪk/",m:"n. 缘故；利益"},
+{w:"salary",p:"/ˈsæləri/",m:"n. 薪水；工资"},
+{w:"sample",p:"/ˈsɑːmpl/",m:"n. 样本；样品 v. 抽样"},
+{w:"satisfactory",p:"/ˌsætɪsˈfæktəri/",m:"adj. 令人满意的"},
+{w:"satisfy",p:"/ˈsætɪsfaɪ/",m:"v. 满足；使满意"},
+{w:"scale",p:"/skeɪl/",m:"n. 规模；等级；秤"},
+{w:"scan",p:"/skæn/",m:"v. 扫描；浏览"},
+{w:"scarce",p:"/skeəs/",m:"adj. 稀少的；缺乏的"},
+{w:"scatter",p:"/ˈskætə(r)/",m:"v. 散开；撒播"},
+{w:"scene",p:"/siːn/",m:"n. 场景；现场"},
+{w:"schedule",p:"/ˈʃedjuːl/",m:"n. 日程 v. 安排"},
+{w:"scheme",p:"/skiːm/",m:"n. 方案；阴谋"},
+{w:"scholar",p:"/ˈskɒlə(r)/",m:"n. 学者；奖学金获得者"},
+{w:"scholarship",p:"/ˈskɒləʃɪp/",m:"n. 奖学金；学术"},
+{w:"scientific",p:"/ˌsaɪənˈtɪfɪk/",m:"adj. 科学的"},
+{w:"scope",p:"/skəʊp/",m:"n. 范围；机会"},
+{w:"score",p:"/skɔː(r)/",m:"n. 分数 v. 得分"},
+{w:"scratch",p:"/skrætʃ/",m:"v./n. 抓；划痕"},
+{w:"screen",p:"/skriːn/",m:"n. 屏幕 v. 筛查"},
+{w:"seal",p:"/siːl/",m:"n. 印章；海豹 v. 密封"},
+{w:"search",p:"/sɜːtʃ/",m:"v./n. 搜索；寻找"},
+{w:"secure",p:"/sɪˈkjʊə(r)/",m:"adj. 安全的 v. 获得；使安全"},
+{w:"seek",p:"/siːk/",m:"v. 寻找；追求"},
+{w:"seize",p:"/siːz/",m:"v. 抓住；夺取"},
+{w:"select",p:"/sɪˈlekt/",m:"v. 选择；挑选"},
+{w:"senior",p:"/ˈsiːniə(r)/",m:"adj. 高级的；年长的 n. 上级"},
+{w:"sensible",p:"/ˈsensəbl/",m:"adj. 明智的；合理的"},
+{w:"sensitive",p:"/ˈsensətɪv/",m:"adj. 敏感的；灵敏的"},
+{w:"separate",p:"/ˈsepəreɪt/",m:"v. 分开 adj. 分开的"},
+{w:"sequence",p:"/ˈsiːkwəns/",m:"n. 顺序；一系列"},
+{w:"series",p:"/ˈsɪəriːz/",m:"n. 系列；连续"},
+{w:"serious",p:"/ˈsɪəriəs/",m:"adj. 严重的；认真的"},
+{w:"servant",p:"/ˈsɜːvənt/",m:"n. 仆人；公务员"},
+{w:"serve",p:"/sɜːv/",m:"v. 服务；供应"},
+{w:"session",p:"/ˈseʃn/",m:"n. 会议；一段时间"},
+{w:"settle",p:"/ˈsetl/",m:"v. 解决；定居；安顿"},
+{w:"severe",p:"/sɪˈvɪə(r)/",m:"adj. 严重的；严厉的"},
+{w:"shallow",p:"/ˈʃæləʊ/",m:"adj. 浅的；肤浅的"},
+{w:"shame",p:"/ʃeɪm/",m:"n. 羞耻；遗憾"},
+{w:"shape",p:"/ʃeɪp/",m:"n. 形状 v. 塑造"},
+{w:"share",p:"/ʃeə(r)/",m:"v. 分享；分担 n. 份额；股票"},
+{w:"sharp",p:"/ʃɑːp/",m:"adj. 尖锐的；急剧的"},
+{w:"shelter",p:"/ˈʃeltə(r)/",m:"n. 庇护所 v. 遮蔽"},
+{w:"shift",p:"/ʃɪft/",m:"v./n. 转移；轮班"},
+{w:"shine",p:"/ʃaɪn/",m:"v. 照耀；发光"},
+{w:"shortage",p:"/ˈʃɔːtɪdʒ/",m:"n. 短缺；不足"},
+{w:"shrink",p:"/ʃrɪŋk/",m:"v. 收缩；缩小"},
+{w:"sight",p:"/saɪt/",m:"n. 视力；景象"},
+{w:"signal",p:"/ˈsɪɡnəl/",m:"n. 信号 v. 示意"},
+{w:"signature",p:"/ˈsɪɡnətʃə(r)/",m:"n. 签名；特征"},
+{w:"significant",p:"/sɪɡˈnɪfɪkənt/",m:"adj. 重要的；显著的"},
+{w:"similar",p:"/ˈsɪmələ(r)/",m:"adj. 相似的；类似的"},
+{w:"simplify",p:"/ˈsɪmplɪfaɪ/",m:"v. 简化；使单纯"},
+{w:"sincere",p:"/sɪnˈsɪə(r)/",m:"adj. 真诚的；诚挚的"},
+{w:"situation",p:"/ˌsɪtʃuˈeɪʃn/",m:"n. 情况；形势"},
+{w:"sketch",p:"/sketʃ/",m:"n. 素描；概述 v. 概述"},
+{w:"slight",p:"/slaɪt/",m:"adj. 轻微的；微小的"},
+{w:"slope",p:"/sləʊp/",m:"n. 斜坡 v. 倾斜"},
+{w:"smooth",p:"/smuːð/",m:"adj. 光滑的；顺利的"},
+{w:"solid",p:"/ˈsɒlɪd/",m:"adj. 固体的；坚实的 n. 固体"},
+{w:"solution",p:"/səˈluːʃn/",m:"n. 解决方案；溶液"},
+{w:"source",p:"/sɔːs/",m:"n. 来源；源头"},
+{w:"spare",p:"/speə(r)/",m:"adj. 空闲的；备用的 v. 抽出"},
+{w:"species",p:"/ˈspiːʃiːz/",m:"n. 物种；种类"},
+{w:"specific",p:"/spəˈsɪfɪk/",m:"adj. 具体的；特定的"},
+{w:"spirit",p:"/ˈspɪrɪt/",m:"n. 精神；心灵"},
+{w:"spite",p:"/spaɪt/",m:"n. 恶意；不顾"},
+{w:"split",p:"/splɪt/",m:"v. 分开；分裂"},
+{w:"spoil",p:"/spɔɪl/",m:"v. 破坏；宠坏"},
+{w:"sponsor",p:"/ˈspɒnsə(r)/",m:"n. 赞助商 v. 赞助"},
+{w:"spot",p:"/spɒt/",m:"n. 地点；斑点 v. 发现"},
+{w:"spread",p:"/spred/",m:"v./n. 传播；展开"},
+{w:"stable",p:"/ˈsteɪbl/",m:"adj. 稳定的 n. 马厩"},
+{w:"staff",p:"/stɑːf/",m:"n. 员工；全体职员"},
+{w:"stage",p:"/steɪdʒ/",m:"n. 阶段；舞台"},
+{w:"standard",p:"/ˈstændəd/",m:"n. 标准 adj. 标准的"},
+{w:"stare",p:"/steə(r)/",m:"v./n. 凝视；盯着看"},
+{w:"statistics",p:"/stəˈtɪstɪks/",m:"n. 统计；统计数据"},
+{w:"status",p:"/ˈsteɪtəs/",m:"n. 地位；状态"},
+{w:"steady",p:"/ˈstedi/",m:"adj. 稳定的；稳步的"},
+{w:"steep",p:"/stiːp/",m:"adj. 陡峭的；急剧的"},
+{w:"stem",p:"/stem/",m:"n. 茎；词干 v. 起源于"},
+{w:"stiff",p:"/stɪf/",m:"adj. 僵硬的；严厉的"},
+{w:"stimulate",p:"/ˈstɪmjuleɪt/",m:"v. 刺激；激励"},
+{w:"stock",p:"/stɒk/",m:"n. 库存；股票 v. 储备"},
+{w:"strain",p:"/streɪn/",m:"n. 压力；紧张 v. 拉紧"},
+{w:"strategy",p:"/ˈstrætədʒi/",m:"n. 策略；战略"},
+{w:"strengthen",p:"/ˈstreŋθn/",m:"v. 加强；巩固"},
+{w:"stress",p:"/stres/",m:"n. 压力；重音 v. 强调"},
+{w:"stretch",p:"/stretʃ/",m:"v. 伸展；延伸"},
+{w:"strict",p:"/strɪkt/",m:"adj. 严格的；严谨的"},
+{w:"strike",p:"/straɪk/",m:"v. 打击；罢工 n. 罢工"},
+{w:"striking",p:"/ˈstraɪkɪŋ/",m:"adj. 显著的；引人注目的"},
+{w:"structure",p:"/ˈstrʌktʃə(r)/",m:"n. 结构 v. 构建"},
+{w:"struggle",p:"/ˈstrʌɡl/",m:"v./n. 挣扎；奋斗"},
+{w:"stubborn",p:"/ˈstʌbən/",m:"adj. 固执的；顽固的"},
+{w:"stuff",p:"/stʌf/",m:"n. 东西；材料 v. 填塞"},
+{w:"submit",p:"/səbˈmɪt/",m:"v. 提交；服从"},
+{w:"substance",p:"/ˈsʌbstəns/",m:"n. 物质；实质"},
+{w:"substitute",p:"/ˈsʌbstɪtjuːt/",m:"n. 替代品 v. 代替"},
+{w:"suburb",p:"/ˈsʌbɜːb/",m:"n. 郊区；近郊"},
+{w:"succeed",p:"/səkˈsiːd/",m:"v. 成功；接替"},
+{w:"sufficient",p:"/səˈfɪʃnt/",m:"adj. 充足的；足够的"},
+{w:"suggest",p:"/səˈdʒest/",m:"v. 建议；暗示"},
+{w:"suitable",p:"/ˈsuːtəbl/",m:"adj. 合适的；适宜的"},
+{w:"summary",p:"/ˈsʌməri/",m:"n. 总结；摘要"},
+{w:"superior",p:"/suːˈpɪəriə(r)/",m:"adj. 优越的 n. 上级"},
+{w:"supply",p:"/səˈplaɪ/",m:"n./v. 供应；供给"},
+{w:"suppose",p:"/səˈpəʊz/",m:"v. 假设；认为"},
+{w:"surface",p:"/ˈsɜːfɪs/",m:"n. 表面；水面"},
+{w:"surgery",p:"/ˈsɜːdʒəri/",m:"n. 外科手术；手术室"},
+{w:"surround",p:"/səˈraʊnd/",m:"v. 包围；环绕"},
+{w:"survey",p:"/ˈsɜːveɪ/",m:"n./v. 调查；勘测"},
+{w:"survive",p:"/səˈvaɪv/",m:"v. 幸存；存活"},
+{w:"suspect",p:"/səˈspekt/",m:"v. 怀疑 n. 嫌疑人"},
+{w:"suspend",p:"/səˈspend/",m:"v. 暂停；悬挂"},
+{w:"sustain",p:"/səˈsteɪn/",m:"v. 维持；支撑"},
+{w:"swallow",p:"/ˈswɒləʊ/",m:"v. 吞咽 n. 燕子"},
+{w:"sweet",p:"/swiːt/",m:"adj. 甜的；可爱的"},
+{w:"swift",p:"/swɪft/",m:"adj. 迅速的；敏捷的"},
+{w:"symbol",p:"/ˈsɪmbl/",m:"n. 符号；象征"},
+{w:"sympathy",p:"/ˈsɪmpəθi/",m:"n. 同情；赞同"},
+{w:"symptom",p:"/ˈsɪmptəm/",m:"n. 症状；征兆"},
+{w:"system",p:"/ˈsɪstəm/",m:"n. 系统；制度"},
+{w:"tackle",p:"/ˈtækl/",m:"v. 处理；对付 n. 用具"},
+{w:"talent",p:"/ˈtælənt/",m:"n. 天赋；人才"},
+{w:"target",p:"/ˈtɑːɡɪt/",m:"n. 目标 v. 以……为目标"},
+{w:"task",p:"/tɑːsk/",m:"n. 任务；工作"},
+{w:"taste",p:"/teɪst/",m:"n. 味道；品味 v. 品尝"},
+{w:"tax",p:"/tæks/",m:"n. 税 v. 征税"},
+{w:"technique",p:"/tekˈniːk/",m:"n. 技术；技巧"},
+{w:"technology",p:"/tekˈnɒlədʒi/",m:"n. 技术；科技"},
+{w:"telescope",p:"/ˈtelɪskəʊp/",m:"n. 望远镜"},
+{w:"temper",p:"/ˈtempə(r)/",m:"n. 脾气；情绪"},
+{w:"temperature",p:"/ˈtemprətʃə(r)/",m:"n. 温度；体温"},
+{w:"temporary",p:"/ˈtemprəri/",m:"adj. 暂时的；临时的"},
+{w:"tempt",p:"/tempt/",m:"v. 引诱；吸引"},
+{w:"tend",p:"/tend/",m:"v. 倾向；照料"},
+{w:"tendency",p:"/ˈtendənsi/",m:"n. 趋势；倾向"},
+{w:"tender",p:"/ˈtendə(r)/",m:"adj. 温柔的；柔软的"},
+{w:"tension",p:"/ˈtenʃn/",m:"n. 紧张；张力"},
+{w:"terminal",p:"/ˈtɜːmɪnl/",m:"n. 终点站；终端 adj. 末端的"},
+{w:"terrible",p:"/ˈterəbl/",m:"adj. 可怕的；糟糕的"},
+{w:"territory",p:"/ˈterətri/",m:"n. 领土；领域"},
+{w:"terror",p:"/ˈterə(r)/",m:"n. 恐怖；惊恐"},
+{w:"theme",p:"/θiːm/",m:"n. 主题；题目"},
+{w:"theory",p:"/ˈθɪəri/",m:"n. 理论；学说"},
+{w:"therefore",p:"/ˈðeəfɔː(r)/",m:"adv. 因此；所以"},
+{w:"thorough",p:"/ˈθʌrə/",m:"adj. 彻底的；细致的"},
+{w:"threaten",p:"/ˈθretn/",m:"v. 威胁；预示"},
+{w:"tight",p:"/taɪt/",m:"adj. 紧的；紧凑的"},
+{w:"tiny",p:"/ˈtaɪni/",m:"adj. 极小的；微小的"},
+{w:"tip",p:"/tɪp/",m:"n. 提示；小费 v. 倾斜"},
+{w:"tissue",p:"/ˈtɪʃuː/",m:"n. 组织；纸巾"},
+{w:"title",p:"/ˈtaɪtl/",m:"n. 标题；头衔"},
+{w:"tolerate",p:"/ˈtɒləreɪt/",m:"v. 容忍；忍受"},
+{w:"tone",p:"/təʊn/",m:"n. 语气；色调"},
+{w:"total",p:"/ˈtəʊtl/",m:"adj. 总的 n. 总数"},
+{w:"touch",p:"/tʌtʃ/",m:"v. 触摸；感动 n. 接触"},
+{w:"tough",p:"/tʌf/",m:"adj. 艰难的；坚韧的"},
+{w:"tour",p:"/tʊə(r)/",m:"n./v. 旅行；参观"},
+{w:"trace",p:"/treɪs/",m:"v. 追踪 n. 痕迹"},
+{w:"track",p:"/træk/",m:"n. 轨道；踪迹 v. 追踪"},
+{w:"trade",p:"/treɪd/",m:"n. 贸易 v. 交易"},
+{w:"tradition",p:"/trəˈdɪʃn/",m:"n. 传统；惯例"},
+{w:"traffic",p:"/ˈtræfɪk/",m:"n. 交通；流量"},
+{w:"tragedy",p:"/ˈtrædʒədi/",m:"n. 悲剧；惨事"},
+{w:"transfer",p:"/trænsˈfɜː(r)/",m:"v./n. 转移；转学；转让"},
+{w:"transform",p:"/trænsˈfɔːm/",m:"v. 改变；转化"},
+{w:"translate",p:"/trænzˈleɪt/",m:"v. 翻译；转化"},
+{w:"transmit",p:"/trænzˈmɪt/",m:"v. 传送；传播"},
+{w:"transport",p:"/ˈtrænspɔːt/",m:"n./v. 运输；交通"},
+{w:"trap",p:"/træp/",m:"n. 陷阱 v. 诱捕"},
+{w:"treasure",p:"/ˈtreʒə(r)/",m:"n. 财宝 v. 珍惜"},
+{w:"treat",p:"/triːt/",m:"v. 对待；治疗；请客"},
+{w:"treaty",p:"/ˈtriːti/",m:"n. 条约；协定"},
+{w:"trend",p:"/trend/",m:"n. 趋势；潮流"},
+{w:"trial",p:"/ˈtraɪəl/",m:"n. 试验；审判"},
+{w:"trick",p:"/trɪk/",m:"n. 诡计；技巧 v. 欺骗"},
+{w:"triumph",p:"/ˈtraɪʌmf/",m:"n./v. 胜利；成功"},
+{w:"troop",p:"/truːp/",m:"n. 部队；一群"},
+{w:"tropical",p:"/ˈtrɒpɪkl/",m:"adj. 热带的"},
+{w:"trouble",p:"/ˈtrʌbl/",m:"n. 麻烦 v. 使烦恼"},
+{w:"trust",p:"/trʌst/",m:"n./v. 信任；信托"},
+{w:"truth",p:"/truːθ/",m:"n. 真相；真理"},
+{w:"tune",p:"/tjuːn/",m:"n. 曲调 v. 调音"},
+{w:"tunnel",p:"/ˈtʌnl/",m:"n. 隧道；地道"},
+{w:"twist",p:"/twɪst/",m:"v. 扭转；扭曲"},
+{w:"typical",p:"/ˈtɪpɪkl/",m:"adj. 典型的；有代表性的"},
+{w:"ultimate",p:"/ˈʌltɪmət/",m:"adj. 最终的；根本的"},
+{w:"uncover",p:"/ʌnˈkʌvə(r)/",m:"v. 揭露；发现"},
+{w:"underline",p:"/ˌʌndəˈlaɪn/",m:"v. 在……下划线；强调"},
+{w:"understand",p:"/ˌʌndəˈstænd/",m:"v. 理解；明白"},
+{w:"undertake",p:"/ˌʌndəˈteɪk/",m:"v. 承担；着手"},
+{w:"uniform",p:"/ˈjuːnɪfɔːm/",m:"n. 制服 adj. 统一的"},
+{w:"unique",p:"/juˈniːk/",m:"adj. 独特的；唯一的"},
+{w:"unite",p:"/juˈnaɪt/",m:"v. 联合；团结"},
+{w:"universal",p:"/ˌjuːnɪˈvɜːsl/",m:"adj. 普遍的；通用的"},
+{w:"universe",p:"/ˈjuːnɪvɜːs/",m:"n. 宇宙；领域"},
+{w:"unless",p:"/ənˈles/",m:"conj. 除非；如果不"},
+{w:"unlike",p:"/ˌʌnˈlaɪk/",m:"prep. 与……不同"},
+{w:"unusual",p:"/ʌnˈjuːʒuəl/",m:"adj. 不寻常的；独特的"},
+{w:"update",p:"/ˌʌpˈdeɪt/",m:"v./n. 更新；升级"},
+{w:"upgrade",p:"/ˌʌpˈɡreɪd/",m:"v. 升级；提升"},
+{w:"urban",p:"/ˈɜːbən/",m:"adj. 城市的；都市的"},
+{w:"urge",p:"/ɜːdʒ/",m:"v. 催促；力劝 n. 冲动"},
+{w:"urgent",p:"/ˈɜːdʒənt/",m:"adj. 紧急的；急迫的"},
+{w:"usage",p:"/ˈjuːsɪdʒ/",m:"n. 用法；使用量"},
+{w:"utility",p:"/juːˈtɪləti/",m:"n. 效用；公用事业"},
+{w:"utilize",p:"/ˈjuːtəlaɪz/",m:"v. 利用；使用"},
+{w:"vacant",p:"/ˈveɪkənt/",m:"adj. 空的；空缺的"},
+{w:"valid",p:"/ˈvælɪd/",m:"adj. 有效的；正当的"},
+{w:"valley",p:"/ˈvæli/",m:"n. 山谷；流域"},
+{w:"valuable",p:"/ˈvæljuəbl/",m:"adj. 有价值的；贵重的"},
+{w:"vanish",p:"/ˈvænɪʃ/",m:"v. 消失；突然不见"},
+{w:"variety",p:"/vəˈraɪəti/",m:"n. 多样性；种类"},
+{w:"various",p:"/ˈveəriəs/",m:"adj. 各种各样的"},
+{w:"vary",p:"/ˈveəri/",m:"v. 变化；不同"},
+{w:"vast",p:"/vɑːst/",m:"adj. 广阔的；巨大的"},
+{w:"vehicle",p:"/ˈviːəkl/",m:"n. 车辆；工具"},
+{w:"venture",p:"/ˈventʃə(r)/",m:"n. 冒险事业 v. 冒险"},
+{w:"version",p:"/ˈvɜːʃn/",m:"n. 版本；说法"},
+{w:"vertical",p:"/ˈvɜːtɪkl/",m:"adj. 垂直的；纵向的"},
+{w:"via",p:"/ˈvaɪə/",m:"prep. 经由；通过"},
+{w:"victim",p:"/ˈvɪktɪm/",m:"n. 受害者；牺牲品"},
+{w:"victory",p:"/ˈvɪktəri/",m:"n. 胜利；成功"},
+{w:"view",p:"/vjuː/",m:"n. 观点；景色 v. 看待"},
+{w:"violate",p:"/ˈvaɪəleɪt/",m:"v. 违反；侵犯"},
+{w:"violent",p:"/ˈvaɪələnt/",m:"adj. 暴力的；猛烈的"},
+{w:"virtual",p:"/ˈvɜːtʃuəl/",m:"adj. 虚拟的；实质上的"},
+{w:"virtue",p:"/ˈvɜːtʃuː/",m:"n. 美德；优点"},
+{w:"virus",p:"/ˈvaɪrəs/",m:"n. 病毒"},
+{w:"visible",p:"/ˈvɪzəbl/",m:"adj. 可见的；明显的"},
+{w:"vision",p:"/ˈvɪʒn/",m:"n. 视力；愿景"},
+{w:"vital",p:"/ˈvaɪtl/",m:"adj. 至关重要的；生命的"},
+{w:"vivid",p:"/ˈvɪvɪd/",m:"adj. 生动的；鲜艳的"},
+{w:"vocabulary",p:"/vəˈkæbjələri/",m:"n. 词汇；词汇量"},
+{w:"volume",p:"/ˈvɒljuːm/",m:"n. 体积；音量；卷"},
+{w:"volunteer",p:"/ˌvɒlənˈtɪə(r)/",m:"n. 志愿者 v. 自愿"},
+{w:"vote",p:"/vəʊt/",m:"n./v. 投票；选举"},
+{w:"voyage",p:"/ˈvɔɪɪdʒ/",m:"n. 航行；远行"},
+{w:"wage",p:"/weɪdʒ/",m:"n. 工资 v. 进行"},
+{w:"wander",p:"/ˈwɒndə(r)/",m:"v. 漫游；走神"},
+{w:"warn",p:"/wɔːn/",m:"v. 警告；提醒"},
+{w:"waste",p:"/weɪst/",m:"v./n. 浪费；废物"},
+{w:"wave",p:"/weɪv/",m:"n. 波浪；挥手 v. 挥舞"},
+{w:"weaken",p:"/ˈwiːkən/",m:"v. 削弱；变弱"},
+{w:"wealth",p:"/welθ/",m:"n. 财富；大量"},
+{w:"weapon",p:"/ˈwepən/",m:"n. 武器；手段"},
+{w:"wear",p:"/weə(r)/",m:"v. 穿着；磨损"},
+{w:"website",p:"/ˈwebsaɪt/",m:"n. 网站"},
+{w:"weigh",p:"/weɪ/",m:"v. 称重；权衡"},
+{w:"weird",p:"/wɪəd/",m:"adj. 怪异的；离奇的"},
+{w:"welfare",p:"/ˈwelfeə(r)/",m:"n. 福利；幸福"},
+{w:"whereas",p:"/ˌweərˈæz/",m:"conj. 然而；尽管"},
+{w:"whisper",p:"/ˈwɪspə(r)/",m:"v./n. 低语；耳语"},
+{w:"widespread",p:"/ˈwaɪdspred/",m:"adj. 广泛的；普遍的"},
+{w:"willing",p:"/ˈwɪlɪŋ/",m:"adj. 愿意的；乐意的"},
+{w:"withdraw",p:"/wɪðˈdrɔː/",m:"v. 撤回；取款"},
+{w:"witness",p:"/ˈwɪtnəs/",m:"n. 目击者 v. 目击"},
+{w:"wonder",p:"/ˈwʌndə(r)/",m:"v. 想知道 n. 惊奇；奇迹"},
+{w:"worship",p:"/ˈwɜːʃɪp/",m:"n./v. 崇拜；敬奉"},
+{w:"worth",p:"/wɜːθ/",m:"adj. 值……的 n. 价值"},
+{w:"worthy",p:"/ˈwɜːði/",m:"adj. 值得的；可敬的"},
+{w:"wrap",p:"/ræp/",m:"v. 包裹；缠绕"},
+{w:"wrist",p:"/rɪst/",m:"n. 手腕"},
+{w:"yield",p:"/jiːld/",m:"v. 产生；屈服 n. 产量"},
+{w:"zone",p:"/zəʊn/",m:"n. 地区；地带"}
+],
+cet6:[
+{w:"abide",p:"/əˈbaɪd/",m:"v. 遵守；忍受"},
+{w:"abolish",p:"/əˈbɒlɪʃ/",m:"v. 废除；取消"},
+{w:"abrupt",p:"/əˈbrʌpt/",m:"adj. 突然的；唐突的"},
+{w:"absurd",p:"/əbˈsɜːd/",m:"adj. 荒谬的；可笑的"},
+{w:"abundant",p:"/əˈbʌndənt/",m:"adj. 丰富的；充裕的"},
+{w:"accelerate",p:"/əkˈseləreɪt/",m:"v. 加速；促进"},
+{w:"accommodate",p:"/əˈkɒmədeɪt/",m:"v. 容纳；适应；提供住宿"},
+{w:"accumulate",p:"/əˈkjuːmjəleɪt/",m:"v. 积累；积聚"},
+{w:"acknowledge",p:"/əkˈnɒlɪdʒ/",m:"v. 承认；答谢"},
+{w:"acute",p:"/əˈkjuːt/",m:"adj. 敏锐的；急性的；剧烈的"},
+{w:"adhere",p:"/ədˈhɪə(r)/",m:"v. 粘附；坚持"},
+{w:"adjacent",p:"/əˈdʒeɪsnt/",m:"adj. 邻近的；毗连的"},
+{w:"administer",p:"/ədˈmɪnɪstə(r)/",m:"v. 管理；实施；给予"},
+{w:"adverse",p:"/ˈædvɜːs/",m:"adj. 不利的；有害的"},
+{w:"advocate",p:"/ˈædvəkeɪt/",m:"v. 提倡；拥护 n. 拥护者"},
+{w:"aesthetic",p:"/iːsˈθetɪk/",m:"adj. 美学的；审美的"},
+{w:"aggregate",p:"/ˈæɡrɪɡət/",m:"n. 总数 adj. 总计的 v. 聚集"},
+{w:"allege",p:"/əˈledʒ/",m:"v. 声称；指控"},
+{w:"alleviate",p:"/əˈliːvieɪt/",m:"v. 减轻；缓和"},
+{w:"allocate",p:"/ˈæləkeɪt/",m:"v. 分配；拨给"},
+{w:"ambiguous",p:"/æmˈbɪɡjuəs/",m:"adj. 模棱两可的；含糊的"},
+{w:"ambitious",p:"/æmˈbɪʃəs/",m:"adj. 有雄心的；野心勃勃的"},
+{w:"amend",p:"/əˈmend/",m:"v. 修订；修改"},
+{w:"ample",p:"/ˈæmpl/",m:"adj. 充足的；宽敞的"},
+{w:"amplify",p:"/ˈæmplɪfaɪ/",m:"v. 放大；增强；详述"},
+{w:"analogy",p:"/əˈnælədʒi/",m:"n. 类比；类似"},
+{w:"anonymous",p:"/əˈnɒnɪməs/",m:"adj. 匿名的；无名的"},
+{w:"anticipate",p:"/ænˈtɪsɪpeɪt/",m:"v. 预期；预料"},
+{w:"apparatus",p:"/ˌæpəˈreɪtəs/",m:"n. 器械；装置"},
+{w:"arbitrary",p:"/ˈɑːbɪtrəri/",m:"adj. 任意的；专断的"},
+{w:"articulate",p:"/ɑːˈtɪkjuleɪt/",m:"v. 清楚表达 adj. 表达清晰的"},
+{w:"ascertain",p:"/ˌæsəˈteɪn/",m:"v. 查明；确定"},
+{w:"aspire",p:"/əˈspaɪə(r)/",m:"v. 渴望；追求"},
+{w:"assemble",p:"/əˈsembl/",m:"v. 集合；装配"},
+{w:"assert",p:"/əˈsɜːt/",m:"v. 断言；维护"},
+{w:"assess",p:"/əˈses/",m:"v. 评估；估价"},
+{w:"asset",p:"/ˈæset/",m:"n. 资产；优点"},
+{w:"attain",p:"/əˈteɪn/",m:"v. 达到；获得"},
+{w:"authentic",p:"/ɔːˈθentɪk/",m:"adj. 真实的；正宗的"},
+{w:"autonomy",p:"/ɔːˈtɒnəmi/",m:"n. 自治；自主"},
+{w:"ballot",p:"/ˈbælət/",m:"n. 选票；投票 v. 投票"},
+{w:"barren",p:"/ˈbærən/",m:"adj. 贫瘠的；不育的"},
+{w:"bias",p:"/ˈbaɪəs/",m:"n. 偏见 v. 使有偏见"},
+{w:"bizarre",p:"/bɪˈzɑː(r)/",m:"adj. 奇异的；古怪的"},
+{w:"blast",p:"/blɑːst/",m:"n. 爆炸；一阵 v. 炸毁"},
+{w:"bleak",p:"/bliːk/",m:"adj. 暗淡的；荒凉的"},
+{w:"blunt",p:"/blʌnt/",m:"adj. 钝的；直率的"},
+{w:"bolster",p:"/ˈbəʊlstə(r)/",m:"v. 增强；支持"},
+{w:"boost",p:"/buːst/",m:"v./n. 促进；提高"},
+{w:"breach",p:"/briːtʃ/",m:"n./v. 违反；缺口"},
+{w:"brisk",p:"/brɪsk/",m:"adj. 轻快的；活跃的"},
+{w:"brittle",p:"/ˈbrɪtl/",m:"adj. 易碎的；脆弱的"},
+{w:"brochure",p:"/ˈbrəʊʃə(r)/",m:"n. 小册子；宣传册"},
+{w:"browse",p:"/braʊz/",m:"v. 浏览；随便翻阅"},
+{w:"brutal",p:"/ˈbruːtl/",m:"adj. 残忍的；野蛮的"},
+{w:"bulk",p:"/bʌlk/",m:"n. 大量；主体"},
+{w:"candid",p:"/ˈkændɪd/",m:"adj. 坦率的；直言的"},
+{w:"cater",p:"/ˈkeɪtə(r)/",m:"v. 迎合；提供饮食"},
+{w:"cease",p:"/siːs/",m:"v. 停止；终止"},
+{w:"celebrity",p:"/səˈlebrəti/",m:"n. 名人；名声"},
+{w:"certify",p:"/ˈsɜːtɪfaɪ/",m:"v. 证明；颁发证书"},
+{w:"chaos",p:"/ˈkeɪɒs/",m:"n. 混乱；无序"},
+{w:"characterize",p:"/ˈkærəktəraɪz/",m:"v. 描述……的特征；以……为特征"},
+{w:"cherish",p:"/ˈtʃerɪʃ/",m:"v. 珍惜；怀有"},
+{w:"chronic",p:"/ˈkrɒnɪk/",m:"adj. 慢性的；长期的"},
+{w:"circulate",p:"/ˈsɜːkjəleɪt/",m:"v. 循环；流传"},
+{w:"cite",p:"/saɪt/",m:"v. 引用；引证"},
+{w:"clarify",p:"/ˈklærəfaɪ/",m:"v. 澄清；阐明"},
+{w:"cling",p:"/klɪŋ/",m:"v. 紧握；依恋"},
+{w:"clumsy",p:"/ˈklʌmzi/",m:"adj. 笨拙的；不灵活的"},
+{w:"coalition",p:"/ˌkəʊəˈlɪʃn/",m:"n. 联合；联盟"},
+{w:"coherent",p:"/kəʊˈhɪərənt/",m:"adj. 连贯的；一致的"},
+{w:"coincide",p:"/ˌkəʊɪnˈsaɪd/",m:"v. 相符；同时发生"},
+{w:"collaborate",p:"/kəˈlæbəreɪt/",m:"v. 合作；协作"},
+{w:"collide",p:"/kəˈlaɪd/",m:"v. 碰撞；冲突"},
+{w:"commence",p:"/kəˈmens/",m:"v. 开始；着手"},
+{w:"commodity",p:"/kəˈmɒdəti/",m:"n. 商品；日用品"},
+{w:"compatible",p:"/kəmˈpætəbl/",m:"adj. 兼容的；相容的"},
+{w:"compel",p:"/kəmˈpel/",m:"v. 强迫；迫使"},
+{w:"compensate",p:"/ˈkɒmpenseɪt/",m:"v. 补偿；弥补"},
+{w:"competence",p:"/ˈkɒmpɪtəns/",m:"n. 能力；胜任"},
+{w:"compile",p:"/kəmˈpaɪl/",m:"v. 编译；汇编"},
+{w:"complement",p:"/ˈkɒmplɪment/",m:"v. 补充 n. 补充物"},
+{w:"comply",p:"/kəmˈplaɪ/",m:"v. 遵从；服从"},
+{w:"component",p:"/kəmˈpəʊnənt/",m:"n. 组件；成分"},
+{w:"composite",p:"/ˈkɒmpəzɪt/",m:"adj. 合成的 n. 复合材料"},
+{w:"compromise",p:"/ˈkɒmprəmaɪz/",m:"n./v. 妥协；折中"},
+{w:"compulsory",p:"/kəmˈpʌlsəri/",m:"adj. 强制的；必修的"},
+{w:"conceal",p:"/kənˈsiːl/",m:"v. 隐藏；隐瞒"},
+{w:"concede",p:"/kənˈsiːd/",m:"v. 承认；让步"},
+{w:"conceive",p:"/kənˈsiːv/",m:"v. 构想；设想；怀孕"},
+{w:"concise",p:"/kənˈsaɪs/",m:"adj. 简明的；简洁的"},
+{w:"condemn",p:"/kənˈdem/",m:"v. 谴责；判刑"},
+{w:"confer",p:"/kənˈfɜː(r)/",m:"v. 授予；商议"},
+{w:"confess",p:"/kənˈfes/",m:"v. 承认；坦白"},
+{w:"confine",p:"/kənˈfaɪn/",m:"v. 限制；禁闭"},
+{w:"conform",p:"/kənˈfɔːm/",m:"v. 遵守；符合"},
+{w:"confront",p:"/kənˈfrʌnt/",m:"v. 面对；对抗"},
+{w:"consecutive",p:"/kənˈsekjətɪv/",m:"adj. 连续的；连贯的"},
+{w:"consensus",p:"/kənˈsensəs/",m:"n. 共识；一致意见"},
+{w:"conserve",p:"/kənˈsɜːv/",m:"v. 保护；节约"},
+{w:"consolidate",p:"/kənˈsɒlɪdeɪt/",m:"v. 巩固；合并"},
+{w:"conspicuous",p:"/kənˈspɪkjuəs/",m:"adj. 显眼的；显著的"},
+{w:"constitute",p:"/ˈkɒnstɪtjuːt/",m:"v. 构成；组成"},
+{w:"constrain",p:"/kənˈstreɪn/",m:"v. 限制；约束"},
+{w:"contaminate",p:"/kənˈtæmɪneɪt/",m:"v. 污染；弄脏"},
+{w:"contemplate",p:"/ˈkɒntəmpleɪt/",m:"v. 沉思；考虑"},
+{w:"contempt",p:"/kənˈtempt/",m:"n. 蔑视；轻视"},
+{w:"contend",p:"/kənˈtend/",m:"v. 争夺；主张"},
+{w:"contradict",p:"/ˌkɒntrəˈdɪkt/",m:"v. 反驳；与……矛盾"},
+{w:"controversial",p:"/ˌkɒntrəˈvɜːʃl/",m:"adj. 有争议的"},
+{w:"convey",p:"/kənˈveɪ/",m:"v. 传达；运送"},
+{w:"correlate",p:"/ˈkɒrəleɪt/",m:"v. 关联；相关"},
+{w:"corrupt",p:"/kəˈrʌpt/",m:"adj. 腐败的 v. 腐蚀"},
+{w:"counterpart",p:"/ˈkaʊntəpɑːt/",m:"n. 对应的人或物"},
+{w:"credible",p:"/ˈkredəbl/",m:"adj. 可信的；可靠的"},
+{w:"crucial",p:"/ˈkruːʃl/",m:"adj. 关键的；决定性的"},
+{w:"crude",p:"/kruːd/",m:"adj. 粗糙的；天然的"},
+{w:"cultivate",p:"/ˈkʌltɪveɪt/",m:"v. 培养；耕种"},
+{w:"curb",p:"/kɜːb/",m:"v. 抑制 n. 路缘"},
+{w:"cynical",p:"/ˈsɪnɪkl/",m:"adj. 愤世嫉俗的；怀疑的"},
+{w:"decay",p:"/dɪˈkeɪ/",m:"v./n. 腐烂；衰退"},
+{w:"deceive",p:"/dɪˈsiːv/",m:"v. 欺骗；误导"},
+{w:"decent",p:"/ˈdiːsnt/",m:"adj. 体面的；相当好的"},
+{w:"decisive",p:"/dɪˈsaɪsɪv/",m:"adj. 决定性的；果断的"},
+{w:"dedicate",p:"/ˈdedɪkeɪt/",m:"v. 奉献；致力于"},
+{w:"deem",p:"/diːm/",m:"v. 认为；视为"},
+{w:"defect",p:"/ˈdiːfekt/",m:"n. 缺陷；缺点"},
+{w:"deficiency",p:"/dɪˈfɪʃnsi/",m:"n. 缺乏；不足"},
+{w:"deficit",p:"/ˈdefɪsɪt/",m:"n. 赤字；亏损"},
+{w:"degrade",p:"/dɪˈɡreɪd/",m:"v. 降低；退化；贬低"},
+{w:"deliberate",p:"/dɪˈlɪbərət/",m:"adj. 故意的；深思熟虑的"},
+{w:"delicate",p:"/ˈdelɪkət/",m:"adj. 微妙的；精致的；脆弱的"},
+{w:"denote",p:"/dɪˈnəʊt/",m:"v. 表示；意味着"},
+{w:"depict",p:"/dɪˈpɪkt/",m:"v. 描绘；描述"},
+{w:"deprive",p:"/dɪˈpraɪv/",m:"v. 剥夺；使丧失"},
+{w:"derive",p:"/dɪˈraɪv/",m:"v. 源于；获得"},
+{w:"descend",p:"/dɪˈsend/",m:"v. 下降；传下来"},
+{w:"designate",p:"/ˈdezɪɡneɪt/",m:"v. 指定；标明"},
+{w:"despise",p:"/dɪˈspaɪz/",m:"v. 鄙视；看不起"},
+{w:"destiny",p:"/ˈdestəni/",m:"n. 命运；天命"},
+{w:"deteriorate",p:"/dɪˈtɪəriəreɪt/",m:"v. 恶化；退化"},
+{w:"deviate",p:"/ˈdiːvieɪt/",m:"v. 偏离；背离"},
+{w:"devise",p:"/dɪˈvaɪz/",m:"v. 设计；想出"},
+{w:"diagnose",p:"/ˈdaɪəɡnəʊz/",m:"v. 诊断；判断"},
+{w:"dictate",p:"/dɪkˈteɪt/",m:"v. 口述；命令；支配"},
+{w:"differentiate",p:"/ˌdɪfəˈrenʃieɪt/",m:"v. 区分；使不同"},
+{w:"diffuse",p:"/dɪˈfjuːz/",m:"v. 扩散；传播 adj. 弥漫的"},
+{w:"dilemma",p:"/dɪˈlemə/",m:"n. 困境；两难"},
+{w:"diminish",p:"/dɪˈmɪnɪʃ/",m:"v. 减少；削弱"},
+{w:"discern",p:"/dɪˈsɜːn/",m:"v. 辨明；察觉"},
+{w:"disclose",p:"/dɪsˈkləʊz/",m:"v. 揭露；透露"},
+{w:"discrepancy",p:"/dɪsˈkrepənsi/",m:"n. 差异；不一致"},
+{w:"discriminate",p:"/dɪˈskrɪmɪneɪt/",m:"v. 歧视；区分"},
+{w:"disguise",p:"/dɪsˈɡaɪz/",m:"v./n. 伪装；掩饰"},
+{w:"disperse",p:"/dɪˈspɜːs/",m:"v. 驱散；散开"},
+{w:"displace",p:"/dɪsˈpleɪs/",m:"v. 取代；迫使离开"},
+{w:"dispose",p:"/dɪˈspəʊz/",m:"v. 处理；处置"},
+{w:"disrupt",p:"/dɪsˈrʌpt/",m:"v. 扰乱；中断"},
+{w:"dissolve",p:"/dɪˈzɒlv/",m:"v. 溶解；解散"},
+{w:"distort",p:"/dɪˈstɔːt/",m:"v. 扭曲；歪曲"},
+{w:"distract",p:"/dɪˈstrækt/",m:"v. 分散（注意力）；使分心"},
+{w:"divert",p:"/daɪˈvɜːt/",m:"v. 转移；使转向"},
+{w:"doctrine",p:"/ˈdɒktrɪn/",m:"n. 教义；主义"},
+{w:"domain",p:"/dəˈmeɪn/",m:"n. 领域；域名"},
+{w:"drastic",p:"/ˈdræstɪk/",m:"adj. 激烈的；极端的"},
+{w:"dubious",p:"/ˈdjuːbiəs/",m:"adj. 可疑的；半信半疑的"},
+{w:"duplicate",p:"/ˈdjuːplɪkeɪt/",m:"v. 复制 n. 副本"},
+{w:"dwell",p:"/dwel/",m:"v. 居住；细想"},
+{w:"dynamic",p:"/daɪˈnæmɪk/",m:"adj. 动态的；有活力的"},
+{w:"eccentric",p:"/ɪkˈsentrɪk/",m:"adj. 古怪的 n. 怪人"},
+{w:"ecological",p:"/ˌiːkəˈlɒdʒɪkl/",m:"adj. 生态的；生态学的"},
+{w:"elaborate",p:"/ɪˈlæbərət/",m:"adj. 精心制作的 v. 详细阐述"},
+{w:"elevate",p:"/ˈelɪveɪt/",m:"v. 提升；举起"},
+{w:"elicit",p:"/iˈlɪsɪt/",m:"v. 引出；诱出"},
+{w:"eligible",p:"/ˈelɪdʒəbl/",m:"adj. 有资格的；合适的"},
+{w:"embark",p:"/ɪmˈbɑːk/",m:"v. 上船；着手"},
+{w:"embody",p:"/ɪmˈbɒdi/",m:"v. 体现；包含"},
+{w:"embrace",p:"/ɪmˈbreɪs/",m:"v. 拥抱；接受 n. 拥抱"},
+{w:"empirical",p:"/ɪmˈpɪrɪkl/",m:"adj. 经验的；实证的"},
+{w:"endeavor",p:"/ɪnˈdevə(r)/",m:"n./v. 努力；尽力"},
+{w:"endorse",p:"/ɪnˈdɔːs/",m:"v. 支持；背书"},
+{w:"enhance",p:"/ɪnˈhɑːns/",m:"v. 提高；增强"},
+{w:"enterprise",p:"/ˈentəpraɪz/",m:"n. 企业；事业心"},
+{w:"entitle",p:"/ɪnˈtaɪtl/",m:"v. 使有资格；给……命名"},
+{w:"entrepreneur",p:"/ˌɒntrəprəˈnɜː(r)/",m:"n. 企业家；创业者"},
+{w:"epidemic",p:"/ˌepɪˈdemɪk/",m:"n. 流行病 adj. 流行的"},
+{w:"equivalent",p:"/ɪˈkwɪvələnt/",m:"adj. 相等的 n. 等价物"},
+{w:"erode",p:"/ɪˈrəʊd/",m:"v. 侵蚀；削弱"},
+{w:"essence",p:"/ˈesns/",m:"n. 本质；精华"},
+{w:"esteem",p:"/ɪˈstiːm/",m:"n./v. 尊重；敬重"},
+{w:"eternal",p:"/ɪˈtɜːnl/",m:"adj. 永恒的；不朽的"},
+{w:"ethical",p:"/ˈeθɪkl/",m:"adj. 道德的；伦理的"},
+{w:"ethnic",p:"/ˈeθnɪk/",m:"adj. 种族的；民族的"},
+{w:"evoke",p:"/ɪˈvəʊk/",m:"v. 唤起；引起"},
+{w:"exceptional",p:"/ɪkˈsepʃənl/",m:"adj. 卓越的；例外的"},
+{w:"excess",p:"/ɪkˈses/",m:"n. 过量 adj. 过量的"},
+{w:"exempt",p:"/ɪɡˈzempt/",m:"adj. 免除的 v. 免除"},
+{w:"exert",p:"/ɪɡˈzɜːt/",m:"v. 施加；运用"},
+{w:"exotic",p:"/ɪɡˈzɒtɪk/",m:"adj. 异国的；奇异的"},
+{w:"expel",p:"/ɪkˈspel/",m:"v. 驱逐；开除"},
+{w:"expenditure",p:"/ɪkˈspendɪtʃə(r)/",m:"n. 支出；开支"},
+{w:"expertise",p:"/ˌekspɜːˈtiːz/",m:"n. 专门知识；专长"},
+{w:"expire",p:"/ɪkˈspaɪə(r)/",m:"v. 到期；失效"},
+{w:"explicit",p:"/ɪkˈsplɪsɪt/",m:"adj. 明确的；清楚的"},
+{w:"exploit",p:"/ɪkˈsplɔɪt/",m:"v. 利用；剥削"},
+{w:"exquisite",p:"/ɪkˈskwɪzɪt/",m:"adj. 精美的；精致的"},
+{w:"extinct",p:"/ɪkˈstɪŋkt/",m:"adj. 灭绝的；熄灭的"},
+{w:"extract",p:"/ɪkˈstrækt/",m:"v. 提取；摘录"},
+{w:"extravagant",p:"/ɪkˈstrævəɡənt/",m:"adj. 奢侈的；过度的"},
+{w:"fabricate",p:"/ˈfæbrɪkeɪt/",m:"v. 编造；制造"},
+{w:"facilitate",p:"/fəˈsɪlɪteɪt/",m:"v. 促进；使便利"},
+{w:"faculty",p:"/ˈfækəlti/",m:"n. 才能；全体教员；学院"},
+{w:"fatigue",p:"/fəˈtiːɡ/",m:"n. 疲劳 v. 使疲劳"},
+{w:"feasible",p:"/ˈfiːzəbl/",m:"adj. 可行的；行得通的"},
+{w:"feeble",p:"/ˈfiːbl/",m:"adj. 虚弱的；微弱的"},
+{w:"fertile",p:"/ˈfɜːtaɪl/",m:"adj. 肥沃的；多产的"},
+{w:"fiscal",p:"/ˈfɪskl/",m:"adj. 财政的；国库的"},
+{w:"flaw",p:"/flɔː/",m:"n. 瑕疵；缺陷"},
+{w:"fluctuate",p:"/ˈflʌktʃueɪt/",m:"v. 波动；起伏"},
+{w:"formidable",p:"/fəˈmɪdəbl/",m:"adj. 强大的；令人生畏的"},
+{w:"fossil",p:"/ˈfɒsl/",m:"n. 化石 adj. 化石的"},
+{w:"foster",p:"/ˈfɒstə(r)/",m:"v. 培养；促进；收养"},
+{w:"fragile",p:"/ˈfrædʒaɪl/",m:"adj. 易碎的；脆弱的"},
+{w:"fragment",p:"/ˈfræɡmənt/",m:"n. 碎片 v. 破碎"},
+{w:"fraud",p:"/frɔːd/",m:"n. 欺诈；骗子"},
+{w:"furious",p:"/ˈfjʊəriəs/",m:"adj. 狂怒的；猛烈的"},
+{w:"futile",p:"/ˈfjuːtaɪl/",m:"adj. 徒劳的；无效的"},
+{w:"gauge",p:"/ɡeɪdʒ/",m:"n. 计量器 v. 估计；测量"},
+{w:"generic",p:"/dʒəˈnerɪk/",m:"adj. 通用的；一般的"},
+{w:"gloomy",p:"/ˈɡluːmi/",m:"adj. 阴暗的；忧郁的"},
+{w:"gorgeous",p:"/ˈɡɔːdʒəs/",m:"adj. 华丽的；极好的"},
+{w:"graceful",p:"/ˈɡreɪsfl/",m:"adj. 优雅的；优美的"},
+{w:"grim",p:"/ɡrɪm/",m:"adj. 严峻的；阴森的"},
+{w:"gross",p:"/ɡrəʊs/",m:"adj. 总的；严重的；粗俗的"},
+{w:"guideline",p:"/ˈɡaɪdlaɪn/",m:"n. 指导方针；准则"},
+{w:"hamper",p:"/ˈhæmpə(r)/",m:"v. 妨碍；阻碍"},
+{w:"harass",p:"/ˈhærəs/",m:"v. 骚扰；烦扰"},
+{w:"hazard",p:"/ˈhæzəd/",m:"n. 危险 v. 冒……的风险"},
+{w:"heritage",p:"/ˈherɪtɪdʒ/",m:"n. 遗产；传统"},
+{w:"hierarchy",p:"/ˈhaɪərɑːki/",m:"n. 等级制度；层级"},
+{w:"hinder",p:"/ˈhɪndə(r)/",m:"v. 阻碍；妨碍"},
+{w:"homogeneous",p:"/ˌhɒməˈdʒiːniəs/",m:"adj. 同质的；同类的"},
+{w:"hostile",p:"/ˈhɒstaɪl/",m:"adj. 敌对的；不友好的"},
+{w:"hybrid",p:"/ˈhaɪbrɪd/",m:"n. 混合物；杂种 adj. 混合的"},
+{w:"identical",p:"/aɪˈdentɪkl/",m:"adj. 完全相同的"},
+{w:"ideology",p:"/ˌaɪdiˈɒlədʒi/",m:"n. 意识形态；思想体系"},
+{w:"ignorance",p:"/ˈɪɡnərəns/",m:"n. 无知；愚昧"},
+{w:"illuminate",p:"/ɪˈluːmɪneɪt/",m:"v. 照亮；阐明"},
+{w:"immerse",p:"/ɪˈmɜːs/",m:"v. 使沉浸；使浸没"},
+{w:"imminent",p:"/ˈɪmɪnənt/",m:"adj. 迫近的；即将发生的"},
+{w:"immune",p:"/ɪˈmjuːn/",m:"adj. 免疫的；免除的"},
+{w:"impair",p:"/ɪmˈpeə(r)/",m:"v. 损害；削弱"},
+{w:"impart",p:"/ɪmˈpɑːt/",m:"v. 传授；告知"},
+{w:"imperative",p:"/ɪmˈperətɪv/",m:"adj. 必要的；紧急的 n. 必要的事"},
+{w:"impetus",p:"/ˈɪmpɪtəs/",m:"n. 推动力；促进"},
+{w:"implement",p:"/ˈɪmplɪment/",m:"v. 实施；执行 n. 工具"},
+{w:"implicit",p:"/ɪmˈplɪsɪt/",m:"adj. 含蓄的；暗示的"},
+{w:"incentive",p:"/ɪnˈsentɪv/",m:"n. 激励；动机"},
+{w:"incidence",p:"/ˈɪnsɪdəns/",m:"n. 发生率；影响范围"},
+{w:"incline",p:"/ɪnˈklaɪn/",m:"v. 倾向；倾斜"},
+{w:"incorporate",p:"/ɪnˈkɔːpəreɪt/",m:"v. 包含；合并"},
+{w:"incur",p:"/ɪnˈkɜː(r)/",m:"v. 招致；遭受"},
+{w:"indigenous",p:"/ɪnˈdɪdʒənəs/",m:"adj. 本土的；土著的"},
+{w:"induce",p:"/ɪnˈdjuːs/",m:"v. 诱导；引起"},
+{w:"indulge",p:"/ɪnˈdʌldʒ/",m:"v. 沉溺；纵容"},
+{w:"inevitable",p:"/ɪnˈevɪtəbl/",m:"adj. 不可避免的"},
+{w:"infectious",p:"/ɪnˈfekʃəs/",m:"adj. 传染的；有感染力的"},
+{w:"infer",p:"/ɪnˈfɜː(r)/",m:"v. 推断；推论"},
+{w:"inflict",p:"/ɪnˈflɪkt/",m:"v. 造成；施加"},
+{w:"ingenious",p:"/ɪnˈdʒiːniəs/",m:"adj. 巧妙的；有独创性的"},
+{w:"inherent",p:"/ɪnˈhɪərənt/",m:"adj. 固有的；内在的"},
+{w:"inhibit",p:"/ɪnˈhɪbɪt/",m:"v. 抑制；阻止"},
+{w:"initiate",p:"/ɪˈnɪʃieɪt/",m:"v. 开始；发起"},
+{w:"innate",p:"/ɪˈneɪt/",m:"adj. 天生的；固有的"},
+{w:"innovate",p:"/ˈɪnəveɪt/",m:"v. 创新；革新"},
+{w:"insight",p:"/ˈɪnsaɪt/",m:"n. 洞察力；见解"},
+{w:"integral",p:"/ˈɪntɪɡrəl/",m:"adj. 不可或缺的；完整的"},
+{w:"integrate",p:"/ˈɪntɪɡreɪt/",m:"v. 整合；融合"},
+{w:"integrity",p:"/ɪnˈteɡrəti/",m:"n. 诚信；完整"},
+{w:"intervene",p:"/ˌɪntəˈviːn/",m:"v. 干预；介入"},
+{w:"intimate",p:"/ˈɪntɪmət/",m:"adj. 亲密的；私密的"},
+{w:"intricate",p:"/ˈɪntrɪkət/",m:"adj. 复杂的；错综的"},
+{w:"intrinsic",p:"/ɪnˈtrɪnsɪk/",m:"adj. 内在的；本质的"},
+{w:"intuition",p:"/ˌɪntjuˈɪʃn/",m:"n. 直觉；直觉力"},
+{w:"inventory",p:"/ˈɪnvəntri/",m:"n. 库存；清单"},
+{w:"invoke",p:"/ɪnˈvəʊk/",m:"v. 援引；唤起"},
+{w:"ironic",p:"/aɪˈrɒnɪk/",m:"adj. 讽刺的；反讽的"},
+{w:"jeopardize",p:"/ˈdʒepədaɪz/",m:"v. 危及；损害"},
+{w:"judicial",p:"/dʒuˈdɪʃl/",m:"adj. 司法的；法庭的"},
+{w:"junction",p:"/ˈdʒʌŋkʃn/",m:"n. 交叉口；连接点"},
+{w:"jurisdiction",p:"/ˌdʒʊərɪsˈdɪkʃn/",m:"n. 管辖权；司法权"},
+{w:"latent",p:"/ˈleɪtnt/",m:"adj. 潜在的；潜伏的"},
+{w:"lavish",p:"/ˈlævɪʃ/",m:"adj. 奢华的；慷慨的"},
+{w:"legacy",p:"/ˈleɡəsi/",m:"n. 遗产；遗留问题"},
+{w:"legislation",p:"/ˌledʒɪsˈleɪʃn/",m:"n. 立法；法规"},
+{w:"legitimate",p:"/lɪˈdʒɪtɪmət/",m:"adj. 合法的；正当的"},
+{w:"lest",p:"/lest/",m:"conj. 以免；免得"},
+{w:"liability",p:"/ˌlaɪəˈbɪləti/",m:"n. 责任；负债"},
+{w:"literacy",p:"/ˈlɪtərəsi/",m:"n. 读写能力；素养"},
+{w:"literal",p:"/ˈlɪtərəl/",m:"adj. 字面的；逐字的"},
+{w:"lure",p:"/lʊə(r)/",m:"v. 引诱 n. 诱惑"},
+{w:"magnitude",p:"/ˈmæɡnɪtjuːd/",m:"n. 巨大；重要性；震级"},
+{w:"mandate",p:"/ˈmændeɪt/",m:"n. 授权；命令 v. 强制执行"},
+{w:"manifest",p:"/ˈmænɪfest/",m:"v. 显示；表明 adj. 明显的"},
+{w:"manipulate",p:"/məˈnɪpjuleɪt/",m:"v. 操纵；操作"},
+{w:"marginal",p:"/ˈmɑːdʒɪnl/",m:"adj. 边缘的；微小的"},
+{w:"mediate",p:"/ˈmiːdieɪt/",m:"v. 调解；斡旋"},
+{w:"merge",p:"/mɜːdʒ/",m:"v. 合并；融合"},
+{w:"metaphor",p:"/ˈmetəfə(r)/",m:"n. 隐喻；象征"},
+{w:"meticulous",p:"/məˈtɪkjələs/",m:"adj. 一丝不苟的；细致的"},
+{w:"migrate",p:"/maɪˈɡreɪt/",m:"v. 迁移；移居"},
+{w:"mingle",p:"/ˈmɪŋɡl/",m:"v. 混合；交往"},
+{w:"minimize",p:"/ˈmɪnɪmaɪz/",m:"v. 最小化；轻视"},
+{w:"momentum",p:"/məˈmentəm/",m:"n. 势头；动量"},
+{w:"monopoly",p:"/məˈnɒpəli/",m:"n. 垄断；专卖"},
+{w:"morale",p:"/məˈrɑːl/",m:"n. 士气；斗志"},
+{w:"municipal",p:"/mjuːˈnɪsɪpl/",m:"adj. 市政的；地方性的"},
+{w:"naive",p:"/naɪˈiːv/",m:"adj. 天真的；幼稚的"},
+{w:"negligible",p:"/ˈneɡlɪdʒəbl/",m:"adj. 微不足道的"},
+{w:"notorious",p:"/nəʊˈtɔːriəs/",m:"adj. 臭名昭著的"},
+{w:"nurture",p:"/ˈnɜːtʃə(r)/",m:"v. 培养；养育 n. 养育"},
+{w:"oblige",p:"/əˈblaɪdʒ/",m:"v. 迫使；施恩于"},
+{w:"obscure",p:"/əbˈskjʊə(r)/",m:"adj. 模糊的；鲜为人知的 v. 遮蔽"},
+{w:"obsess",p:"/əbˈses/",m:"v. 使着迷；困扰"},
+{w:"obsolete",p:"/ˈɒbsəliːt/",m:"adj. 过时的；废弃的"},
+{w:"obstruct",p:"/əbˈstrʌkt/",m:"v. 阻碍；阻塞"},
+{w:"offset",p:"/ˈɒfset/",m:"v. 抵消；补偿"},
+{w:"omit",p:"/əˈmɪt/",m:"v. 省略；遗漏"},
+{w:"oppress",p:"/əˈpres/",m:"v. 压迫；使沮丧"},
+{w:"orient",p:"/ˈɔːrient/",m:"v. 使适应；确定方向"},
+{w:"originate",p:"/əˈrɪdʒɪneɪt/",m:"v. 起源；创始"},
+{w:"outbreak",p:"/ˈaʊtbreɪk/",m:"n. 爆发；突然发生"},
+{w:"outrage",p:"/ˈaʊtreɪdʒ/",m:"n. 愤怒；暴行 v. 激怒"},
+{w:"overlap",p:"/ˌəʊvəˈlæp/",m:"v./n. 重叠；交叉"},
+{w:"overturn",p:"/ˌəʊvəˈtɜːn/",m:"v. 推翻；倾覆"},
+{w:"overwhelm",p:"/ˌəʊvəˈwelm/",m:"v. 压倒；使不知所措"},
+{w:"paradox",p:"/ˈpærədɒks/",m:"n. 悖论；自相矛盾"},
+{w:"paralyze",p:"/ˈpærəlaɪz/",m:"v. 使瘫痪；使无效"},
+{w:"parameter",p:"/pəˈræmɪtə(r)/",m:"n. 参数；界限"},
+{w:"patent",p:"/ˈpætnt/",m:"n. 专利 adj. 明显的"},
+{w:"pathetic",p:"/pəˈθetɪk/",m:"adj. 可怜的；差劲的"},
+{w:"peculiar",p:"/pɪˈkjuːliə(r)/",m:"adj. 奇怪的；特有的"},
+{w:"pending",p:"/ˈpendɪŋ/",m:"adj. 待定的；即将发生的"},
+{w:"perpetual",p:"/pəˈpetʃuəl/",m:"adj. 永久的；不断的"},
+{w:"persevere",p:"/ˌpɜːsɪˈvɪə(r)/",m:"v. 坚持；不屈不挠"},
+{w:"persist",p:"/pəˈsɪst/",m:"v. 坚持；持续"},
+{w:"persistent",p:"/pəˈsɪstənt/",m:"adj. 坚持不懈的；持续的"},
+{w:"pessimistic",p:"/ˌpesɪˈmɪstɪk/",m:"adj. 悲观的"},
+{w:"petition",p:"/pəˈtɪʃn/",m:"n. 请愿书 v. 请愿"},
+{w:"plausible",p:"/ˈplɔːzəbl/",m:"adj. 貌似合理的；可信的"},
+{w:"plead",p:"/pliːd/",m:"v. 恳求；辩护"},
+{w:"ponder",p:"/ˈpɒndə(r)/",m:"v. 思考；沉思"},
+{w:"portray",p:"/pɔːˈtreɪ/",m:"v. 描绘；扮演"},
+{w:"pragmatic",p:"/præɡˈmætɪk/",m:"adj. 务实的；实用主义的"},
+{w:"precede",p:"/prɪˈsiːd/",m:"v. 在……之前；先于"},
+{w:"predominant",p:"/prɪˈdɒmɪnənt/",m:"adj. 主要的；占优势的"},
+{w:"preliminary",p:"/prɪˈlɪmɪnəri/",m:"adj. 初步的；预备的"},
+{w:"premise",p:"/ˈpremɪs/",m:"n. 前提；假设"},
+{w:"premium",p:"/ˈpriːmiəm/",m:"n. 保险费；溢价 adj. 优质的"},
+{w:"prescribe",p:"/prɪˈskraɪb/",m:"v. 开处方；规定"},
+{w:"prestige",p:"/preˈstiːʒ/",m:"n. 声望；威信"},
+{w:"presume",p:"/prɪˈzjuːm/",m:"v. 假定；推测"},
+{w:"prevail",p:"/prɪˈveɪl/",m:"v. 盛行；获胜"},
+{w:"prevalent",p:"/ˈprevələnt/",m:"adj. 流行的；普遍的"},
+{w:"proclaim",p:"/prəˈkleɪm/",m:"v. 宣布；声明"},
+{w:"proficiency",p:"/prəˈfɪʃnsi/",m:"n. 熟练；精通"},
+{w:"profound",p:"/prəˈfaʊnd/",m:"adj. 深刻的；深远的"},
+{w:"prominent",p:"/ˈprɒmɪnənt/",m:"adj. 突出的；杰出的"},
+{w:"propel",p:"/prəˈpel/",m:"v. 推动；驱动"},
+{w:"prosecute",p:"/ˈprɒsɪkjuːt/",m:"v. 起诉；检举"},
+{w:"provoke",p:"/prəˈvəʊk/",m:"v. 激起；挑衅"},
+{w:"prudent",p:"/ˈpruːdnt/",m:"adj. 谨慎的；精明的"},
+{w:"publicity",p:"/pʌbˈlɪsəti/",m:"n. 宣传；公众关注"},
+{w:"quantitative",p:"/ˈkwɒntɪtətɪv/",m:"adj. 定量的；数量的"},
+{w:"quota",p:"/ˈkwəʊtə/",m:"n. 配额；定额"},
+{w:"radiate",p:"/ˈreɪdieɪt/",m:"v. 辐射；散发"},
+{w:"rally",p:"/ˈræli/",m:"n. 集会 v. 集合；恢复"},
+{w:"reassure",p:"/ˌriːəˈʃʊə(r)/",m:"v. 使安心；打消疑虑"},
+{w:"reconcile",p:"/ˈrekənsaɪl/",m:"v. 使和解；调和"},
+{w:"redundant",p:"/rɪˈdʌndənt/",m:"adj. 多余的；被裁减的"},
+{w:"refine",p:"/rɪˈfaɪn/",m:"v. 精炼；改进"},
+{w:"refrain",p:"/rɪˈfreɪn/",m:"v. 克制；避免"},
+{w:"refute",p:"/rɪˈfjuːt/",m:"v. 驳斥；反驳"},
+{w:"regime",p:"/reɪˈʒiːm/",m:"n. 政权；制度"},
+{w:"reinforce",p:"/ˌriːɪnˈfɔːs/",m:"v. 加强；强化"},
+{w:"render",p:"/ˈrendə(r)/",m:"v. 使成为；给予；表达"},
+{w:"replicate",p:"/ˈreplɪkeɪt/",m:"v. 复制；重复"},
+{w:"resemble",p:"/rɪˈzembl/",m:"v. 像；类似"},
+{w:"resent",p:"/rɪˈzent/",m:"v. 怨恨；愤恨"},
+{w:"reside",p:"/rɪˈzaɪd/",m:"v. 居住；存在于"},
+{w:"resilient",p:"/rɪˈzɪliənt/",m:"adj. 有韧性的；能恢复的"},
+{w:"resort",p:"/rɪˈzɔːt/",m:"n. 度假地；手段 v. 诉诸"},
+{w:"restrain",p:"/rɪˈstreɪn/",m:"v. 抑制；约束"},
+{w:"retain",p:"/rɪˈteɪn/",m:"v. 保留；保持"},
+{w:"retrieve",p:"/rɪˈtriːv/",m:"v. 取回；检索"},
+{w:"revenue",p:"/ˈrevənjuː/",m:"n. 收入；税收"},
+{w:"revive",p:"/rɪˈvaɪv/",m:"v. 复活；复兴"},
+{w:"rigorous",p:"/ˈrɪɡərəs/",m:"adj. 严格的；严谨的"},
+{w:"robust",p:"/rəʊˈbʌst/",m:"adj. 强健的；稳健的"},
+{w:"saturate",p:"/ˈsætʃəreɪt/",m:"v. 使饱和；浸透"},
+{w:"scandal",p:"/ˈskændl/",m:"n. 丑闻；流言"},
+{w:"scenario",p:"/səˈnɑːriəʊ/",m:"n. 设想；情节"},
+{w:"scrutiny",p:"/ˈskruːtəni/",m:"n. 细查；审视"},
+{w:"segment",p:"/ˈseɡmənt/",m:"n. 部分；片段 v. 分割"},
+{w:"sensation",p:"/senˈseɪʃn/",m:"n. 感觉；轰动"},
+{w:"sentiment",p:"/ˈsentɪmənt/",m:"n. 情绪；观点"},
+{w:"setback",p:"/ˈsetbæk/",m:"n. 挫折；倒退"},
+{w:"simulate",p:"/ˈsɪmjuleɪt/",m:"v. 模拟；假装"},
+{w:"simultaneous",p:"/ˌsɪmlˈteɪniəs/",m:"adj. 同时发生的"},
+{w:"skeptical",p:"/ˈskeptɪkl/",m:"adj. 怀疑的"},
+{w:"soar",p:"/sɔː(r)/",m:"v. 猛增；高飞"},
+{w:"sober",p:"/ˈsəʊbə(r)/",m:"adj. 清醒的；冷静的"},
+{w:"solitary",p:"/ˈsɒlətri/",m:"adj. 孤独的；单独的"},
+{w:"sovereign",p:"/ˈsɒvrɪn/",m:"n. 君主 adj. 有主权的"},
+{w:"spectrum",p:"/ˈspektrəm/",m:"n. 光谱；范围"},
+{w:"speculate",p:"/ˈspekjuleɪt/",m:"v. 推测；投机"},
+{w:"sphere",p:"/sfɪə(r)/",m:"n. 球体；领域"},
+{w:"spontaneous",p:"/spɒnˈteɪniəs/",m:"adj. 自发的；自然的"},
+{w:"sporadic",p:"/spəˈrædɪk/",m:"adj. 零星的；偶发的"},
+{w:"spur",p:"/spɜː(r)/",m:"n. 刺激 v. 激励"},
+{w:"stagger",p:"/ˈstæɡə(r)/",m:"v. 蹒跚；使震惊"},
+{w:"stagnant",p:"/ˈstæɡnənt/",m:"adj. 停滞的；不流动的"},
+{w:"startle",p:"/ˈstɑːtl/",m:"v. 使惊吓；使吃惊"},
+{w:"static",p:"/ˈstætɪk/",m:"adj. 静态的；静止的"},
+{w:"stationary",p:"/ˈsteɪʃənri/",m:"adj. 固定的；静止的"},
+{w:"strive",p:"/straɪv/",m:"v. 努力；奋斗"},
+{w:"stumble",p:"/ˈstʌmbl/",m:"v. 绊倒；蹒跚"},
+{w:"subordinate",p:"/səˈbɔːdɪnət/",m:"adj. 从属的 n. 下属"},
+{w:"subsequent",p:"/ˈsʌbsɪkwənt/",m:"adj. 随后的；后来的"},
+{w:"subsidy",p:"/ˈsʌbsədi/",m:"n. 补贴；津贴"},
+{w:"substantial",p:"/səbˈstænʃl/",m:"adj. 大量的；实质的"},
+{w:"successive",p:"/səkˈsesɪv/",m:"adj. 连续的；接连的"},
+{w:"superficial",p:"/ˌsuːpəˈfɪʃl/",m:"adj. 表面的；肤浅的"},
+{w:"supplement",p:"/ˈsʌplɪment/",m:"n. 补充 v. 增补"},
+{w:"suppress",p:"/səˈpres/",m:"v. 压制；抑制"},
+{w:"surge",p:"/sɜːdʒ/",m:"v./n. 激增；涌动"},
+{w:"surpass",p:"/səˈpɑːs/",m:"v. 超过；胜过"},
+{w:"surplus",p:"/ˈsɜːpləs/",m:"n. 盈余 adj. 过剩的"},
+{w:"susceptible",p:"/səˈseptəbl/",m:"adj. 易受影响的；易感的"},
+{w:"tangible",p:"/ˈtændʒəbl/",m:"adj. 有形的；可触摸的"},
+{w:"tedious",p:"/ˈtiːdiəs/",m:"adj. 乏味的；冗长的"},
+{w:"temperament",p:"/ˈtemprəmənt/",m:"n. 气质；性情"},
+{w:"tentative",p:"/ˈtentətɪv/",m:"adj. 试探性的；暂时的"},
+{w:"terminate",p:"/ˈtɜːmɪneɪt/",m:"v. 终止；结束"},
+{w:"testify",p:"/ˈtestɪfaɪ/",m:"v. 作证；证明"},
+{w:"texture",p:"/ˈtekstʃə(r)/",m:"n. 质地；纹理"},
+{w:"thereby",p:"/ˌðeəˈbaɪ/",m:"adv. 由此；因此"},
+{w:"threshold",p:"/ˈθreʃhəʊld/",m:"n. 门槛；临界点"},
+{w:"thrust",p:"/θrʌst/",m:"v. 猛推；插入 n. 推力"},
+{w:"tide",p:"/taɪd/",m:"n. 潮汐；趋势"},
+{w:"timid",p:"/ˈtɪmɪd/",m:"adj. 胆怯的；害羞的"},
+{w:"toll",p:"/təʊl/",m:"n. 通行费；伤亡人数"},
+{w:"toxic",p:"/ˈtɒksɪk/",m:"adj. 有毒的；有害的"},
+{w:"trait",p:"/treɪt/",m:"n. 特征；品质"},
+{w:"transaction",p:"/trænˈzækʃn/",m:"n. 交易；事务"},
+{w:"transcend",p:"/trænˈsend/",m:"v. 超越；超出"},
+{w:"transient",p:"/ˈtrænziənt/",m:"adj. 短暂的；临时的"},
+{w:"transparent",p:"/trænsˈpærənt/",m:"adj. 透明的；易懂的"},
+{w:"tremendous",p:"/trəˈmendəs/",m:"adj. 巨大的；极好的"},
+{w:"trivial",p:"/ˈtrɪviəl/",m:"adj. 琐碎的；不重要的"},
+{w:"turbulent",p:"/ˈtɜːbjələnt/",m:"adj. 动荡的；湍流的"},
+{w:"unanimous",p:"/juˈnænɪməs/",m:"adj. 一致同意的"},
+{w:"underestimate",p:"/ˌʌndərˈestɪmeɪt/",m:"v. 低估；看轻"},
+{w:"undergo",p:"/ˌʌndəˈɡəʊ/",m:"v. 经历；遭受"},
+{w:"underlying",p:"/ˌʌndəˈlaɪɪŋ/",m:"adj. 潜在的；根本的"},
+{w:"undermine",p:"/ˌʌndəˈmaɪn/",m:"v. 削弱；暗中破坏"},
+{w:"unprecedented",p:"/ʌnˈpresɪdentɪd/",m:"adj. 前所未有的"},
+{w:"uphold",p:"/ʌpˈhəʊld/",m:"v. 支持；维护"},
+{w:"utmost",p:"/ˈʌtməʊst/",m:"adj. 极度的 n. 极限"},
+{w:"vague",p:"/veɪɡ/",m:"adj. 模糊的；含糊的"},
+{w:"vain",p:"/veɪn/",m:"adj. 徒劳的；虚荣的"},
+{w:"variable",p:"/ˈveəriəbl/",m:"adj. 可变的 n. 变量"},
+{w:"vegetation",p:"/ˌvedʒəˈteɪʃn/",m:"n. 植被；草木"},
+{w:"velocity",p:"/vəˈlɒsəti/",m:"n. 速度；速率"},
+{w:"verdict",p:"/ˈvɜːdɪkt/",m:"n. 裁决；判断"},
+{w:"verge",p:"/vɜːdʒ/",m:"n. 边缘 v. 接近"},
+{w:"versatile",p:"/ˈvɜːsətaɪl/",m:"adj. 多才多艺的；多用途的"},
+{w:"viable",p:"/ˈvaɪəbl/",m:"adj. 可行的；能存活的"},
+{w:"vibrant",p:"/ˈvaɪbrənt/",m:"adj. 充满活力的；鲜艳的"},
+{w:"vicinity",p:"/vəˈsɪnəti/",m:"n. 附近；邻近"},
+{w:"vigorous",p:"/ˈvɪɡərəs/",m:"adj. 强有力的；精力充沛的"},
+{w:"void",p:"/vɔɪd/",m:"adj. 无效的；空的 n. 空白"},
+{w:"volatile",p:"/ˈvɒlətaɪl/",m:"adj. 易变的；不稳定的"},
+{w:"voluntary",p:"/ˈvɒləntri/",m:"adj. 自愿的；志愿的"},
+{w:"vulnerable",p:"/ˈvʌlnərəbl/",m:"adj. 脆弱的；易受伤害的"},
+{w:"warrant",p:"/ˈwɒrənt/",m:"n. 授权令 v. 使有必要"},
+{w:"weary",p:"/ˈwɪəri/",m:"adj. 疲倦的；厌烦的"},
+{w:"withhold",p:"/wɪðˈhəʊld/",m:"v. 拒绝给予；隐瞒"},
+{w:"withstand",p:"/wɪðˈstænd/",m:"v. 承受；抵挡"},
+{w:"wreck",p:"/rek/",m:"n. 残骸 v. 毁坏"},
+{w:"yearn",p:"/jɜːn/",m:"v. 渴望；向往"},
+{w:"zeal",p:"/ziːl/",m:"n. 热情；热忱"}
+]};
+
+const CNOTES=[
+{t:"1. 变量与数据类型",d:"基本类型：int(整数)、float/double(小数)、char(字符)。变量必须先声明再使用，printf 打印时用格式符对应类型。",
+code:'#include <stdio.h>\nint main(void)\n{\n    int age = 20;\n    double score = 92.5;\n    char grade = \'A\';\n    printf("%d %.1f %c\\n", age, score, grade);\n    return 0;\n}'},
+{t:"2. printf 与 scanf 输入输出",d:"printf 输出：%d整数 %f浮点 %c字符 %s字符串 %%百分号本身。scanf 读入时变量前必须加取地址符 &。常用 \\n 换行。",
+code:'int a;\ndouble b;\nscanf("%d %lf", &a, &b);\nprintf("a=%d, b=%.2f\\n", a, b);'},
+{t:"3. 运算符",d:"算术：+ - * / %（取余，只用于整数）。注意：整数除法会截断小数，5/2=2，5.0/2=2.5。比较：== 等于、!= 不等。复合：+=、-= 等。",
+code:'int a = 10;\nprintf("%d\\n", a % 3);\nprintf("%f\\n", 5.0 / 2);\nif (a % 2 == 0) {\n    printf("偶数\\n");\n}'},
+{t:"4. if / else 分支",d:"条件为真执行。注意区分 =（赋值）和 ==（判断相等）。多分支用 else if，最后可以有 else 兜底。",
+code:'int score;\nscanf("%d", &score);\nif (score >= 90) {\n    printf("优秀\\n");\n} else if (score >= 60) {\n    printf("及格\\n");\n} else {\n    printf("不及格\\n");\n}'},
+{t:"5. for / while 循环",d:"for(初始化; 条件; 更新)。while 先判断后执行。break 跳出整个循环，continue 跳过本轮。经典练习：求 1~100 累加。",
+code:'int sum = 0;\nfor (int i = 1; i <= 100; i++) {\n    sum += i;\n}\nprintf("%d\\n", sum);\n\nint i = 1;\nwhile (i <= 100) {\n    sum += i;\n    i++;\n}'},
+{t:"6. 数组",d:"类型 名字[长度]，下标从 0 开始，最大下标是长度-1，越界不会报错但很危险。数组常和循环配合遍历。",
+code:'int a[5] = {3, 1, 4, 1, 5};\nint max = a[0];\nfor (int i = 1; i < 5; i++) {\n    if (a[i] > max) {\n        max = a[i];\n    }\n}\nprintf("max=%d\\n", max);'},
+{t:"7. 函数",d:"把一段功能封装起来复用。返回类型 函数名(参数)。分析问题先想：需要什么输入(参数)、要不要返回值。",
+code:'int add(int x, int y)\n{\n    return x + y;\n}\nvoid show(void)\n{\n    printf("hello\\n");\n}\nint main(void)\n{\n    printf("%d\\n", add(2, 3));\n    show();\n    return 0;\n}'},
+{t:"8. 指针",d:"指针存的是内存地址。& 取地址，* 解引用(通过地址找值)。指针是 C 语言的灵魂，也是重难点。",
+code:'int x = 5;\nint *p = &x;\nprintf("%d\\n", *p);\n*p = 100;\nprintf("%d\\n", x);'},
+{t:"9. 字符串",d:"C 语言没有字符串类型，用字符数组 + \\0 结尾表示。头文件 string.h 提供 strlen/strcpy/strcmp 等常用函数。",
+code:'#include <string.h>\nchar s[20] = "hello";\nprintf("%lu %lu\\n", strlen(s), sizeof(s));\nif (strcmp(s, "hello") == 0) {\n    printf("equal\\n");\n}'},
+{t:"10. 结构体",d:"把多个相关数据打包成一个类型，适合描述一个“对象”如学生。通过 . 访问成员，指针时用 -> 访问。",
+code:'struct Student {\n    char name[20];\n    int age;\n};\nstruct Student st = {"Li", 20};\nprintf("%s %d\\n", st.name, st.age);'},
+{t:"11. 文件读写",d:"fopen 打开文件(参数 w=写 r=读)，fprintf/fscanf 与 printf/scanf 类似只是多一个文件指针，fclose 记得关闭。",
+code:'FILE *fp = fopen("data.txt", "w");\nif (fp == NULL) {\n    printf("打开失败\\n");\n    return 1;\n}\nfprintf(fp, "hello file\\n");\nfclose(fp);'},
+{t:"12. 常见易错点",d:"新手最常犯的 5 个错误：①比较写成赋值 if(x=0)；②printf 语句忘写分号；③scanf 忘取地址；④数组下标越界；⑤中文输入法打出全角引号或分号导致编译报错。",
+code:'if (x == 0) { }\nprintf("hello\\n");\nscanf("%d", &x);'},
+{c:"📈 进阶篇",t:"13. 二维数组",d:"二维数组像表格：类型 名字[行][列]，访问 a[i][j]，行和列都从 0 开始。常用于矩阵、棋盘问题。初始化可按行分组，遍历需要两层循环。",
+code:'int a[2][3] = {{1, 2, 3}, {4, 5, 6}};\nfor (int i = 0; i < 2; i++) {\n    for (int j = 0; j < 3; j++) {\n        printf("%d ", a[i][j]);\n    }\n    printf("\\n");   // 每行结束换行\n}'},
+{t:"14. 值传递与地址传递",d:"C 语言函数参数默认是“值传递”——函数拿到的是副本，改副本不影响原变量。想让函数修改原变量，必须传地址（指针），这也是 scanf 必须写 & 的原因。",
+code:'void tryChange(int x) { x = 100; }     // 改不动原变量\nvoid realChange(int *p) { *p = 100; }  // 传地址才改得动\nint main(void)\n{\n    int a = 1;\n    tryChange(a);   // a 依然是 1\n    realChange(&a); // a 变成 100\n    printf("%d\\n", a);\n    return 0;\n}'},
+{t:"15. 递归",d:"函数自己调用自己。两个必备要素：①终止条件（否则栈溢出崩溃）；②递归公式（把问题一点点变小）。经典例子：阶乘、斐波那契数列。理解技巧：画出调用层次图，先“递”下去再“归”回来。",
+code:'int fact(int n)\n{\n    if (n <= 1) return 1;    // 终止条件\n    return n * fact(n - 1);  // 问题变小\n}\nprintf("%d\\n", fact(5));  // 120 = 5*4*3*2*1'},
+{t:"16. 动态内存 malloc / free",d:"数组长度在编译时就固定了；malloc 在运行时按需申请堆内存，用完必须 free 归还，否则内存泄漏。原则：有 malloc 就有 free，一对一配对。申请后记得判空，free 后置 NULL 防野指针。",
+code:'#include <stdlib.h>\nint n = 5;\nint *p = malloc(n * sizeof(int));\nif (p == NULL) return 1;   // 申请失败要处理\nfor (int i = 0; i < n; i++) p[i] = i * i;\nfree(p);    // 用完释放\np = NULL;   // 防止误用野指针'},
+{t:"17. 指针与数组的关系",d:"数组名近似看作指向首元素的指针：a[i] 完全等价于 *(a+i)。指针加减 1 表示移动一个“元素”的距离（int 数组就是 4 字节）。但数组名不是变量不能 a++；数组作函数参数时会退化为指针。",
+code:'int a[3] = {10, 20, 30};\nint *p = a;              // 指向 a[0]\nprintf("%d %d\\n", *p, *(p + 1));  // 10 20\nprintf("%d\\n", p[1]);    // 指针也能用下标，结果 20\nprintf("%d\\n", sizeof(a) / sizeof(a[0]));  // 3，数组自己知道长度'},
+{t:"18. 字符串常用函数",d:"string.h 家族：strlen 求长度（不含 \\0）；strcpy/strncpy 复制；strcat 拼接；strcmp 比较（返回 0 表示相等）；strchr 找字符；strstr 找子串。注意：目标数组必须足够大，否则越界危险。",
+code:'#include <string.h>\nchar s[20] = "hello", t[20];\nstrncpy(t, s, sizeof(t) - 1);   // 安全复制\nstrcat(s, " world");            // s 变成 hello world\nprintf("%lu\\n", strlen(s));     // 11\nif (strcmp(t, "hello") == 0) printf("相等\\n");\nif (strstr(s, "wor")) printf("找到子串\\n");'},
+{t:"19. typedef 与 enum",d:"typedef 给类型起别名，代码更清晰，结构体配 typedef 后不用每次写 struct；enum 枚举一组合名常量，默认从 0 开始自增，适合表示状态、选项（比魔法数字 0/1/2 可读性强得多）。",
+code:'typedef struct {\n    char name[20];\n    int age;\n} Student;                       // 以后直接写 Student\nenum Color { RED, GREEN, BLUE }; // 0 1 2\nStudent st = {"Tom", 18};\nprintf("%s %d\\n", st.name, GREEN);  // Tom 1'},
+{t:"20. 位运算",d:"& 与、| 或、^ 异或、~ 取反、<< 左移、>> 右移。左移 1 位相当于乘 2，右移 1 位除 2，速度极快。常用技巧：n & 1 判奇偶；n & (n-1) 消掉最低位的 1；x ^ x = 0（异或消自己）。",
+code:'int n = 6;               // 二进制 110\nprintf("%d\\n", n & 1);   // 0 → 偶数\nprintf("%d\\n", n << 1);  // 12（乘 2）\nprintf("%d\\n", n >> 1);  // 3（除 2）\nprintf("%d\\n", 5 ^ 5);   // 0，异或消自己'},
+{t:"21. 预处理器与多文件编译",d:"#define 定义宏（纯文本替换，参数建议加括号防优先级坑）；#include 引入头文件，\"\" 先找当前目录，<> 找系统目录。大项目拆成 .h（声明）+ .c（实现），gcc 时把所有 .c 一起编译。",
+code:'#define MAX(a, b) ((a) > (b) ? (a) : (b))\n#define PI 3.14159\nprintf("%d\\n", MAX(3, 7));   // 7\n/* math.h 里写:  int add(int, int);  */\n/* math.c 里写实现，main.c 里 #include "math.h" */\n/* 编译: */\ngcc main.c math.c -o app'},
+{t:"22. 命令行参数",d:"main 的完整形态：int main(int argc, char *argv[])。argc 是参数个数（程序名本身也算 1 个），argv 是字符串数组，argv[0] 是程序名。写命令行工具（如 cp、cat）的基础。",
+code:'int main(int argc, char *argv[])\n{\n    printf("参数个数: %d\\n", argc);\n    for (int i = 0; i < argc; i++) {\n        printf("argv[%d] = %s\\n", i, argv[i]);\n    }\n    return 0;\n}\n/* 运行: ./app hello 123\n   输出: 参数个数 3, argv[1]=hello, argv[2]=123 */'},
+{c:"🧮 数据结构与算法",t:"23. 链表",d:"链表节点 = 数据 + 指向下一个节点的指针，靠指针把节点串起来。对比数组：增删元素快（不用整体挪动）、但不能按下标随机访问。考试和面试的高频考点，务必亲手画图 + 敲一遍。",
+code:'struct Node {\n    int data;\n    struct Node *next;\n};\nstruct Node a = {1, NULL}, b = {2, NULL}, c = {3, NULL};\na.next = &b;  b.next = &c;       // 串成链\nfor (struct Node *p = &a; p; p = p->next)\n    printf("%d -> ", p->data);   // 1 -> 2 -> 3'},
+{t:"24. 栈与队列",d:"栈：后进先出 LIFO，像叠盘子，函数调用、括号匹配、撤销操作都靠它；队列：先进先出 FIFO，像排队买饭，任务调度、广度优先搜索用。两者都可以用数组或链表实现，先掌握数组版。",
+code:'// 用数组实现一个栈\nint stk[100], top = 0;           // top 指向下一个空位\nvoid push(int v) { stk[top++] = v; }\nint pop(void)    { return stk[--top]; }\npush(1); push(2); push(3);\nprintf("%d ", pop());  // 3，后进先出\nprintf("%d\\n", pop()); // 2'},
+{t:"25. 冒泡排序",d:"最经典的入门排序：相邻两个两两比较，大的往后换，每一轮把当前最大的“冒”到末尾。两层循环：外层管轮数（n-1 轮），内层管比较范围（逐轮缩小）。O(n²)，重点是理解循环边界。",
+code:'int a[5] = {5, 2, 9, 1, 7};\nfor (int i = 0; i < 4; i++)           // 轮数 n-1\n    for (int j = 0; j < 4 - i; j++)   // 范围逐轮缩小\n        if (a[j] > a[j + 1]) {        // 前面大就交换\n            int t = a[j];\n            a[j] = a[j + 1];\n            a[j + 1] = t;\n        }\nfor (int i = 0; i < 5; i++) printf("%d ", a[i]);  // 1 2 5 7 9'},
+{t:"26. 二分查找",d:"前提：数组必须已排序。每次和中间元素比较，一次砍掉一半范围，O(log n) 快到飞起——100 万个数据最多 20 次命中。易错点：循环条件 left <= right、mid 写成 left + (right-left)/2 防溢出。",
+code:'int a[6] = {1, 3, 5, 7, 9, 11};   // 必须有序！\nint target = 7, left = 0, right = 5, ans = -1;\nwhile (left <= right) {\n    int mid = left + (right - left) / 2;\n    if (a[mid] == target) { ans = mid; break; }\n    else if (a[mid] < target) left = mid + 1;   // 往右找\n    else right = mid - 1;                       // 往左找\n}\nprintf("下标: %d\\n", ans);   // 3'},
+{c:"🛠️ 实战与工具",t:"27. 调试入门：printf 大法到 gdb",d:"三招按顺序学：①printf 打印关键变量，最快定位；②gcc -Wall 开启所有警告，编译期就抓住一大批 bug；③gcc -g 编译后用 gdb：break 下断点、run 运行、n 单步、p 看变量。调试能力比写代码能力更稀缺。",
+code:'gcc -Wall -g hello.c -o hello\ngdb ./hello\n(gdb) break 5     # 在第 5 行下断点\n(gdb) run         # 开始运行\n(gdb) n           # 单步执行下一行\n(gdb) p x         # 打印变量 x 的值\n(gdb) quit        # 退出'},
+{t:"28. 综合小项目：成绩统计",d:"把数组、循环、条件、输入输出串起来：输入 N 个学生成绩，输出最高分、平均分、不及格人数。这个例子建议不看代码自己先写一遍，卡住了再回来对照——写出来的才是自己的。",
+code:'#include <stdio.h>\nint main(void)\n{\n    double s[100], sum = 0, max = 0;\n    int n, fail = 0;\n    scanf("%d", &n);\n    for (int i = 0; i < n; i++) {\n        scanf("%lf", &s[i]);\n        sum += s[i];\n        if (s[i] > max) max = s[i];\n        if (s[i] < 60) fail++;\n    }\n    printf("最高分 %.1f 平均分 %.1f 不及格 %d 人\\n",\n           max, sum / n, fail);\n    return 0;\n}'}
+];
+
+const CQUIZ=[
+{q:"每个 C 语言程序的执行入口是？",o:["start() 函数","main() 函数","init() 函数","第一个定义的函数"],a:1,e:"程序总是从 main 函数开始执行，main 结束整个程序结束。"},
+{q:"printf 输出整数应该使用哪种格式符？",o:["%c","%f","%d","%s"],a:2,e:"%d 输出 int，%c 字符，%f 浮点数，%s 字符串。"},
+{q:"以下哪个是合法的 C 语言标识符？",o:["int","2a","a-b","_score"],a:3,e:"标识符不能是关键字(int)、不能以数字开头、不能含减号；下划线开头合法。"},
+{q:"int a[10]; 数组 a 的下标范围是？",o:["1~10","0~10","0~9","1~9"],a:2,e:"C 语言数组下标从 0 开始，10 个元素对应 0~9。"},
+{q:"for (int i = 0; i < 10; i += 2) 循环体执行几次？",o:["4 次","5 次","10 次","9 次"],a:1,e:"i 依次取 0,2,4,6,8 共 5 次。"},
+{q:"int x = 5; int *p = &x; 那么 *p 的值是？",o:["地址","5","&x","不确定"],a:1,e:"*p 表示解引用，取出指针指向变量 x 的值 5。"},
+{q:"int x = 5; 执行 x += 3; 后 x 的值是？",o:["3","8","53","30"],a:1,e:"+= 等价于 x = x + 3，即 8。"},
+{q:"char s[] = \"hi\"; 则 sizeof(s) 的值是？",o:["1","2","3","4"],a:2,e:"字符串末尾自动补 \\0 结束符，共 h、i、\\0 三个字节。strlen(s) 才是 2。"},
+{q:"x = 5; int y = (x > 3) ? 100 : 200; y 的值是？",o:["5","100","200","3"],a:1,e:"三目运算符：条件为真取 100，假取 200。"},
+{q:"scanf(\"%d\", &n) 中为什么必须加 &？",o:["格式要求","为了取 n 的地址，scanf 才能把输入写进变量","没有原因，可加可不加","为了输出"],a:1,e:"函数只能修改传入地址指向的内容，所以要传变量地址而不是变量本身。"},
+{q:"比较变量 x 是否等于 0 的正确写法是？",o:["if (x = 0)","if (x == 0)","if (x eq 0)","if (x <> 0)"],a:1,e:"= 是赋值，== 才是比较；常见 bug 就是误写一个等号。"},
+{q:"以下哪个不是 C 语言的基本数据类型？",o:["int","double","string","char"],a:2,e:"C 语言没有 string 类型，字符串用字符数组表示。"},
+{q:"递归函数要想安全（不死循环），必须包含什么？",o:["全局变量","终止条件","goto 语句","静态变量"],a:1,e:"没有终止条件，递归会一直压栈直到栈溢出崩溃。"},
+{q:"malloc 申请的堆内存应该用什么释放？",o:["delete","free()","程序结束自动释放堆内存（会泄漏）","clear()"],a:1,e:"malloc 配 free，一对一释放；不释放就内存泄漏。"},
+{q:"判断整数 n 是奇数，最简洁的位运算写法是？",o:["n & 1","n | 1","n ^ 1","n >> 1"],a:0,e:"n & 1 取最低位：1 是奇数，0 是偶数。"},
+{q:"void f(int x) 在函数内部修改 x，函数外的原变量？",o:["跟着改变","不会改变（值传递是副本）","编译报错","变成 0"],a:1,e:"C 默认值传递，函数拿到的是副本；要改原变量需传指针。"},
+{q:"链表节点之间靠什么连接？",o:["数组下标","next 指针","全局变量","文件"],a:1,e:"每个节点存一个指向下一节点的指针，串成链。"},
+{q:"二分查找的使用前提是？",o:["数组已排序","元素必须是整数","长度是偶数","数据是正数"],a:0,e:"有序是二分的前提，乱序时比较中间值没有意义。"},
+{q:"冒泡排序每一轮结束后，什么元素会到位？",o:["最小的到最前面","最大的沉到最后面","随机一个","中间元素"],a:1,e:"相邻比较大的往后换，每轮当前最大值“冒”到末尾。"},
+{q:"栈（stack）的数据特点是？",o:["先进先出","后进先出","随机访问","按名字查找"],a:1,e:"栈是后进先出 LIFO，像叠盘子；队列才是先进先出。"},
+{q:"命令行运行 ./app hello 123 时，argc 的值是？",o:["0","1","2","3"],a:3,e:"程序名 ./app 也算一个参数，所以 argc = 3，argv[0] 是程序名。"}
+];
+
+/* 文件名 map：测验历史显示用 */
+const QUIZ_NAMES={vocab4:"四级词汇",vocab6:"六级词汇",vocabmix:"四六级混合",vocab:"四六级词汇",c:"C 语言",linux:"Linux 命令"};
+
+const LINUX_NOTES=[
+{t:"1. 命令的基本结构",d:"Linux 命令通用格式：命令 [-选项] [参数]。选项改变命令行为（-a 显示隐藏，-l 详细列表），参数是操作对象。一切操作从终端（Terminal）敲命令开始。",
+code:'ls -l /home\ncd /etc\npwd'},
+{t:"2. 目录导航：pwd / cd / ls",d:"pwd 显示当前在哪；cd 切换目录（.. 上级，~ 主目录，- 上次目录）；ls 列出内容，-a 显示隐藏文件（.开头），-l 长格式，-h 人类可读大小。",
+code:'cd ~\ncd ..\nls -alh\ncd -'},
+{t:"3. 创建与删除：mkdir / rm",d:"mkdir 建目录，-p 一次建多级。rm 删除，-r 删目录（递归），-f 不问确认。警告：rm -rf 删起来不进回收站，不可恢复，敲之前一定看清路径！",
+code:'mkdir -p study/linux/day1\nrm study/linux/day1 -r\nrm -f old.log'},
+{t:"4. 复制与移动：cp / mv",d:"cp 复制（复制目录加 -r）；mv 移动，也可当重命名用（移到同名地方改名）。两者都支持通配符 *。",
+code:'cp hello.c /home/cyc/c_workspace/\ncp -r assets /home/cyc/share/\nmv old_name.c new_name.c'},
+{t:"5. 查看文件：cat / less / tail",d:"cat 一次性输出整个文件（小文件用）；less 分页看大文件（q 退出，/ 搜索）；head -n 20 看前 20 行；tail -f 实时跟踪日志新增内容，调试程序常用。",
+code:'cat README.md\nless big.log\ntail -f /var/log/syslog'},
+{t:"6. 查找文件与内容：find / grep / which",d:"find 按名字/大小找文件；grep 按关键词过滤文本内容，-n 显示行号，-r 递归搜目录，-i 忽略大小写；which 找命令的位置。",
+code:'find ~ -name "*.c"\ngrep -rn "main(" ~/c_workspace\nwhich gcc'},
+{t:"7. 权限：chmod / chown",d:"ls -l 开头的 -rwxr-xr-- 表示权限：每 3 位一组读(4)写(2)执行(1)。755 = 所有者 rwx，组和其他人 r-x。chmod 改权限（数字式或 u+x 方式），chown 改属主。",
+code:'chmod 755 run.sh\nchmod u+x a.out\nchown cyc:cyc hello.c\nls -l hello.c'},
+{t:"8. 用户与提权：su / sudo",d:"普通用户权限有限，sudo 用管理员身份执条命令（当前用户需在 sudo 组）。su - 切换到 root。装软件、改系统配置一般都要 sudo。Ubuntu 默认禁 root 直接登录，用 sudo 更安全。",
+code:'sudo apt update\nsudo useradd -m tom\nsudo -v'},
+{t:"9. 进程管理：ps / top / kill",d:"ps aux 快照式列出进程；top 动态监控（P/CPU M/Mem 排序，q 退出）；kill 用 杀指定 PID，kill -9 强杀；pkill 按名字批量杀。",
+code:'ps aux | grep python\ntop\nkill 3542\nkill -9 3542'},
+{t:"10. 服务管理：systemctl",d:"Ubuntu 用 systemd 管服务：status 看状态，start/stop/restart 控制，enable 设开机自启。比如我们虚拟机装的 open-vm-tools 就是服务。",
+code:'systemctl status open-vm-tools\nsudo systemctl restart ssh\nsystemctl list-units --type=service'},
+{t:"11. 网络工具：ping / ip / curl",d:"ping 测连通性；ip addr 看 IP（老命令 ifconfig）；ss -tulpn 看端口监听（老的 netstat）；curl -I 只看响应头，wget 下载文件。",
+code:'ping -c 4 baidu.com\nip addr\ncurl -I http://localhost:8000\nwget https://example.com/app.deb'},
+{t:"12. 压缩打包：tar / zip",d:"tar 把多个文件打包并压缩：-c 创建 -x 解开 -z 用 gzip -v 显示过程 -f 文件名（必须最后）。习惯后缀 .tar.gz。zip/unzip 是 Windows 惯用的另一格式。",
+code:'tar -czvf study.tar.gz study/\ntar -xzvf study.tar.gz -C /tmp\nunzip 包.zip'},
+{t:"13. 磁盘与内存：df / du / free",d:"df -h 看各分区剩余空间；du -sh 目录 看某目录总大小；free -h 看内存使用；lsblk 看磁盘分区结构。磁盘满了先 df 找大区，再 du 找大目录。",
+code:'df -h\ndu -sh /var/log\nfree -h\nlsblk'},
+{t:"14. 软件包管理：apt（Ubuntu）",d:"安装软件一条命令：sudo apt update（更新列表）→ sudo apt install 包名（安装）；卸载 apt remove，连配置 purge；apt list --installed 看已装。老系统 dpkg 配 .deb，yum/redhat 系用 dnf。",
+code:'sudo apt update\nsudo apt install -y tree\napt list --installed | grep -i v2ray'},
+{t:"15. 管道与重定向：| > >>",d:"| 把左命令的输出接到右命令当输入，可多级串联；> 写入覆盖，>> 追加；< 输入；2>&1 把错误一起收；丢弃输出用 >/dev/null。",
+code:'ps aux | grep python | wc -l\nls -l > list.txt\necho " end" >> list.txt\nfind / -name core 2>/dev/null'},
+{t:"16. 别名与变量：alias / export",d:"alias ll='ls -alF' 设临时别名（写进 ~/.bashrc 才永久）。echo $PATH 打印环境变量；export 导出变量供子进程用；.bashrc 改完要 source 一下才生效。",
+code:'alias gs="git status"\nexport MYPROJ=$HOME/myproject\necho $PATH\nsource ~/.bashrc'},
+{t:"17. 文本编辑：Vim 入门",d:"Vim 三模式：普通模式（进入默认，j/k 下上，dd 删行，yy 复制行，p 粘贴，/ 搜索）；按 i/o 进入插入模式改字；Esc 回普通模式，:wq 保存退出，:q! 不保存退出。怕迷路就 Esc 一下再说。",
+code:'vim hello.c\n:  → 输入 :wq\n普通模式：dd 删除行 / u 撤销\n/word 回车搜索，n 跳下一个'},
+{t:"18. 远程与传输：ssh / scp",d:"ssh user@IP 登录远程（正文机或另一台虚拟机）；scp 本地↔远程拷文件（scp 文件 user@IP:路径）；配好免密登录前可用 sftp。我们虚拟机互传也可以用它，比共享文件夹更通用。",
+code:'ssh cyc@192.168.153.129\nscp study.tar.gz cyc@192.168.153.129:~/\nscp -r ~/share cyc@hostip:~/backup'}
+];
+
+const LQUIZ=[
+{q:"列出当前目录下的文件和子目录，用哪个命令？",o:["cd","ls","pwd","cat"],a:1,e:"ls 列出内容（-l 详细，-a 含隐藏文件）；pwd 显示当前路径；cd 切换；cat 看文件内容。"},
+{q:"cd ~ 会切换到？",o:["根目录 /","上一级目录","当前用户的主目录","/etc"],a:2,e:"~ 代表当前用户主目录（如 /home/cyc）；/ 是根目录；.. 是上一级。"},
+{q:"删除整个目录及其内容，应该用？",o:["rm 文件名","rmdir 目录名","rm -r 目录名","del 目录名"],a:2,e:"rm -r 递归删除目录；rmdir 只能删空目录；Linux 没有 del 命令。"},
+{q:"复制一个目录（含里面所有文件）需要加什么参数？",o:["cp -r","cp -f","mv -r","cp -a 目录"],a:0,e:"cp 默认不拷贝目录，需要 -r 递归复制（慢慢来：-copy recursive）。"},
+{q:"在多个文件里搜索关键词内容，用哪个命令？",o:["grep","find","whereis","touch"],a:0,e:"grep 搜“内容”，find 找“文件名”，which 找命令位置。"},
+{q:"chmod 755 file 中，数字 7 代表权限 rwx 是怎么算的？",o:["3+3+1","4+2+1","7+5+5","读+写"],a:1,e:"r=4, w=2, x=1；7=4+2+1 表示读写执行都有；5=4+1 读+执行。"},
+{q:"查看当前正在运行的进程，最常用？",o:["ls -l","ps aux","top -a","ps -list"],a:1,e:"ps aux 一次性列出所有进程；top 是动态实时监控。"},
+{q:"结束 PID 为 2537 的进程，命令是？",o:["kill 2537","stop 2537","killall 2537","exit 2537"],a:0,e:"kill 信号进程PID；kill -9 PID 强制杀死；killall 用进程名而不是 PID。"},
+{q:"从终端下载一个文件，常用命令是？",o:["wget","ping","curl -H","netstat"],a:0,e:"wget/curl 都能下载；wget 更适合下载保存为文件。"},
+{q:"tar -xzvf data.tar.gz 的作用是？",o:["压缩打包","解压缩列出过程","查看内容不解压","加密压缩"],a:1,e:"x=解开，z=gzip，v=显示过程，f=文件；c 才是创建压缩包。"},
+{q:"命令 ls -l | sort 中 | 的作用是？",o:["注释符号","把左边命令的输出交给右边命令当输入","条件判断","后台运行"],a:1,e:"管道符 | 是 Linux 的精华：输出变输入，可以多级串联。"},
+{q:"sudo apt update 的作用是？",o:["升级系统内核","更新软件包列表/元数据","安装所有软件","重启 apt 服务"],a:1,e:"apt update 只刷新“软件清单”，配合 apt install/upgrade 使用；不会自动升级所有软件。"}
+];
+
+/* ===== 进阶篇：条目改编整理自 GitHub《The Art of Command Line》中文版（CC BY-SA 4.0, jlevy 著，多作者贡献，https://github.com/jlevy/the-art-of-command-line）仅供教学摘编；完整原文与英文版见页面下方资源导航 ===== */
+const LINUX_NOTES_EXTRA=[
+{t:"进阶 1️⃣ 终端效率快捷键（必学）",d:"Tab 一键补全，按两下列出所有候选；Ctrl-R 输关键词即可搜历史命令（再按向后翻，Enter 执行，→ 放下去修改）；Ctrl-W 删上一个词、Ctrl-U 删到行首、Ctrl-A/E 跳行首/行尾、Ctrl-L 清屏；!! 重跑上一条，!$ 是上一条命令的最后一个参数，alt-. 粘贴上次参数。改编自《命令行的艺术·日常使用》。",
+code:'history\n!42        # 重新执行编号 42 的命令\n!!         # 重跑上一条\nls study/ learning\n!!         # 等于 ls study/ learning（如 ls 是上一条）\nalt-.      # 自动贴上上一命令末尾参数'},
+{t:"进阶 2️⃣ && 和 ;：链条式行动",d:"cmd1 && cmd2：cmd1 成功才执行 cmd2（编译成功才运行就用它）；cmd1 ; cmd2：不管成败都接着跑；cmd1 || cmd2：cmd1 失败时才执行 cmd2（兜底提示）。长命令可用行尾反斜杠 \\ 换行书写。",
+code:'gcc hello.c -o hello && ./hello\nmake ; make test\napt search tree || echo "没有找到，检查拼写"'},
+{t:"进阶 3️⃣ xargs：批量流水线神器",d:"把上一命令的输出变成下一命令的参数。安全用法：先 xargs echo 空跑一遍确认将执行的命令对不对，再真正执行；-I{} 指定占位符。改编自《命令行的艺术·日常使用》。",
+code:'find . -name "*.bak" | xargs echo     # 预演一遍\nfind . -name "*.bak" | xargs rm -f    # 确认无误再删\nfind . -name "*.py" | xargs grep some_function\ncat hostlist | xargs -I{} ping -c 2 {}'},
+{t:"进阶 4️⃣ shell 脚本安全起步三件套",d:"set -e：命令失败立即退出，不带伤运行；set -u：使用未定义变量立刻报错；set -o pipefail：管道中任何一环失败整条就算失败。配合 trap 输出失败提示，写在脚本开头省一半调试时间。改编自《命令行的艺术》。",
+code:'set -euo pipefail\ntrap \'echo "error: 脚本执行失败，见上方最后一条命令"\' ERR\necho "开始处理…"\ncp config.json backup/ || echo "没有配置文件"'},
+{t:"进阶 5️⃣ 调试与排障速查",d:"程序跑不动：htop/top 看 CPU 占用；lsof -iTCP -sTCP:LISTEN 查谁监听端口；mtr 域名同时看路由与丢包；dmesg 看内核层报错（装不上驱动先看它）；文件删了但磁盘没释放：lsof | grep deleted，是进程还攥着文件。改编自《命令行的艺术·系统调试》。",
+code:'htop\nlsof -iTCP -sTCP:LISTEN -P -n\nmtr baidu.com\ndmesg | tail -30\nlsof | grep deleted'},
+{t:"进阶 6️⃣ 一行命令处理文本",d:"sort + uniq 做集合运算（并/交/差）；awk 按列统计求和最省事；wc -l 数行数；cut 取列。组合起来就是无代码的数据清洗流水线。改编自《命令行的艺术·单行脚本》。",
+code:'sort a.txt b.txt | uniq          # 并集\nsort a.txt b.txt | uniq -d       # 交集\nsort a.txt b.txt b.txt | uniq -u # 差集 a-b\nawk \'{s+=$3} END {print s}\' score.txt    # 第三列求和\nwc -l notes.txt                  # 数行数'}
+];
+
+let db=loadDB();
+function normalize(d){
+  d=d||{};
+  d.words=d.words||{cet4:{},cet6:{}};
+  d.todos=d.todos||[];
+  d.quizHistory=d.quizHistory||[];
+  d.pomo=d.pomo||{date:"",count:0,total:0};
+  d.streak=d.streak||{last:"",count:0};
+  d.theme=typeof d.theme==="string"?d.theme:"";
+  d.daily=d.daily||{date:"",words:0,clap:false};
+  d.pet=d.pet||null;
+  d.savedAt=d.savedAt||0;
+  return d;
+}
+function loadDB(){
+  try{
+    const raw=localStorage.getItem("learnPlatform_v1");
+    if(raw)return normalize(JSON.parse(raw));
+  }catch(e){}
+  return normalize(null);
+}
+function save(){
+  db.savedAt=Date.now();
+  try{localStorage.setItem("learnPlatform_v1",JSON.stringify(db));}catch(e){}
+  cloudSave();
+}
+/* 服务端记忆：防抖同步，页面关闭/切走时强制落盘 */
+let cloudTimer=null;
+/* 云端是否可用：静态部署（GitHub Pages）时 /api/state 不存在，
+   init 探测失败就把这里关掉，避免每次保存都刷一串 404 */
+let cloudOK=false;
+function cloudSave(){clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloud,700);}
+function flushCloud(){
+  if(!cloudOK)return;
+  if(typeof fetch!=="function")return;
+  db.savedAt=db.savedAt||Date.now();
+  try{
+    fetch("/api/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(db),keepalive:true}).catch(()=>{});
+  }catch(e){}
+}
+window.addEventListener("beforeunload",flushCloud);
+document.addEventListener("visibilitychange",()=>{if(document.hidden)flushCloud();});
+function today(){const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+function yesterday(){const d=new Date(Date.now()-86400000);return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+let toastTimer=null;
+function toast(msg){
+  const t=$("#toast");
+  t.textContent=msg;t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove("show"),2200);
+}
+function setTheme(theme){
+  document.body.dataset.theme=theme;
+  const sel=$("#themeQuick");
+  if(sel)sel.value=theme;
+  db.theme=theme;save();
+  fxStart(theme);
+}
+
+function switchTab(name){
+  $$("nav.tabs button").forEach(b=>b.classList.toggle("active",b.dataset.tab===name));
+  $$("section.tab").forEach(s=>s.classList.toggle("show",s.id==="tab-"+name));
+  if(name==="review")renderReview();
+  if(name==="dashboard")renderDash();
+  if(name==="words")renderWord();
+}
+$$("nav.tabs button").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
+$("#themeQuick")?.addEventListener("change",e=>setTheme(e.target.value));
+
+function dateCN(){
+  const d=new Date();
+  const w=["日","一","二","三","四","五","六"][d.getDay()];
+  return "今天是 "+d.getFullYear()+" 年 "+(d.getMonth()+1)+" 月 "+d.getDate()+" 日 · 星期"+w;
+}
+function shortDate(){
+  const d=new Date();
+  return (d.getMonth()+1)+"月"+d.getDate()+"日 星期"+["日","一","二","三","四","五","六"][d.getDay()];
+}
+
+function knownCount(){
+  let k=0,h=0,t=0;
+  for(const lv of ["cet4","cet6"]){
+    WORDS[lv].forEach(x=>{
+      t++;
+      const st=db.words[lv][x.w];
+      if(st===1)k++;
+      if(st===2)h++;
+    });
+  }
+  return {k,h,t};
+}
+function renderDash(){
+  $("#todayLine").textContent=dateCN();
+  $("#topDate").textContent=shortDate();
+  $("#topStreakN").textContent=db.streak.count||0;
+  $("#stStreak").textContent=db.streak.count||0;
+  const c=knownCount();
+  $("#stWordsKnown").textContent=c.k;
+  $("#stWordsHard").textContent=c.h;
+  ensurePomoDay();
+  ensureDaily();
+  $("#stPomo").textContent=db.pomo.count;
+  $("#stTodo").textContent=db.todos.filter(t=>!t.done).length;
+  $("#stDaily").textContent=db.daily.words;
+  const rq=$("#recentQuiz");
+  if(db.quizHistory.length===0){
+    rq.innerHTML='<p class="empty">还没有测验记录，快来试试吧</p>';
+  }else{
+    rq.innerHTML=db.quizHistory.slice(0,5).map(qu=>{
+      const name=QUIZ_NAMES[qu.t]||qu.t;
+      const pct=Math.round(qu.s/qu.total*100);
+      const col=pct>=80?'style="color:var(--ok)"':(pct<60?'style="color:var(--bad)"':"");
+      return '<div class="list-item"><span>【'+name+'】'+qu.d+'</span><span '+col+'>'+qu.s+' / '+qu.total+'（'+pct+'分）</span></div>';
+    }).join("");
+  }
+  renderLvProgress();
+}
+
+/* 仪表盘：四级 / 六级 分开的两行进度 */
+function renderLvProgress(){
+  const box=$("#lvProgress");
+  if(!box)return;
+  let html="";
+  for(const lv of ["cet4","cet6"]){
+    const s=statsFor(lv);
+    const pct=s.total?Math.round(s.known/s.total*100):0;
+    html+='<div class="lvrow">'+
+      '<div class="top">'+lvTag(lv)+'<span>'+(lv==="cet4"?"CET-4 基础核心词":"CET-6 进阶提高词")+'</span>'+
+      '<span class="n">'+s.known+' / '+s.total+' · '+pct+'%</span></div>'+
+      '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
+      '<div class="sub">生词 '+s.hard+' 个 · 未学 '+(s.total-s.known-s.hard)+' 个'+
+      '<a class="tx" style="margin-left:10px" onclick="switchTab(\'words\');setLevel(\''+lv+'\')">去背'+LV[lv]+'</a></div>'+
+      '</div>';
+  }
+  box.innerHTML=html;
+}
+
+/* 词库速查：两个等级分开展示、分别入生词本 */
+function renderSearch(){
+  const box=$("#searchResult");
+  if(!box)return;
+  const q=($("#wordSearch").value||"").trim().toLowerCase();
+  if(!q){box.innerHTML='<p class="empty" style="font-size:13px">输入英文或中文，四级 / 六级会各自标注</p>';return;}
+  const hits=[];
+  for(const lv of ["cet4","cet6"]){
+    for(const x of WORDS[lv]){
+      if(hits.length>=60)break;
+      if(x.w.toLowerCase().includes(q)||x.m.includes(q))hits.push({x,lv});
+    }
+  }
+  if(!hits.length){box.innerHTML='<p class="empty" style="font-size:13px">没有找到「'+q+'」，换个关键词试试</p>';return;}
+  box.innerHTML='<div class="muted" style="font-size:12px;margin:6px 0">匹配 '+hits.length+' 条'+(hits.length>=60?"（仅显示前 60 条）":"")+'</div>'+
+    hits.map(h=>{
+      const st=db.words[h.lv][h.x.w];
+      return '<div class="srch-item">'+lvTag(h.lv)+
+        '<span class="sw">'+h.x.w+'</span>'+
+        '<span class="sp">'+h.x.p+'</span>'+
+        '<span class="sm">'+h.x.m+'</span>'+
+        '<button class="btn small ghost" onclick="markHard(\''+h.lv+'\',\''+h.x.w+'\')">'+(st===1?"已掌握":(st===2?"在生词本":"＋ 生词本"))+'</button>'+
+        '</div>';
+    }).join("");
+}
+function markHard(lv,w){
+  if(db.words[lv][w]===1){toast("「"+w+"」已标记掌握，先去重置进度才能改");return;}
+  if(db.words[lv][w]===2){toast("「"+w+"」已经在"+LV[lv]+"生词本里了");return;}
+  db.words[lv][w]=2;save();
+  renderSearch();renderLvProgress();renderReview();renderDash();
+  toast("已存入"+LV[lv]+"生词本："+w);
+}
+function checkIn(){
+  const t=today();
+  if(db.streak.last===t){toast("今天已经打过卡啦，明天继续 💪");return;}
+  db.streak.count=(db.streak.last===yesterday())?(db.streak.count||0)+1:1;
+  db.streak.last=t;
+  save();renderDash();
+  toast("打卡成功！已连续 "+db.streak.count+" 天 🔥");
+  fabReact("happy");
+  fabBubble(streakLine());
+}
+
+const LV={cet4:"四级",cet6:"六级"};
+const CET4SET=new Set(WORDS.cet4.map(x=>x.w));
+function lvTag(lv){return '<span class="lvtag '+(lv==="cet4"?"t4":"t6")+'">'+LV[lv]+'</span>';}
+
+let level="cet4",queue=[],cur=null,revealed=false;
+function statsFor(lv){
+  let known=0,hard=0;
+  WORDS[lv].forEach(x=>{const st=db.words[lv][x.w];if(st===1)known++;if(st===2)hard++;});
+  return {known,hard,total:WORDS[lv].length};
+}
+function setLevel(lv){
+  level=lv;
+  $("#btnCet4").classList.toggle("on",lv==="cet4");
+  $("#btnCet6").classList.toggle("on",lv==="cet6");
+  revealed=false;cur=null;
+  rebuildQueue();
+  cur=queue.pop()||null;
+  renderWord();renderLvProgress();
+}
+function resetLevel(){
+  WORDS[level].forEach(x=>{delete db.words[level][x.w];});
+  save();revealed=false;cur=null;rebuildQueue();cur=queue.pop()||null;
+  renderWord();renderDash();renderReview();renderLvProgress();
+  toast("已重置"+LV[level]+"学习进度（另一等级不受影响）");
+}
+function rebuildQueue(){
+  queue=shuffle(WORDS[level].filter(x=>db.words[level][x.w]!==1));
+  if(queue.length===0){
+    const hard=WORDS[level].filter(x=>db.words[level][x.w]===2);
+    if(hard.length>0){queue=shuffle(hard);toast("全部认识啦，开始复习生词");}
+  }
+}
+function renderWord(){
+  const s=statsFor(level);
+  $("#wprog").style.width=(s.known/s.total*100)+"%";
+  $("#wprogtext").textContent=LV[level]+"词汇　已掌握 "+s.known+" / "+s.total+"　·　生词 "+s.hard+" 个　·　本组剩余 "+queue.length+" 个";
+  const card=$("#wordCard"),btns=$("#wordBtns");
+  if(!cur){
+    card.innerHTML='<div class="wt">'+lvTag(level)+'</div>'+
+      '<p class="empty">🎉 '+LV[level]+'词汇已经全部学完！<br>可以去生词本复习，或者重置进度再学一遍。</p>';
+    btns.innerHTML='<button class="btn ghost" onclick="resetLevel()">↺ 重置'+LV[level]+'进度</button>';
+    return;
+  }
+  const seen=db.words[level][cur.w];
+  card.innerHTML=
+    '<div class="wt">'+lvTag(level)+'</div>'+
+    '<div class="w">'+cur.w+'</div>'+
+    '<div class="p">'+cur.p+'</div>'+
+    (seen?'<div style="margin-top:8px"><span class="chip-pill">'+(seen===1?"已掌握 ✓":"生词本中 ⚠")+'</span></div>':"")+
+    '<div class="m'+(revealed?" show":"")+'">'+cur.m+'</div>'+
+    (revealed?"":'<div class="hidden-tip">💡 先看单词想想意思，再点击下方「显示释义」检查自己</div>');
+  if(!revealed){
+    btns.innerHTML='<button class="btn" onclick="revealMeaning()">显示释义</button>';
+  }else{
+    btns.innerHTML=
+      '<button class="btn ok" onclick="markWord(1)">✓ 认识（掌握）</button>'+
+      '<button class="btn bad" onclick="markWord(2)">✗ 不认识（收进生词本）</button>'+
+      '<button class="btn ghost" onclick="revealMeaning()">再看一遍释义</button>';
+  }
+}
+function revealMeaning(){revealed=true;renderWord();}
+function markWord(st){
+  if(!cur)return;
+  const prev=db.words[level][cur.w];
+  const picked=cur.w;
+  db.words[level][cur.w]=st;
+  if(st===1&&prev!==1)bumpDaily();
+  save();
+  if(st===1){toast("棒！"+cur.w+" 已掌握");}
+  nextWord();
+  renderReview();
+  if(window.PetBrain)PetBrain.study(st===1?"word":"wrong",{word:picked});
+}
+function nextWord(){
+  revealed=false;
+  rebuildQueue();
+  cur=queue.pop();
+  renderWord();renderDash();
+}
+
+function renderReview(){
+  const box=$("#reviewList");
+  let html="",total=0,n4=0,n6=0;
+  for(const lv of ["cet4","cet6"]){
+    const list=WORDS[lv].filter(x=>db.words[lv][x.w]===2);
+    total+=list.length;
+    if(lv==="cet4")n4=list.length;else n6=list.length;
+    if(!list.length)continue;
+    html+='<div class="lvhead">'+lvTag(lv)+' 生词 '+list.length+' 个，单独复习</div>';
+    html+=list.map(x=>
+      '<div class="list-item"><span><b>'+x.w+'</b> <span class="muted">'+x.p+'</span><br><span style="font-size:13px">'+x.m+'</span></span>'+
+      '<span><button class="btn small ok" onclick="masterWord(\''+lv+'\',\''+x.w+'\')">已掌握</button></span></div>'
+    ).join("");
+  }
+  box.innerHTML=html||'<p class="empty">生词本是空的，太棒了！</p>';
+  const h=$("#reviewCount");
+  if(h)h.textContent=total?("共 "+total+" 个 · 四级 "+n4+" · 六级 "+n6):"四级、六级分开记录，各自复习";
+}
+function masterWord(lv,w){
+  const prev=db.words[lv][w];
+  db.words[lv][w]=1;
+  if(prev!==1)bumpDaily();
+  save();renderReview();renderDash();renderLvProgress();
+  if($("#wordSearch")&&$("#wordSearch").value)renderSearch();
+  toast("✓ "+LV[lv]+" "+w+" 已标记掌握");
+  if(window.PetBrain)PetBrain.study("word",{word:w});
+}
+
+let quiz={list:[],idx:0,score:0,answered:false,type:null};
+function startQuiz(type){
+  quiz={list:[],idx:0,score:0,answered:false,type};
+  $$("[data-qtype]").forEach(b=>b.classList.toggle("ghost",b.dataset.qtype!==type));
+  if(type==="vocab4"||type==="vocab6"||type==="vocabmix"){
+    const lv=type==="vocab4"?"cet4":(type==="vocab6"?"cet6":null);
+    const pool=lv?WORDS[lv]:WORDS.cet4.concat(WORDS.cet6);
+    const picks=shuffle(pool.slice()).slice(0,10);
+    quiz.list=picks.map(item=>{
+      const distract=shuffle(pool.filter(x=>x.m!==item.m)).slice(0,3).map(x=>x.m);
+      const opts=shuffle([item.m,...distract]);
+      const tag=lv?lvTag(lv):lvTag(CET4SET.has(item.w)?"cet4":"cet6");
+      return {q:tag+' 单词 <b>'+item.w+'</b> <span class="muted">'+item.p+'</span> 的意思是：',o:opts,a:opts.indexOf(item.m),e:null};
+    });
+    $("#quizBox").style.display="block";
+  }else{
+    quiz.list=shuffle((type==="linux"?LQUIZ:CQUIZ).slice()).slice(0,10);
+    $("#quizBox").style.display="block";
+  }
+  showQuizQ();
+}
+function showQuizQ(){
+  if(quiz.idx>=quiz.list.length){finishQuiz();return;}
+  const q=quiz.list[quiz.idx];
+  quiz.answered=false;
+  const box=$("#quizBox");
+  box.innerHTML=
+    '<div class="muted" style="font-size:13px;margin-bottom:8px">第 '+(quiz.idx+1)+' / '+quiz.list.length+' 题 · 当前答对 '+quiz.score+' 题</div>'+
+    '<div style="font-size:16px;font-weight:600;margin-bottom:6px">'+q.q+'</div>'+
+    '<div class="bar"><i style="width:'+(quiz.idx/quiz.list.length*100)+'%"></i></div>'+
+    q.o.map((o,i)=>'<button class="opt" id="opt'+i+'" onclick="pickOpt('+i+')">'+String.fromCharCode(65+i)+". "+o+'</button>').join("")+
+    '<div id="quizExplain" style="display:none;margin-top:4px"></div>'+
+    '<div style="margin-top:12px"><button class="btn" id="qNext" style="display:none" onclick="quizNext()">下一题 →</button></div>';
+}
+function pickOpt(i){
+  if(quiz.answered)return;
+  quiz.answered=true;
+  const q=quiz.list[quiz.idx];
+  const right=q.a;
+  for(let k=0;k<q.o.length;k++){
+    const el=$("#opt"+k);
+    el.disabled=true;
+    if(k===right)el.classList.add("right");
+  }
+  if(i===right){quiz.score++;toast("回答正确！");}
+  else{$("#opt"+i).classList.add("wrong");toast("答错了，正确答案已标绿");}
+  const ex=$("#quizExplain");
+  if(q.e){ex.style.display="block";ex.innerHTML='<div class="sep"></div><div style="font-size:13.5px;line-height:1.8">📖 解析：'+q.e+'</div>';}
+  $("#qNext").style.display="inline-block";
+  $("#qNext").textContent=quiz.idx===quiz.list.length-1?"查看成绩 →":"下一题 →";
+}
+function quizNext(){quiz.idx++;showQuizQ();}
+function finishQuiz(){
+  const pct=Math.round(quiz.score/quiz.list.length*100);
+  const name=QUIZ_NAMES[quiz.type]||quiz.type;
+  db.quizHistory.unshift({d:today(),t:quiz.type,s:quiz.score,total:quiz.list.length});
+  db.quizHistory=db.quizHistory.slice(0,20);
+  save();renderDash();
+  let word="";
+  if(pct===100){word="满分！太厉害了 🏆";}
+  else if(pct>=80){word="很棒，继续保持！";}
+  else if(pct>=60){word="及格啦，再巩固一下错题。";}
+  else{word="别灰心，回到单词卡 / C 语言笔记再学一遍吧。";}
+  if(window.PetBrain)PetBrain.study("quiz",{pct:pct});
+  else if(pct>=80){fabReact(pct===100?"love":"happy");fabBubble(pct===100?"满分！小云仰望你 ✨":"考得真棒！🌟");}
+  $("#quizBox").innerHTML=
+    '<div style="text-align:center;padding:26px 0">'+
+    '<div style="font-size:44px;font-weight:700;color:var(--accent)">'+pct+' 分</div>'+
+    '<div class="muted" style="margin-top:6px">'+name+' 共 '+quiz.list.length+' 题 · 答对 '+quiz.score+' 题</div>'+
+    '<div style="margin-top:10px;font-size:15px">'+word+'</div>'+
+    '<div class="row" style="justify-content:center;margin-top:18px">'+
+    '<button class="btn" onclick="startQuiz(\''+quiz.type+'\')">再来一轮</button>'+
+    '<button class="btn ghost" onclick="switchTab(\'dashboard\')">回仪表盘</button>'+
+    '</div></div>';
+}
+
+function renderClang(){
+  const groups=[],map={};let cat="📝 基础篇";
+  CNOTES.forEach(n=>{
+    if(n.c)cat=n.c;
+    if(!map[cat]){map[cat]=[];groups.push(cat);}
+    map[cat].push(n);
+  });
+  $("#clangList").innerHTML=groups.map(g=>
+    '<h2 style="margin:20px 0 10px;font-size:14px;color:var(--muted);letter-spacing:1px">'+g+'（'+map[g].length+' 篇）</h2>'+
+    map[g].map(n=>
+      '<details><summary>'+n.t+'</summary>'+
+      '<div class="desc">'+n.d+'</div>'+
+      '<pre class="code">'+n.code+'</pre></details>'
+    ).join("")
+  ).join("");
+}
+
+function renderLinux(){
+  $("#linuxList").innerHTML=LINUX_NOTES.map(n=>
+    '<details><summary>'+n.t+'</summary>'+
+    '<div class="desc">'+n.d+'</div>'+
+    '<pre class="code">'+n.code+'</pre></details>'
+  ).join("");
+}
+
+function ensurePomoDay(){
+  const t=today();
+  if(db.pomo.date!==t){db.pomo.date=t;db.pomo.count=0;}
+}
+function ensureDaily(){
+  const t=today();
+  if(!db.daily||db.daily.date!==t){db.daily={date:t,words:0,clap:false};}
+}
+function bumpDaily(){
+  ensureDaily();
+  db.daily.words++;
+  if(db.daily.words===10){fabReact("happy");fabBubble("10 个了！过半啦，冲！");}
+  if(db.daily.words>=20&&!db.daily.clap){db.daily.clap=true;toast("🎉 今日 20 个单词目标达成，太棒了！");fabReact("love");fabBubble("目标达成！小云给你比心 ❤️");}
+}
+let pomo={mode:"work",left:25*60,running:false,timer:null};
+let POMO_LEN={work:25*60,rest:5*60};
+function pomoVal(v,def,max){const n=parseInt(v,10);return Math.min(Math.max(isNaN(n)?def:n,1),max);}
+function loadPomoLen(){
+  const l=db.pomoLen||{};
+  const w=pomoVal(l.work,25,180);
+  const r=pomoVal(l.rest,5,60);
+  POMO_LEN={work:w*60,rest:r*60};
+  $("#pWorkMin").value=w;$("#pRestMin").value=r;
+  updatePomoLabels();
+}
+function updatePomoLabels(){
+  $("#pmWork").textContent="专注 "+(POMO_LEN.work/60)+" 分钟";
+  $("#pmRest").textContent="休息 "+(POMO_LEN.rest/60)+" 分钟";
+}
+function applyPomoLen(){
+  if(pomo.running){toast("计时进行中，先「重置」再修改时长");return;}
+  const w=pomoVal($("#pWorkMin").value,25,180);
+  const r=pomoVal($("#pRestMin").value,5,60);
+  $("#pWorkMin").value=w;$("#pRestMin").value=r;
+  POMO_LEN={work:w*60,rest:r*60};
+  db.pomoLen={work:w,rest:r};save();
+  updatePomoLabels();
+  setPomoMode(pomo.mode,true);
+  toast("已应用：专注 "+w+" 分钟 · 休息 "+r+" 分钟");
+}
+function setPomoMode(mode,silent){
+  if(pomo.running)stopPomoTick();
+  pomo.mode=mode;pomo.left=POMO_LEN[mode];
+  $("#pmWork").classList.toggle("on",mode==="work");
+  $("#pmRest").classList.toggle("on",mode==="rest");
+  $("#pStart").textContent="▶ 开始";
+  renderPomoTime();
+  if(!silent)toast(mode==="work"?"进入专注模式":"进入休息模式");
+}
+function renderPomoTime(){
+  const m=String(Math.floor(pomo.left/60)).padStart(2,"0");
+  const s=String(pomo.left%60).padStart(2,"0");
+  $("#pTime").textContent=m+":"+s;
+}
+function togglePomo(){
+  if(pomo.running){stopPomoTick();}
+  else{
+    pomo.running=true;
+    $("#pStart").textContent="⏸ 暂停";
+    pomo.timer=setInterval(pomoTick,1000);
+  }
+}
+function stopPomoTick(){
+  pomo.running=false;
+  clearInterval(pomo.timer);
+  $("#pStart").textContent="▶ 开始";
+}
+function pomoTick(){
+  pomo.left--;
+  if(pomo.left<=0){
+    stopPomoTick();
+    beep();
+    pomo.left=0;renderPomoTime();
+    if(pomo.mode==="work"){
+      ensurePomoDay();
+      db.pomo.count++;db.pomo.total++;save();renderDash();renderPomoStats();
+      toast("🍅 番茄钟完成！休息 5 分钟吧");
+      if(window.PetBrain)PetBrain.study("pomo");
+      else{fabReact("happy");fabBubble("第 "+db.pomo.count+" 个番茄完成！休息一下吧～");}
+      setPomoMode("rest");
+    }else{
+      toast("休息结束，继续开一个专注番茄吧！");
+    }
+    return;
+  }
+  renderPomoTime();
+}
+function resetPomo(){
+  stopPomoTick();
+  pomo.left=POMO_LEN[pomo.mode];
+  $("#pStart").textContent="▶ 开始";
+  renderPomoTime();
+}
+function renderPomoStats(){
+  ensurePomoDay();
+  $("#pToday").textContent=db.pomo.count;
+  $("#pTotal").textContent=db.pomo.total;
+}
+function beep(){
+  try{
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    const c=new Ctx();
+    const o=c.createOscillator(),g=c.createGain();
+    o.connect(g);g.connect(c.destination);
+    o.frequency.value=880;
+    g.gain.setValueAtTime(0.2,c.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.01,c.currentTime+0.9);
+    o.start();o.stop(c.currentTime+1);
+  }catch(e){}
+}
+
+function addTodo(){
+  const inp=$("#todoInput");
+  const v=inp.value.trim();
+  if(!v){toast("先输入任务内容哦");return;}
+  db.todos.push({text:v,done:false});
+  inp.value="";
+  save();renderTodos();renderDash();
+}
+function renderTodos(){
+  const box=$("#todoList");
+  if(db.todos.length===0){box.innerHTML='<p class="empty">没有待办，添加一个开始学习吧</p>';return;}
+  box.innerHTML=db.todos.map((t,i)=>
+    '<div class="todo-item'+(t.done?" done":"")+'">'+
+    '<input type="checkbox" '+(t.done?"checked":"")+' onchange="toggleTodo('+i+')">'+
+    '<label onclick="toggleTodo('+i+')" style="cursor:pointer">'+t.text+'</label>'+
+    '<button class="del" onclick="delTodo('+i+')">✕</button>'+
+    '</div>'
+  ).join("");
+}
+function toggleTodo(i){
+  db.todos[i].done=!db.todos[i].done;
+  save();renderTodos();renderDash();
+  if(db.todos[i].done&&window.PetBrain)PetBrain.study("todo");
+}
+function delTodo(i){db.todos.splice(i,1);save();renderTodos();renderDash();}
+
+/* ========= 终端演示机（本地模拟文件系统，无需联网） ========= */
+function ttyFile(c){return{type:"file",content:c};}
+function ttyDir(ch){return{type:"dir",children:ch||{}};}
+var FS=ttyDir({
+  home:ttyDir({cyc:ttyDir({
+    practice:ttyDir({
+      "hello.c":ttyFile('#include <stdio.h>\nint main(void)\n{\n    printf("hello world\\n");\n    return 0;\n}'),
+      "notes.txt":ttyFile("第1行：今天学习了 ls 和 cd\n第2行：计划明天学 chmod\n第3行：main 函数是 C 语言入口函数\n第4行：grep 可以按关键词查找内容\n备注：记得复习 grep 的 -n 参数"),
+      "TODO.txt":ttyFile("[x] 安装 Ubuntu 虚拟机\n[ ] 学会 ls / cd / pwd\n[ ] 在演示机里把每个命令都试一遍")
+    }),
+    ".bashrc":ttyFile("# ~/.bashrc（演示）\nalias ll='ls -alF'\nPS1='cyc@learn $ '"),
+    c_workspace:ttyDir({"hello.c":ttyFile('#include <stdio.h>\nint main(void){ printf("hi\\n"); return 0; }')}),
+    share:ttyDir({"index.html":ttyFile("<!doctype html>\x3C!-- 我的学习平台（演示副本） -->")})
+  })})
+});
+var cwdV=["home","cyc","practice"];
+function ttyEsc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function fsNode(path){
+  var n=FS;
+  for(var i=0;i<path.length;i++){
+    var seg=path[i];
+    if(!n||n.type!=="dir"||!n.children[seg])return null;
+    n=n.children[seg];
+  }
+  return n;
+}
+function prettyCwd(){
+  return "~"+(cwdV.length>2?"/"+cwdV.slice(2).join("/"):"");
+}
+function absPath(arg){
+  var base;
+  if(!arg||arg==="~")return["home","cyc"];
+  if(arg===".")return cwdV.slice();
+  if(arg==="..")return cwdV.slice(0,-1);
+  if(arg==="/")return[];
+  if(arg.charAt(0)==="~")base=["home","cyc"].concat(arg.slice(2).split("/"));
+  else if(arg.charAt(0)==="/")base=arg.split("/");
+  else base=cwdV.slice().concat(arg.split("/"));
+  var out=[];
+  for(var i=0;i<base.length;i++){
+    var seg=base[i];
+    if(!seg||seg===".")continue;
+    if(seg==="..")out.pop();
+    else out.push(seg);
+  }
+  return out;
+}
+function errL(s){return{cls:"err",t:s};}
+function txtL(t){return{cls:"",t:t};}
+function dimL(t){return{cls:"dim",t:t};}
+function okL(t){return{cls:"okk",t:t};}
+function sortKeys(dir){
+  return Object.keys(dir.children).sort(function(a,b){
+    var da=dir.children[a].type==="dir"?0:1;
+    var db=dir.children[b].type==="dir"?0:1;
+    return da-db||a.localeCompare(b);
+  });
+}
+function lsLine(name,node){
+  if(node.type==="dir")return "drwxr-xr-x  2 cyc cyc   4096 11-04 "+name+"/";
+  var size=String((node.content||"").length).padStart(5," ");
+  return "-rw-r--r--  1 cyc cyc "+size+" 11-04 "+name;
+}
+function fileParentNode(p){
+  if(p.length===0)return null;
+  return fsNode(p.slice(0,-1));
+}
+function makeParentList(pths){
+  return (fsNode(pths.slice(0,-1))||null);
+}
+function parentOf(root,p){
+  if(p.length===0)return null;
+  return fsNode(p.slice(0,-1));
+}
+function ensureParent(p){
+  return fsNode(p.slice(0,-1));
+}
+function deny(p){
+  if(p.length<3)return true;
+  var cur=p.toString();
+  if(cwdV.join("/").indexOf(cur)===0)return true;
+  return false;
+}
+function execLine(raw){
+  var t=String(raw).trim();
+  if(!t)return[];
+  var chain=t.split("&&").map(function(x){return x.trim();}).filter(Boolean);
+  var lines=[];
+  for(var i=0;i<chain.length;i++){
+    var r=execOne(chain[i]);
+    for(var j=0;j<r.length;j++)lines.push(r[j]);
+  }
+  return lines;
+}
+function execOne(tkStr){
+  var out=[];
+  var tokens=tkStr.split(/\s+/);
+  if(tokens[0]==="sudo")tokens=tokens.slice(1);
+  var cmd=tokens[0];
+  var flags=tokens.filter(function(x){return x.charAt(0)==="-";}).join("");
+  var args=tokens.slice(1).filter(function(x){return x.charAt(0)!=="-";});
+  var notFound=true;
+  switch(cmd){
+  case "help":{
+    out.push(okL("可用命令（模拟环境；输入命令后按 Enter）:"));
+    ["ls [-l/-a] [目录]   列出内容","cd 目录 | .. | ~ | /  切换路径","pwd                   当前位置",
+     "cat 文件1 [文件2]      看内容","touch 新文件           建空文件","mkdir 新目录           建目录",
+     "rm [-r] 目标           删除（小心！演示保护）","cp 源 目标   mv 源 目标  复制/移动",
+     "echo 文本 > 文件       写入（>> 追加）","grep [-n] 关键词 文件   搜内容",
+     "head/tail [-n N] 文件  头尾几行","tree                 树形浏览",
+     "date whoami uname history man 命令","sudo xxx            以管理员身份（自动忽略前缀）",
+     "链式支持: mkdir xx && tree"].forEach(function(x){out.push(txtL("  "+x));});
+    notFound=false;break;}
+  case "exit":out.push(dimL("演示机不许退出 (¬‿¬) 想动手就去你的 Ubuntu 真终端～"));notFound=false;break;
+  case "pwd":out.push(txtL("/"+cwdV.join("/")));notFound=false;break;
+  case "whoami":out.push(txtL("cyc"));notFound=false;break;
+  case "date":{var d=new Date();out.push(txtL(d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日 星期"+"日一二三四五六"[d.getDay()]+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")));notFound=false;break;}
+  case "uname":out.push(txtL(flags.indexOf("a")>=0?"Linux learn-vm 6.8.0-49-generic Ubuntu 22.04 x86_64（演示信息）":"Linux"));notFound=false;break;
+  case "man":out.push(dimL("演示机没有手册页。真实终端请敲：man "+(args[0]||"命令名")+"；或点上方资源导航看在线版"));notFound=false;break;
+  case "history":{
+    [[1,"ls -l"],[2,"cd practice"],[3,"gcc hello.c && ./a.out"],[4,"cat notes.txt"],[5,"grep -n main notes.txt"]].forEach(function(h){out.push(txtL("  "+h[0]+"  "+h[1]));});
+    notFound=false;break;}
+  case "clear":$("#ttyOut").innerHTML="";notFound=false;break;
+  case "tree":{
+    var tp=args.length?idx=args&&0:0;
+    var baseP=args.length?absPath(args[0]):cwdV.slice();
+    var baseN=fsNode(baseP);
+    if(!baseN||baseN.type!=="dir"){out.push(errL("tree: 目录不存在"));break;}
+    out.push(txtL((baseP.length?"/"+baseP.join("/"):"/")+"/"));
+    out.push.apply(out,ttyTreeFlip(baseN,"",0,flags));
+    notFound=false;break;}
+  case "ls":{
+    var target=args.length?args[args.length-1]:"";
+    var p=target?absPath(target):cwdV.slice();
+    var n=fsNode(p);
+    if(!n){out.push(errL("ls: 无法访问 '"+target+"': 没有那个文件或目录"));break;}
+    if(n.type==="file"){out.push(txtL(lsLine(target,n)));break;}
+    var keys=sortKeys(n).filter(function(k){return flags.indexOf("a")>=0||k.charAt(0)!==".";});
+    if(!keys.length){notFound=false;break;}
+    if(flags.indexOf("l")>=0){keys.forEach(function(k){out.push(txtL(lsLine(k,n.children[k])));});}
+    else{out.push(txtL(keys.map(function(k){return n.children[k].type==="dir"?k+"/":k;}).join("  ")));}
+    notFound=false;break;}
+  case "cd":{
+    var p=absPath(args[0]||"~");
+    var n=fsNode(p);
+    if(p.length===0){cwdV=[];notFound=false;break;}
+    if(!n){out.push(errL("cd: "+(args[0]||"")+": 没有那个文件或目录"));break;}
+    if(n.type!=="dir"){out.push(errL("cd: "+(args[0]||"")+": 不是目录"));break;}
+    cwdV=p;notFound=false;break;}
+  case "cat":{
+    if(!args.length){out.push(errL("cat: 缺少文件参数"));break;}
+    args.forEach(function(a){
+      var n=fsNode(absPath(a));
+      if(!n)out.push(errL("cat: "+a+": 没有那个文件或目录"));
+      else if(n.type==="dir")out.push(errL("cat: "+a+": 是一个目录"));
+      else (n.content||"").split("\n").forEach(function(l){out.push(txtL(l));});
+    });
+    notFound=false;break;}
+  case "touch":{
+    args.forEach(function(a){
+      var p=absPath(a);
+      if(!ensureParent(p)){out.push(errL("touch: 路径不存在 "+a));return;}
+      if(!fsNode(p))fsNode(p.slice(0,-1)).children[p[p.length-1]]=ttyFile("");
+    });
+    notFound=false;break;}
+  case "mkdir":{
+    args.forEach(function(a){
+      var p=absPath(a);
+      if(!ensureParent(p)){out.push(errL("mkdir: 路径不存在 "+a));return;}
+      if(fsNode(p)){out.push(errL("mkdir: 无法创建目录 '"+a+"': 文件已存在"));return;}
+      fsNode(p.slice(0,-1)).children[p[p.length-1]]=ttyDir({});
+    });
+    notFound=false;break;}
+  case "rm":{
+    args.forEach(function(a){
+      var p=absPath(a);
+      if(deny(p)){out.push(errL("rm: 拒绝删除 '"+a+"'（演示保护：不准动主目录与当前路径上的东西）"));return;}
+      var n=fsNode(p);
+      if(!n){out.push(errL("rm: 无法删除 '"+a+"': 没有那个文件或目录"));return;}
+      if(n.type==="dir"&&flags.indexOf("r")<0){out.push(errL("rm: 无法删除 '"+a+"': 是一个目录（要删目录用 rm -r）"));return;}
+      delete fsNode(p.slice(0,-1)).children[p[p.length-1]];
+      if(!fsNode(cwdV))cwdV=["home","cyc"];
+    });
+    notFound=false;break;}
+  case "cp": case "mv":{
+    if(args.length<2){out.push(errL(cmd+": 缺少参数（用法：cp 源 目标）"));break;}
+    var srcP=absPath(args[0]),dstP=absPath(args[1]);
+    var srcN=fsNode(srcP);
+    if(!srcN){out.push(errL(cmd+": "+args[0]+": 没有那个文件或目录"));break;}
+    if(srcN.type==="dir"){out.push(errL(cmd+": 演示版暂不支持目录，试试文件"));break;}
+    var pn=ensureParent(dstP);
+    if(!pn){out.push(errL(cmd+": 路径不存在 "+args[1]));break;}
+    var name=dstP[dstP.length-1];
+    var dstN=fsNode(dstP);
+    if(dstN&&dstN.type==="dir"){dstN.children[srcP[srcP.length-1]]=ttyFile(srcN.content);}
+    else{pn.children[name]=ttyFile(srcN.content);if(cmd==="mv")delete fsNode(srcP.slice(0,-1)).children[srcP[srcP.length-1]];}
+    if(cmd==="mv"&&dstN&&dstN.type==="dir")delete fsNode(srcP.slice(0,-1)).children[srcP[srcP.length-1]];
+    notFound=false;break;}
+  case "echo":{
+    var raw=tkStr.trim().replace(/^echo\s+/,"");
+    var m=raw.match(/^([\s\S]*?)\s*(>>|>)\s*(\S+)\s*$/);
+    if(m){
+      var text=m[1].trim();
+      if(text.length>1&&text.charAt(0)==='"'&&text.charAt(text.length-1)==='"')text=text.slice(1,-1);
+      var fp=absPath(m[3]);
+      var pn=ensureParent(fp);
+      var fn=fsNode(fp);
+      if(!pn){out.push(errL("echo: 路径不存在 "+m[3]));}
+      else if(fn&&fn.type==="dir"){out.push(errL("echo: "+m[3]+": 是一个目录"));}
+      else{
+        if(!fn)fn=ttyFile("");
+        fn.content=((m[2]===">>"&&fn.content)?fn.content:"")+text+"\n";
+        pn.children[fp[fp.length-1]]=fn;
+      }
+    }else{
+      out.push(txtL(raw));
+    }
+    notFound=false;break;}
+  }
+  if(notFound)out.push(errL("bash: "+cmd+": 未找到命令（演示环境；输入 help 查看可用命令）"));
+  return out;
+}
+function ttyTreeFlip(node,prefix,depth,flags){
+  if(!node||node.type!=="dir"||depth>4)return[];
+  var lines=[];
+  var keys=sortKeys(node).filter(function(k){return flags.indexOf("a")>=0||k.charAt(0)!==".";});
+  keys.forEach(function(k,ix){
+    var c=node.children[k];
+    var last=ix===keys.length-1;
+    lines.push(txtL(prefix+(last?"└── ":"├── ")+k+(c.type==="dir"?"/":"")));
+    if(c.type==="dir")lines.push.apply(lines,ttyTreeFlip(c,prefix+(last?"    ":"│   "),depth+1,flags));
+  });
+  return lines;
+}
+var TTY_PRESETS=[
+  {l:"▤ ls -l 详细列表",c:"ls -l"},
+  {l:"◈ ls -a 含隐藏文件",c:"ls -a"},
+  {l:"📄 cat 看代码",c:"cat hello.c"},
+  {l:"🔍 grep 找 main",c:"grep -n main notes.txt"},
+  {l:"📝 echo 写文件",c:"echo 刚学到 tree 和 grep > 学习日志.txt"},
+  {l:"👀 cat 看日志",c:"cat 学习日志.txt"},
+  {l:"📁 mkdir && tree",c:"mkdir backup && tree"},
+  {l:"🧦 cd ~ 回家",c:"cd ~"},
+  {l:"🧹 清屏",c:"clear"}
+];
+var ttyBusy=false;
+function renderTty(){
+  var box=$("#ttyPresets");
+  box.innerHTML=TTY_PRESETS.map(function(p,i){
+    return '<button class="btn small ghost" onclick="runPreset('+i+')">'+p.l+'</button>';
+  }).join("");
+  openTtyInit();
+}
+function openTtyInit(){
+  var out=$("#ttyOut");
+  if(out.dataset.init)return;
+  out.dataset.init="1";
+  out.innerHTML=
+    '<div><span class="okk">已连接终端演示机</span> — 模拟环境，可随意折腾，刷新即恢复</div>'+
+    '<div class="dim">工作目录: /home/cyc/practice　提示: 输入 help 看命令；预设按钮一键演示</div>';
+}
+function ttyPrint(raw){
+  var out=$("#ttyOut");
+  var pl=document.createElement("div");
+  pl.innerHTML='<span class="dim">cyc@learn:'+ttyEsc(prettyCwd())+'$</span> <span class="cmd">'+ttyEsc(raw)+'</span>';
+  out.appendChild(pl);
+  if(raw.trim()){
+    var lines=execLine(raw);
+    if(lines.length===0)lines=[{cls:"dim",t:"（没有输出）"}];
+    lines.forEach(function(l){
+      var d=document.createElement("div");
+      if(l.cls)d.innerHTML='<span class="'+l.cls+'">'+ttyEsc(l.t)+'</span>';
+      else d.textContent=l.t;
+      out.appendChild(d);
+    });
+  }
+  $("#ttyPrompt").textContent="cyc@learn:"+prettyCwd()+"$";
+  out.scrollTop=out.scrollHeight;
+}
+function runTty(){
+  if(ttyBusy)return;
+  var inp=$("#ttyInput");
+  var v=inp.value;
+  inp.value="";
+  ttyPrint(v);
+}
+function clearTty(){
+  $("#ttyOut").innerHTML="";
+  openTtyInit();
+}
+function runPreset(i){
+  if(ttyBusy)return;
+  ttyBusy=true;
+  var c=TTY_PRESETS[i].c;
+  var inp=$("#ttyInput");
+  inp.value="";
+  var i2=0;
+  var t=setInterval(function(){
+    inp.value=c.slice(0,++i2);
+    if(i2>=c.length){
+      clearInterval(t);
+      setTimeout(function(){runTty();ttyBusy=false;},140);
+    }
+  },22);
+}
+/* ========= 鲸鱼娘小云（模型/运行时：Pal-AI-Lab/Coopanion 开源项目，GPL-3.0） ========= */
+const PET_THUMB="assets/whale/thumbs/deepseek.png";
+let petCtl=null,petRaf=null,petLast=0,talkIv=null,fabGrabbed=false,fabDragged=false,fabDownXY=null;
+function applyAvatars(){
+  $("#aiHeadAvatar").innerHTML='<img src="'+PET_THUMB+'" alt="小云">';
+  $("#logoAvatar").innerHTML='<img src="'+PET_THUMB+'" alt="小云">';
+}
+function petPt(e){
+  const r=$("#aiFab").getBoundingClientRect();
+  return{x:e.clientX-r.left,y:e.clientY-r.top};
+}
+async function initPet(){
+  try{
+    if(!window.WebGL2RenderingContext&&!window.WebGLRenderingContext)throw new Error("no webgl");
+    const [{createPet},{createWhaleFigure}]=await Promise.all([
+      import("./assets/whale/kit/body.js"),
+      import("./assets/whale/whale/figure.js"),
+    ]);
+    const figure=await createWhaleFigure();
+    petCtl=createPet({petG:$("#petG"),shadowEl:$("#petShadow"),fxG:$("#petFx")},{
+      figure,roam:"off",enter:"drop",
+      bounds:()=>{
+        const r=$("#aiFab").getBoundingClientRect();
+        return{W:r.width,H:r.height,floorY:r.height-8,S:Math.max(.3,Math.min(.8,r.height/300))};
+      },
+    });
+    const fab=$("#aiFab");
+    fab.addEventListener("pointerdown",e=>{
+      if(!petCtl)return;
+      fabDownXY={x:e.clientX,y:e.clientY};fabDragged=false;
+      if(petCtl.pointerDown(petPt(e))){fabGrabbed=true;try{fab.setPointerCapture(e.pointerId);}catch(err){}}
+    });
+    fab.addEventListener("pointermove",e=>{
+      if(!petCtl||!fabGrabbed)return;
+      petCtl.pointerMove(petPt(e));
+      if(fabDownXY&&Math.hypot(e.clientX-fabDownXY.x,e.clientY-fabDownXY.y)>8)fabDragged=true;
+    });
+    const up=()=>{if(petCtl)petCtl.pointerUp();fabGrabbed=false;};
+    fab.addEventListener("pointerup",up);
+    fab.addEventListener("pointerleave",()=>{if(fabGrabbed){up();}});
+    petLast=performance.now();
+    petRaf=requestAnimationFrame(petLoop);
+  }catch(e){
+    $("#petStage")?.remove();
+    $("#fabFallback")?.classList.remove("hidden");
+  }
+}
+function petLoop(now){
+  if(!petCtl){petRaf=null;return;}
+  const dt=Math.min(.05,(now-petLast)/1000);petLast=now;
+  // 单帧出错不能终止整个动画循环，否则小云会定格不再动
+  try{petCtl.step(dt);petCtl.render();}
+  catch(err){console.error("[pet] 帧异常：",err);}
+  petRaf=requestAnimationFrame(petLoop);
+}
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){if(petRaf){cancelAnimationFrame(petRaf);petRaf=null;}}
+  else if(petCtl&&!petRaf){petLast=performance.now();petRaf=requestAnimationFrame(petLoop);}
+});
+function petExpr(id,dur){try{petCtl&&petCtl.setExpr(id,dur||2);}catch(e){}}
+function petWord(id){try{petCtl&&petCtl.holdRoam(4),petCtl.doWord(id);}catch(e){}}
+function petFabClick(e){ if(fabDragged){fabDragged=false;return;} if(window.PetBrain)PetBrain.tap(e); else toggleAi(); }
+function fabTalking(on){
+  const fab=$("#aiFab");if(fab)fab.classList.toggle("talking",on);
+  const head=$("#aiHead");if(head)head.classList.toggle("talking",on);
+  clearInterval(talkIv);talkIv=null;
+  if(on&&petCtl){petCtl.talk();talkIv=setInterval(()=>petCtl&&petCtl.talk(),380);}
+}
+function fabWave(){
+  if(petCtl){petWord("wave");petExpr("happy");}
+}
+function sparkBurst(emo){
+  const fab=$("#aiFab");if(!fab)return;
+  for(let i=0;i<6;i++){
+    const s=document.createElement("span");
+    s.className="xy-spark";s.textContent=emo;
+    s.style.left=(15+Math.random()*70)+"%";
+    s.style.bottom=(30+Math.random()*45)+"%";
+    s.style.setProperty("--dx",((Math.random()-.5)*70)+"px");
+    s.style.setProperty("--rot",(Math.random()*120-60)+"deg");
+    s.style.animationDelay=(Math.random()*.25)+"s";
+    fab.appendChild(s);
+    setTimeout(()=>s.remove(),1400);
+  }
+}
+function fabReact(kind){
+  petExpr(kind==="love"?"love":"happy",2.4);
+  sparkBurst(kind==="love"?"❤️":"✨");
+}
+/* ========= 每日鼓励系统 ========= */
+const DAILY_QUOTES=[
+"每天进步 1%，一年强大 37 倍！","现在的每一页，都是考场上的底气。",
+"单词背了会忘很正常，忘了再背就是了。","不用和别人比，和昨天的自己比就好。",
+"学不动的时候，恰恰是在变强的临界点。","今天的小目标完成了吗？完成就是胜利！",
+"代码敲一遍，胜过看十遍。","坚持的秘诀：把目标缩小到不可能失败。",
+"累的时候可以休息，但别停太久哦。","积累到某一天，你会突然发现自己好厉害。",
+"四六级不难，难的是每天打开书。","错题是最好的老师，别怕犯错。"];
+function dailyQuote(){
+  const d=new Date();
+  return DAILY_QUOTES[(d.getFullYear()*372+d.getMonth()*31+d.getDate())%DAILY_QUOTES.length];
+}
+function timeGreet(){
+  const h=new Date().getHours();
+  return h<5?"夜深了还不睡呀，早点休息哦":h<11?"早上好，一天之计在于晨":h<14?"中午好，午休前来点学习":h<18?"下午好，来杯水继续加油":"晚上好，睡前黄金记忆时间";
+}
+function streakLine(){
+  const s=db.streak.count||0;
+  if(s===0)return "今天来打个卡，开启第一天吧！";
+  if(s<3)return "已经连续 "+s+" 天啦，继续保持！";
+  if(s<7)return "连续 "+s+" 天了，越来越稳了！";
+  return "连续 "+s+" 天！你已经超越大多数人啦 🏆";
+}
+function fabBubble(text,ms){
+  /* 互动层接管气泡，保证全站只有一套、位置和样式统一 */
+  if(window.PetBrain){PetBrain.say(text,ms?{ms:ms}:null);return;}
+  const fab=$("#aiFab");
+  if(!fab||typeof fab.appendChild!=="function"||(fab.querySelector&&fab.querySelector(".ai-fab-bubble")))return;
+  const b=document.createElement("div");
+  b.className="ai-fab-bubble";
+  b.textContent=text;
+  fab.appendChild(b);
+  setTimeout(()=>b.remove(),ms||2600);
+}
+function appendMsg(text,role){
+  const chat=$("#aiChat");
+  if(role==="user"){
+    chat.innerHTML+='<div class="ai-msg user"><p>'+text+'</p></div>';
+  }else{
+    chat.innerHTML+='<div class="ai-msg ai"><span class="ai-msg-avatar"><img src="'+PET_THUMB+'" alt=""></span><div class="ai-bubble">'+text+'</div></div>';
+  }
+  chat.scrollTop=chat.scrollHeight;
+}
+function renderAiTips(){
+  const s=knownCount();
+  $("#aiTips").innerHTML=
+    '<div class="tip-card"><span>💬</span><span><b>今日一句</b>：'+dailyQuote()+'</span></div>'+
+    '<div class="tip-card"><span>🔥</span><span>'+streakLine()+'<button class="tip-act" onclick="switchTab(\'dashboard\')">去打卡</button></span></div>'+
+    '<div class="tip-card"><span>🔤</span><span>已掌握 '+s.k+' / '+s.t+' 个单词，生词本还有 '+s.h+' 个。<button class="tip-act" onclick="switchTab(\'words\')">去背单词</button></span></div>'+
+    '<div class="tip-card"><span>⏱️</span><span>专注 25 分钟，休息 5 分钟。<button class="tip-act" onclick="switchTab(\'timer\')">开番茄钟</button></span></div>'+
+    '<div class="tip-card"><span>✍️</span><span>做个 10 题小测验检验一下进度。<button class="tip-act" onclick="switchTab(\'quiz\')">去测验</button></span></div>'+
+    '<div class="tip-card"><span>💻</span><span>每天一个 C 语言知识点，例题记得亲手敲。<button class="tip-act" onclick="switchTab(\'clang\')">看笔记</button></span></div>';
+}
+function toggleAi(){
+  const p=$("#aiPanel");
+  if(p.classList.contains("hidden")){
+    p.classList.remove("hidden");
+    $("#aiFab").classList.remove("enter");
+    fabWave();
+    renderAiTips();
+    if(!$("#aiChat").innerHTML){
+      fabTalking(true);
+      setTimeout(()=>{fabTalking(false);appendMsgAi();},600);
+    }
+  }else{
+    p.classList.add("hidden");
+  }
+}
+let greeted=false;
+function appendMsgAi(){
+  if(greeted)return;
+  greeted=true;
+  appendMsg("嗨～我是你的 3D 学习搭子「小云」(｡•ᴗ•｡)\n"+timeGreet()+"！"+streakLine()+"\n可以对我说：背单词 / 开番茄钟 / C语言 / 测验 / 今日计划\n下面的卡片也能一键直达，一起加油呀！",null);
+}
+const AI_FALLBACK=[
+"嗯…这个问题先记下来～不如先完成眼前的小目标：来 20 个单词或一个番茄钟，学完再想！",
+"先把该学的学完，答案说不定就自己冒出来啦～需要就说「背单词」「开番茄钟」，我帮你安排 (•̀ᴗ•́)و",
+"小云建议：学不进去时先降低难度——看 1 个 C 知识点或 5 个单词，找到感觉就停不下来了！"
+];
+let fbIdx=0;
+function aiReply(t){
+  const s=knownCount();
+  if(/linux|命令行|终端|shell|bash/.test(t)){switchTab("linux");return "Linux 笔记打开啦 🐧\n黄金三件套先记牢：ls 看一看、cd 走一走、pwd 我在哪\n危险提醒：rm -rf 删了不可恢复，敲前瞄一眼路径；不会的用 man 命令名 查手册！";}
+  if(/你好|您好|hi|hello|嗨|在吗|你是/.test(t))
+    return "嗨嗨～我是你的 3D 学习搭子「小云」！(｡•ᴗ•｡)\n"+timeGreet()+"！"+streakLine()+"\n对我说「背单词」「开番茄钟」「C语言」都可以，还能考考我今日一句哦～";
+  if(/单词|词汇|背/.test(t)){switchTab("words");const a=statsFor("cet4"),b=statsFor("cet6");return "带你打开单词卡啦 🔤\n四级 "+a.known+" / "+a.total+"　六级 "+b.known+" / "+b.total+"\n两个等级分开背、分开测，先挑一个等级，20 个一组～";}
+  if(/番茄|专注|效率|拖延|拖延症/.test(t)){switchTab("timer");return "番茄钟打开啦 ⏱️\n方法：25 分钟只做一件事，手机扣过去；结束立刻休息 5 分钟\n先点「▶ 开始」，小云会在这陪你～";}
+  if(/c ?语言|指针|编程|代码|代码报错|error/.test(t)){switchTab("clang");return "C 语言笔记打开啦 💻\n小贴士：指针先画内存图（盒子=变量，便签=地址）；\n易错点：比较写 ==，printf 记得分号，scanf 别忘 &\n例题建议在 VS Code 里亲手敲一遍再跑～";}
+  if(/测验|测试|quiz|检验/.test(t)){switchTab("quiz");return "测验页面已打开 ✍️\n10 道题做完出分，速度快说明掌握牢；\n错题别慌，回卡片/笔记看一眼再测，人就是会遗忘的嘛～";}
+  if(/计划|安排|待办|todo|今天做什么/.test(t)){switchTab("todo");return "参考计划：⬇️\n1️⃣ 背 20 个单词　2️⃣ 测验一组\n3️⃣ 学 1 个 C 知识点并敲例题\n4️⃣ 两个番茄钟　5️⃣ 睡前刷生词本\n写进「待办」里面做完打钩很爽的！";}
+  if(/打卡|激励|坚持|放弃|累|烦|不下去/.test(t)){switchTab("dashboard");return "已经很棒了，坚持最重要 🔥\n去仪表盘点一下「今日打卡」，\n然后挑最小的一步先动起来（5 个单词也算赢）！";}
+  if(/生词|忘了|忘记|忘|什么/.test(t)){switchTab("review");return "打开生词本啦 📒\n临睡前 + 第二天早上各刷一遍，记忆最牢\n高中期越难见到的词越要多见它几面～";}
+  const r=AI_FALLBACK[fbIdx%AI_FALLBACK.length];
+  fbIdx++;
+  return r;
+}
+function sendAi(){
+  const inp=$("#aiInput");
+  const v=(inp.value||"").trim();
+  if(!v){toast("先输入想对小云说的话哦");return;}
+  inp.value="";
+  appendMsg(v,"user");
+  if(window.PetBrain)PetBrain.talk(v);
+  fabTalking(true);
+  setTimeout(()=>{
+    const r=aiReply(v.toLowerCase());
+    fabTalking(false);
+    appendMsg(r,"ai");
+    save();
+  },550+Math.random()*400);
+}
+function aiIdle(){
+  if(window.PetBrain&&PetBrain.speaking())return;
+  if(Math.random()<0.32){
+    const b=["该背单词啦！","加油！💪","来个番茄钟？","今日打卡了吗？","有问题找小云～","学完就休息哦～","小贴士："+dailyQuote(),streakLine()];
+    fabBubble(b[Math.floor(Math.random()*b.length)],2400);
+  }
+}
+
+/* ========= 动态壁纸引擎（Canvas · requestAnimationFrame 60fps） ========= */
+const FX=$("#fxCanvas"),FXC=FX.getContext("2d");
+let fxTheme="",fxRaf=null,fxT=0,fxParts=[],fxShoot=null,fxShootCd=180;
+function fxResize(){
+  const dpr=Math.min(window.devicePixelRatio||1,1.5);
+  FX.width=Math.round(window.innerWidth*dpr);
+  FX.height=Math.round(window.innerHeight*dpr);
+}
+function fxPetal(scatter){
+  return {x:Math.random()*FX.width,y:scatter?Math.random()*FX.height:-24,
+    s:Math.random()*.65+.5,rot:Math.random()*Math.PI*2,vr:(Math.random()-.5)*.035,
+    vy:Math.random()*.75+.5,sw:Math.random()*1.2+.5,ph:Math.random()*Math.PI*2,
+    col:["#f9a8c9","#fbc4d8","#f7a1b8"][Math.floor(Math.random()*3)]};
+}
+function fxInit(){
+  fxParts=[];fxShoot=null;fxShootCd=180;
+  const W=FX.width,H=FX.height;
+  if(fxTheme==="fx-star"){
+    const n=Math.min(220,Math.round(W*H/14000));
+    for(let i=0;i<n;i++)fxParts.push({
+      x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.5,
+      a:Math.random()*Math.PI*2,as:Math.random()*.05+.015,vy:Math.random()*.14+.03
+    });
+  }else if(fxTheme==="fx-sakura"){
+    const n=Math.max(26,Math.round(W/46));
+    for(let i=0;i<n;i++)fxParts.push(fxPetal(true));
+  }else if(fxTheme==="fx-aurora"){
+    const cols=[[13,159,110],[56,130,246],[139,92,246],[236,72,153],[14,165,233]];
+    for(let i=0;i<5;i++)fxParts.push({
+      bx:Math.random(),by:Math.random(),r:Math.max(W,H)*(.24+Math.random()*.16),c:cols[i],
+      ax:.16+Math.random()*.12,ay:.14+Math.random()*.12,
+      sx:.0018+Math.random()*.0016,sy:.0014+Math.random()*.0016,ph:Math.random()*Math.PI*2
+    });
+  }
+}
+function fxLoop(){
+  if(!fxTheme)return;
+  fxT++;
+  const c=FXC,W=FX.width,H=FX.height;
+  c.clearRect(0,0,W,H);
+  if(fxTheme==="fx-star"){
+    for(const p of fxParts){
+      p.y+=p.vy;if(p.y>H+4)p.y=-4;
+      p.a+=p.as;
+      c.globalAlpha=(.45+.55*Math.abs(Math.sin(p.a)))*.9;
+      c.fillStyle="#dfe4ff";
+      c.beginPath();c.arc(p.x,p.y,p.r,0,7);c.fill();
+    }
+    if(--fxShootCd<=0&&!fxShoot){
+      fxShoot={x:Math.random()*W*.7+W*.2,y:Math.random()*H*.35,vx:-(6+Math.random()*4),vy:3+Math.random()*2,life:0,max:36+Math.random()*20};
+      fxShootCd=160+Math.random()*240;
+    }
+    if(fxShoot){
+      const s=fxShoot;s.life++;s.x+=s.vx;s.y+=s.vy;
+      const k=1-s.life/s.max;
+      if(k<=0)fxShoot=null;
+      else{
+        c.globalAlpha=k;c.strokeStyle="#ffffff";c.lineWidth=1.6;
+        c.beginPath();c.moveTo(s.x,s.y);c.lineTo(s.x-s.vx*6,s.y-s.vy*6);c.stroke();
+      }
+    }
+  }else if(fxTheme==="fx-sakura"){
+    for(const p of fxParts){
+      p.ph+=.01;p.x+=Math.sin(p.ph)*p.sw*.5;p.y+=p.vy;p.rot+=p.vr;
+      if(p.y>H+24||p.x<-24||p.x>W+24)Object.assign(p,fxPetal(false));
+      c.save();c.translate(p.x,p.y);c.rotate(p.rot);
+      c.globalAlpha=.8;c.fillStyle=p.col;
+      c.beginPath();c.ellipse(0,0,9*p.s,5.5*p.s,0,0,7);c.fill();
+      c.restore();
+    }
+  }else if(fxTheme==="fx-aurora"){
+    for(const b of fxParts){
+      const x=(b.bx+Math.sin(fxT*b.sx+b.ph)*b.ax)*W;
+      const y=(b.by+Math.cos(fxT*b.sy+b.ph)*b.ay)*H;
+      const g=c.createRadialGradient(x,y,0,x,y,b.r);
+      g.addColorStop(0,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+",.2)");
+      g.addColorStop(1,"rgba("+b.c[0]+","+b.c[1]+","+b.c[2]+",0)");
+      c.fillStyle=g;
+      c.fillRect(x-b.r,y-b.r,b.r*2,b.r*2);
+    }
+  }
+  c.globalAlpha=1;
+  fxRaf=requestAnimationFrame(fxLoop);
+}
+function fxStart(theme){
+  if(fxRaf){cancelAnimationFrame(fxRaf);fxRaf=null;}
+  fxTheme=(theme&&theme.indexOf("fx-")===0)?theme:"";
+  if(!fxTheme){FX.style.display="none";return;}
+  FX.style.display="block";
+  fxResize();fxInit();
+  fxRaf=requestAnimationFrame(fxLoop);
+}
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){if(fxRaf){cancelAnimationFrame(fxRaf);fxRaf=null;}}
+  else if(fxTheme&&!fxRaf)fxRaf=requestAnimationFrame(fxLoop);
+});
+window.addEventListener("resize",()=>{if(fxTheme){fxResize();fxInit();}});
+
+function boot(){
+  setTheme(db.theme||"");
+  applyAvatars();
+  initPet();
+  $("#todayLine").textContent=dateCN();
+  $("#topDate").textContent=shortDate();
+  $("#nCet4").textContent=WORDS.cet4.length;
+  $("#nCet6").textContent=WORDS.cet6.length;
+  $("#libCount").textContent="四级 "+WORDS.cet4.length+" 词 · 六级 "+WORDS.cet6.length+
+    " 词 · 共 "+(WORDS.cet4.length+WORDS.cet6.length)+" 词";
+  ensurePomoDay();save();
+  loadPomoLen();
+  rebuildQueue();
+  cur=queue.pop()||null;
+  renderWord();
+  renderReview();
+  renderSearch();
+  renderClang();
+  renderTodos();
+  renderPomoStats();
+  renderPomoTime();
+  renderDash();
+  const q=new URLSearchParams(location.hash?location.hash.slice(1):location.search.slice(1));
+  if(q.get("theme"))setTheme(q.get("theme"));
+  if(q.get("tab"))switchTab(q.get("tab"));
+  setTimeout(()=>{$("#aiFab").classList.remove("enter");},1200);
+  setInterval(aiIdle,16000);
+  /* 桌宠互动层：摸头 / 投喂 / 好感度 / 成就 / 小游戏 */
+  if(window.PetBrain){
+    PetBrain.init({
+      getDB:()=>db,
+      save:()=>save(),
+      expr:(id,dur)=>petExpr(id,dur),
+      word:(id)=>{try{petWord(id)}catch(e){}},
+      spark:(emo)=>{try{sparkBurst(emo)}catch(e){}},
+      toast:(m)=>toast(m),
+      openChat:()=>{ if($("#aiPanel").classList.contains("hidden")) toggleAi(); }
+    });
+  }
+}
+/* 启动：先取服务端记忆，与本地缓存比 savedAt，谁新用谁 */
+(async function init(){
+  let remote=null;
+  try{
+    const r=await fetch("/api/state",{cache:"no-store"});
+    cloudOK=r.ok;
+    if(r.ok){const j=await r.json();if(j&&j.words)remote=normalize(j);}
+  }catch(e){ cloudOK=false; }
+  const local=loadDB();
+  db=remote&&(remote.savedAt||0)>=(local.savedAt||0)?remote:local;
+  boot();
+})();
+</script>
+</body>
+</html>

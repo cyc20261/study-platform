@@ -1,0 +1,21 @@
+# 本地学习数据（个人进度 + 自动备份），不入库
+data/
+
+# 本地截图与历史备份
+shots/
+preview_home.png
+*.bak.*
+
+# 本地服务 / 无头浏览器临时目录
+.chrometmp*/
+.cdp/
+.ct*/
+
+# Python
+__pycache__/
+*.pyc
+
+# 系统
+.DS_Store
+Thumbs.db
+desktop.ini
