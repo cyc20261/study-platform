@@ -3705,11 +3705,16 @@ function boot(){
 /* 启动：先取服务端记忆，与本地缓存比 savedAt，谁新用谁 */
 (async function init(){
   let remote=null;
-  try{
-    const r=await fetch("/api/state",{cache:"no-store"});
-    cloudOK=r.ok;
-    if(r.ok){const j=await r.json();if(j&&j.words)remote=normalize(j);}
-  }catch(e){ cloudOK=false; }
+  /* 静态托管（GitHub Pages 之类）没有 /api/state，直接跳过探测，免得控制台留一条 404 */
+  const isStaticHost=location.protocol==="file:"||
+    /(^|\.)(github\.io|gitlab\.io|netlify\.app|vercel\.app|pages\.dev)$/.test(location.hostname);
+  if(!isStaticHost){
+    try{
+      const r=await fetch("/api/state",{cache:"no-store"});
+      cloudOK=r.ok;
+      if(r.ok){const j=await r.json();if(j&&j.words)remote=normalize(j);}
+    }catch(e){ cloudOK=false; }
+  }
   const local=loadDB();
   db=remote&&(remote.savedAt||0)>=(local.savedAt||0)?remote:local;
   boot();
