@@ -31,6 +31,8 @@
     petBox: null,
     isPinned: function () { return false; },
     togglePin: function () {},
+    openWardrobe: function () {},
+    wearTop: function () { return null; },
     baseDate: null
   };
 
@@ -108,8 +110,14 @@
     var r = petRect();
     var w = sayEl.offsetWidth;
     var left = clamp(r.left + r.width / 2 - w / 2, 8, Math.max(8, window.innerWidth - w - 8));
+    // 她头上戴了装饰时，气泡还要再往上让一截，别糊住舞狮头套
+    var topY = r.top;
+    try {
+      var wt = H.wearTop && H.wearTop();
+      if (typeof wt === 'number' && isFinite(wt)) topY = Math.min(topY, wt);
+    } catch (e) {}
     sayEl.style.left = left + 'px';
-    sayEl.style.bottom = (window.innerHeight - r.top + 10) + 'px';
+    sayEl.style.bottom = (window.innerHeight - topY + 10) + 'px';
   }
 
   function say(text, opts) {
@@ -593,6 +601,7 @@
       { ico: '🎖️', label: '成长与成就', sub: 'Lv' + p.growth.level, fn: function () { closeMenu(); openPanel(); } },
       { ico: '💬', label: '和她说说话', sub: '双击也可以', fn: function () { closeMenu(); H.openChat(); } },
       { sep: true },
+      { ico: '🎀', label: '给她打扮', sub: '舞狮头套 / 猫耳…', fn: function () { closeMenu(); try { H.openWardrobe(); } catch (e) {} } },
       pinItem(),
       { ico: '👋', label: '打个招呼', sub: '', fn: function () { closeMenu(); greet(); } }
     ];

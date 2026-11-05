@@ -580,6 +580,90 @@ body[data-theme="fx-aurora"]{
   box-shadow:0 4px 12px rgba(31,35,51,.16);white-space:nowrap;
   pointer-events:auto;cursor:pointer;z-index:47;
 }
+/* ===== 桌宠装饰品 ===== */
+/* fixed 而非 absolute：舞台左边界在桌面端从侧栏右边开始，装饰要用视口坐标 */
+.pet-wear{position:fixed;inset:0;pointer-events:none;z-index:3}
+.pet-wear .pw{
+  position:absolute;left:0;top:0;transform:translate(-50%,-100%);
+  transform-origin:50% 100%;will-change:transform;
+  filter:drop-shadow(0 3px 7px rgba(20,26,45,.20));
+}
+.pet-wear .pw svg{display:block;width:100%;height:100%;overflow:visible}
+/* 各自的小动作：飘带摆、绒球晃、猫耳抖、流苏摇… */
+.pw-bob{animation:pwBob 3.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pwBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-1.6px) rotate(2deg)}}
+.pw-rib{animation:pwRib 2.8s ease-in-out infinite;transform-box:view-box}
+@keyframes pwRib{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}
+.pw-tassel{animation:pwRib 3.6s ease-in-out infinite;transform-box:view-box}
+.pw-ear-l{animation:pwEarL 5s ease-in-out infinite;transform-box:view-box}
+.pw-ear-r{animation:pwEarR 5s ease-in-out infinite;transform-box:view-box}
+@keyframes pwEarL{0%,86%,100%{transform:rotate(0)}90%{transform:rotate(-8deg)}94%{transform:rotate(3deg)}}
+@keyframes pwEarR{0%,86%,100%{transform:rotate(0)}90%{transform:rotate(8deg)}94%{transform:rotate(-3deg)}}
+.pw-twinkle{animation:pwTwinkle 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pwTwinkle{0%,100%{opacity:.3;transform:scale(.62) rotate(0)}50%{opacity:1;transform:scale(1.05) rotate(22deg)}}
+.pw-flower{animation:pwFlower 5.5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pwFlower{0%,100%{transform:rotate(-1.4deg)}50%{transform:rotate(1.4deg)}}
+.pw-breathe{animation:pwBreathe 3.6s ease-in-out infinite}
+@keyframes pwBreathe{0%,100%{opacity:.3}50%{opacity:.95}}
+@media (prefers-reduced-motion:reduce){
+  .pet-wear .pw *{animation:none!important}
+}
+
+/* ===== 装扮面板 ===== */
+.ward-mask{
+  position:fixed;inset:0;z-index:70;display:flex;align-items:center;justify-content:center;
+  background:rgba(16,22,38,.34);backdrop-filter:blur(4px);
+  animation:wardFade .18s ease both;padding:16px;
+}
+@keyframes wardFade{from{opacity:0}to{opacity:1}}
+.ward{
+  width:min(580px,100%);max-height:min(82vh,640px);overflow:auto;
+  background:var(--card);backdrop-filter:blur(22px) saturate(1.25);
+  border:1px solid var(--line);border-radius:20px;
+  box-shadow:0 24px 70px rgba(16,22,38,.32);
+  padding:18px 18px 16px;animation:wardPop .22s cubic-bezier(.2,.9,.3,1.15) both;
+}
+@keyframes wardPop{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.ward-head{display:flex;align-items:center;gap:9px}
+.ward-head h3{margin:0;font-size:16px;color:var(--ink);font-weight:700}
+.ward-x{
+  margin-left:auto;width:30px;height:30px;border-radius:50%;border:none;cursor:pointer;
+  background:var(--seg-bg);color:var(--muted);font-size:15px;line-height:1;
+  display:flex;align-items:center;justify-content:center;transition:background .15s,color .15s;
+}
+.ward-x:hover{background:var(--hover-soft);color:var(--ink)}
+.ward-sub{font-size:12.5px;color:var(--muted);margin:6px 0 14px;line-height:1.5}
+.ward-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.ward-item{
+  position:relative;border:1.5px solid var(--line);border-radius:14px;
+  background:var(--seg-bg);padding:8px 6px 9px;cursor:pointer;
+  transition:transform .16s,border-color .16s,box-shadow .16s,background .16s;
+  -webkit-tap-highlight-color:transparent;font:inherit;
+}
+.ward-item:hover{transform:translateY(-2px);border-color:var(--accent);background:var(--hover-soft)}
+.ward-item.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 3px var(--accent-soft)}
+.ward-item.on::after{
+  content:"✓";position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;
+  background:var(--accent);color:#fff;font-size:12px;line-height:20px;text-align:center;
+  box-shadow:0 2px 6px rgba(8,145,178,.4);
+}
+.ward-thumb{height:56px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ward-thumb svg{width:100%;height:100%;overflow:visible}
+.ward-thumb img{max-width:100%;max-height:52px;object-fit:contain;border-radius:8px}
+.ward-name{font-size:12px;font-weight:600;color:var(--ink);margin-top:5px;line-height:1.2}
+.ward-tag{
+  position:absolute;top:-8px;left:8px;font-size:10px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,#f97316,#ef4444);border-radius:999px;padding:1.5px 7px;
+  box-shadow:0 2px 6px rgba(239,68,68,.35);
+}
+.ward-item:focus{outline:none}
+.ward-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@media (max-width:640px){
+  .ward-grid{grid-template-columns:repeat(3,1fr);gap:8px}
+  .ward{padding:16px 14px 14px;border-radius:18px}
+  .ward-thumb{height:52px}
+  .ward-thumb svg{max-height:50px}
+}
 /* 等级徽章由互动层创建，位置交给 petFollow() 每帧贴着她的头顶 */
 .ai-fab .pet-badge{top:auto;right:14px;bottom:150px}
 .ai-fab.enter #petStage{animation:petIn .9s cubic-bezier(.2,.9,.3,1.2) both}
@@ -962,6 +1046,7 @@ body[data-theme="fx-aurora"]{
     <g id="petG"></g>
     <g id="petFx"></g>
   </svg>
+  <div id="petWear" class="pet-wear" aria-hidden="true"></div>
   <div id="petPin" class="pet-pin-badge hidden" title="点击解除固定">📌 已固定</div>
   <img id="fabFallback" class="fab-fallback hidden" src="assets/whale/whale/poster.webp" alt="小云" onerror="this.style.visibility='hidden'">
 </div>
@@ -992,6 +1077,7 @@ body[data-theme="fx-aurora"]{
 <script src="assets/data/c-quiz.js"></script>
 <script src="assets/data/math-notes.js"></script>
 <script src="assets/data/math-quiz.js"></script>
+<script src="assets/data/pet-deco.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
@@ -2273,7 +2359,75 @@ function petFollow(){
     }
     pin.style.top=(by+b.height*0.34)+"px";
   }
+  petWearPlace();
 }
+
+/* ===== 装饰品：戴在头顶，跟着她走 ===== */
+const PET_DECO=window.PET_DECO||[];
+let petWearId="",petWearEl=null;
+function petDecoById(id){for(let i=0;i<PET_DECO.length;i++)if(PET_DECO[i].id===id)return PET_DECO[i];return null;}
+function petUid(){return "d"+Math.random().toString(36).slice(2,8);}
+function petWearApply(id,quiet){
+  const box=$("#petWear");
+  if(!box)return "";
+  const d=petDecoById(id);
+  petWearId=d?d.id:"";
+  db.petWear=petWearId;
+  if(!d){box.innerHTML="";petWearEl=null;}
+  else{
+    box.innerHTML='<div class="pw">'+d.svg.replace(/__I__/g,petUid())+"</div>";
+    petWearEl=box.firstElementChild;
+  }
+  petWearPlace();
+  if(!quiet){try{save();}catch(e){}}
+  return petWearId;
+}
+function petWearPlace(){
+  if(!petWearEl||!petCtl)return;
+  const d=petDecoById(petWearId);
+  if(!d)return;
+  let b=null;
+  try{b=petBox();}catch(e){}
+  if(!b)return;
+  const S=petBounds().S;
+  petWearEl.style.width=(d.w*S)+"px";
+  petWearEl.style.height=(d.h*S)+"px";
+  petWearEl.style.left=(b.cx+(d.ox||0)*S)+"px";
+  petWearEl.style.top=(b.headY+(d.oy||0)*S)+"px";
+}
+function closeWardrobe(){
+  document.getElementById("wardMask")?.remove();
+  document.removeEventListener("keydown",wardEsc,true);
+}
+function wardEsc(e){if(e.key==="Escape")closeWardrobe();}
+function openWardrobe(){
+  closeWardrobe();
+  const mask=document.createElement("div");
+  mask.className="ward-mask";mask.id="wardMask";
+  const all=[{id:"",name:"不戴",empty:true}].concat(PET_DECO);
+  mask.innerHTML='<div class="ward" role="dialog" aria-modal="true" aria-label="给小云打扮">'+
+    '<div class="ward-head"><h3>🎀 给小云打扮</h3><button class="ward-x" aria-label="关闭">✕</button></div>'+
+    '<div class="ward-sub">挑一件戴在她头上，再点一次就摘下来。选择会存进存档，刷新或换设备都还在。</div>'+
+    '<div class="ward-grid">'+all.map(d=>{
+      const on=(d.id||"")===petWearId;
+      return '<button type="button" class="ward-item'+(on?" on":"")+(d.empty?" ward-empty":"")+'" data-deco="'+d.id+'" title="'+(d.desc||d.name)+'">'+
+        (d.tag?'<span class="ward-tag">'+d.tag+"</span>":"")+
+        (d.empty?'<div class="ward-thumb"><img src="'+PET_THUMB+'" alt=""></div>':'<div class="ward-thumb">'+d.svg.replace(/__I__/g,petUid())+"</div>")+
+        '<div class="ward-name">'+d.name+"</div></button>";
+    }).join("")+"</div></div>";
+  document.body.appendChild(mask);
+  mask.addEventListener("click",e=>{
+    if(e.target===mask||e.target.closest(".ward-x")){closeWardrobe();return;}
+    const btn=e.target.closest(".ward-item");
+    if(!btn)return;
+    const id=btn.getAttribute("data-deco")||"";
+    /* 点正在戴的那件 = 摘下来 */
+    petWearApply(id&&id===petWearId?"":id);
+    mask.querySelectorAll(".ward-item").forEach(b=>b.classList.toggle("on",(b.getAttribute("data-deco")||"")===petWearId));
+  });
+  document.addEventListener("keydown",wardEsc,true);
+}
+window.openWardrobe=openWardrobe;
 
 function applyAvatars(){
   $("#aiHeadAvatar").innerHTML='<img src="'+PET_THUMB+'" alt="小云">';
@@ -2346,6 +2500,8 @@ async function initPet(){
       setTimeout(()=>fb.classList.add("hidden"),280);
     }
     $("#petStage")?.classList.add("pet-live");
+    /* 上次戴的装饰，回来还戴着 */
+    try{petWearApply(db.petWear||"",true);}catch(e){}
     /* 视角变了要按新尺寸重新铺场地 */
     window.addEventListener("resize",()=>{try{petCtl&&petCtl.resize();}catch(e){}});
     window.addEventListener("pagehide",()=>petSavePos(true));
@@ -2802,7 +2958,9 @@ function boot(){
       openChat:()=>{ if($("#aiPanel").classList.contains("hidden")) toggleAi(); },
       petBox:()=>{try{return petBox();}catch(e){return null;}},
       isPinned:()=>petPinned,
-      togglePin:()=>petTogglePin()
+      togglePin:()=>petTogglePin(),
+      openWardrobe:()=>{try{openWardrobe();}catch(e){console.error(e);}},
+      wearTop:()=>{try{return petWearEl?petWearEl.getBoundingClientRect().top:null;}catch(e){return null;}}
     });
   }
 }
