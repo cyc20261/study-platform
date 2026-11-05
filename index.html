@@ -387,13 +387,34 @@ body[data-theme^="photo"] .tabs{border-color:rgba(255,255,255,.65);backdrop-filt
 body[data-theme="fx-ocean"]{background:transparent}
 body[data-theme="fx-ocean"] #oceanLayer{display:block}
 .oc{position:absolute}
-.oc-floor{inset:-7%;background:url(assets/ocean/floor.webp) center/cover no-repeat;
-  animation:ocFloat 82s ease-in-out infinite alternate;will-change:transform;
+/* 水流感：海底层缓慢摇曳（transform 实现，GPU 合成，不烧性能） */
+.oc-floor{inset:-9%;background:url(assets/ocean/floor.webp) center/cover no-repeat;
+  animation:ocFloat 82s ease-in-out infinite alternate,ocSway 19s ease-in-out infinite;
+  will-change:transform;
   filter:saturate(1.14) contrast(1.05) brightness(1.02) hue-rotate(14deg)}
 @keyframes ocFloat{
   0%{transform:scale(1.03) translate3d(-1.3%,-.9%,0)}
   52%{transform:scale(1.09) translate3d(1%,1.2%,0)}
   100%{transform:scale(1.045) translate3d(1.5%,-.6%,0)}
+}
+/* 高频微摇曳：模拟水体折射带来的晃动 */
+@keyframes ocSway{
+  0%{rotate:0deg}
+  25%{rotate:.5deg}
+  55%{rotate:-.4deg}
+  80%{rotate:.3deg}
+  100%{rotate:0deg}
+}
+/* 顶部水面带：抬头可见的水面，光网缓慢横向流过 */
+.oc-surf{inset:0;background-image:url(assets/ocean/caustics.webp);background-repeat:repeat;
+  background-size:72% auto;mix-blend-mode:screen;opacity:.30;will-change:transform;
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.5) 15%,transparent 36%);
+  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.5) 15%,transparent 36%);
+  animation:ocSurf 68s linear infinite}
+@keyframes ocSurf{
+  0%{transform:translate3d(0,0,0) scale(1.05)}
+  50%{transform:translate3d(-14%,1.6%,0) scale(1.09)}
+  100%{transform:translate3d(-27%,0,0) scale(1.05)}
 }
 .oc-cau{inset:-34%;background-image:url(assets/ocean/caustics.webp);background-repeat:repeat;
   mix-blend-mode:screen;will-change:transform;opacity:0}
@@ -406,8 +427,12 @@ body[data-theme="fx-ocean"] #oceanLayer{display:block}
 .oc-tint{inset:0;background:
   radial-gradient(112% 74% at 50% -12%,rgba(255,255,255,.30),rgba(255,255,255,0) 58%),
   linear-gradient(180deg,rgba(198,242,250,.12) 0%,rgba(90,175,195,.04) 42%,rgba(12,74,96,.16) 100%)}
-.oc-water{inset:0;background:linear-gradient(158deg,rgba(0,150,200,.07) 0%,rgba(6,120,165,.03) 45%,rgba(4,92,132,.10) 100%);
-  mix-blend-mode:multiply;opacity:.42}
+.oc-water{inset:-4%;background:linear-gradient(158deg,rgba(0,150,200,.07) 0%,rgba(6,120,165,.03) 45%,rgba(4,92,132,.10) 100%);
+  mix-blend-mode:multiply;opacity:.42;animation:ocWater 23s ease-in-out infinite alternate}
+@keyframes ocWater{
+  0%{opacity:.30;transform:translate3d(-1.6%,0,0)}
+  100%{opacity:.50;transform:translate3d(1.6%,1%,0)}
+}
 .oc-vig{inset:0;box-shadow:inset 0 0 220px 34px rgba(10,60,80,.25)}
 body[data-theme="fx-ocean"]{
   --bg-grad:linear-gradient(170deg,#e2f5f7,#cbeef2);
@@ -573,6 +598,7 @@ body[data-theme="fx-aurora"]{
 <div id="bgLayer" aria-hidden="true"></div>
 <div id="oceanLayer" aria-hidden="true">
   <div class="oc oc-floor"></div>
+  <div class="oc oc-surf"></div>
   <div class="oc oc-cau a"></div>
   <div class="oc oc-cau b"></div>
   <div class="oc oc-tint"></div>
@@ -2303,10 +2329,14 @@ function ocSpawn(){
 function ocFrame(c,W,H){
   if(ocMob()&&((OC.slow=(OC.slow+1)%2)===1))return;   /* 手机上 30fps */
   const dpr=W/Math.max(1,window.innerWidth);
+  /* 缓慢水流：方向与强度随时间正弦变化，带动颗粒/气泡/鱼一起漂 */
+  const t0=OC.t||0;
+  const cur=Math.sin(t0*0.00042)*1.1+Math.sin(t0*0.00013+1.7)*0.6;  /* -1.7 ~ +1.7 px/帧 */
+  const curA=(0.5+0.5*Math.sin(t0*0.00031));                        /* 水流强弱呼吸 */
   const im1=OC.img.f1,im2=OC.img.f2;
   for(const f of OC.fish){
     f.ph+=0.018+f.s*0.008;
-    f.x+=f.sp*f.dir;
+    f.x+=f.sp*f.dir+cur*0.35*f.s;
     const y=f.y+Math.sin(f.ph)*f.amp;
     if(f.dir>0&&f.x>W+220)f.x=-220;
     if(f.dir<0&&f.x<-220)f.x=W+220;
@@ -2322,7 +2352,8 @@ function ocFrame(c,W,H){
     c.restore();
   }
   for(const b of OC.bub){
-    b.y-=b.v;b.ph+=0.03;
+    b.y-=b.v;b.ph+=0.03;b.x+=cur*0.5;
+    if(b.x<-12)b.x=W+12;else if(b.x>W+12)b.x=-12;
     const x=b.x+Math.sin(b.ph)*6*dpr;
     if(b.y<-10){b.y=H+10;b.x=Math.random()*W;b.r=(1.3+Math.random()*3.2)*(W/1400);}
     c.beginPath();c.arc(x,b.y,b.r,0,6.2832);
@@ -2331,7 +2362,7 @@ function ocFrame(c,W,H){
     c.fillStyle="rgba(255,255,255,"+b.a+")";c.fill();
   }
   for(const d of OC.dust){
-    d.x+=d.vx*dpr;d.y+=d.vy*dpr;d.ph+=0.02;
+    d.x+=(d.vx+cur*(0.6+d.r*0.25))*dpr;d.y+=d.vy*dpr;d.ph+=0.02;
     if(d.y<-8){d.y=H+8;d.x=Math.random()*W;}
     if(d.x<-8)d.x=W+8;
     if(d.x>W+8)d.x=-8;
@@ -2345,7 +2376,7 @@ function ocFrame(c,W,H){
     c.save();
     c.globalCompositeOperation="lighter";
     for(const bm of OC.beams){
-      const k=0.055+0.035*Math.sin(OC.t*bm.sp+bm.ph);
+      const k=(0.055+0.035*Math.sin(OC.t*bm.sp+bm.ph))*(0.72+0.5*curA);
       c.save();
       c.translate(W*bm.x,-H*0.12);
       c.rotate(bm.rot+0.05*Math.sin(OC.t*bm.sp*0.6+bm.ph));
