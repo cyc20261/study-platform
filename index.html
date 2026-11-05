@@ -25,6 +25,7 @@ body{
   --topbar:rgba(255,255,255,.88); --hover-soft:#f7f8fd;
   --code-bg:#f1f2f8; --code-ink:#4f46e5;
   --ok:#16a34a; --ok-soft:#dcfce7; --bad:#e5484d; --bad-soft:#fee2e2;
+  --note-ink:#3b4157;
   --shadow:0 2px 12px rgba(31,35,51,.06);
 }
 body[data-theme="sakura"]{ --bg-grad:linear-gradient(160deg,#fdf0f6 0%,#f8ebf4 45%,#eff0fb 100%); --accent:#ec4899; --accent-2:#a855f7; --accent-soft:#fdeef8; --code-ink:#db2777 }
@@ -36,6 +37,7 @@ body[data-theme="starry"],body[data-theme="midnight"]{
   --seg-bg:#31355a; --seg-active:#3d4270; --topbar:rgba(30,33,58,.86);
   --hover-soft:#2e3253; --code-bg:#31355a; --code-ink:#a5b4fc;
   --accent-soft:rgba(139,92,246,.18); --shadow:0 2px 14px rgba(0,0,0,.35);
+  --note-ink:#d5d9f7;
 }
 body[data-theme="starry"]{ --bg-grad:linear-gradient(160deg,#15162b 0%,#1c1d3a 55%,#232150 100%); --accent:#8b5cf6; --accent-2:#6366f1 }
 body[data-theme="midnight"]{ --bg-grad:linear-gradient(160deg,#0e1626 0%,#14203a 55%,#1a2b4d 100%); --accent:#38bdf8; --accent-2:#818cf8 }
@@ -309,19 +311,44 @@ details .desc{padding:0 16px 12px;color:var(--muted);font-size:13.5px;line-heigh
   font-size:12px;font-weight:500;color:var(--muted);background:var(--seg-bg);
   padding:2px 8px;border-radius:20px;
 }
+/* --- 高数：章节试卷卡、公式区、例题区 --- */
+.math-papers{display:grid;grid-template-columns:repeat(auto-fill,minmax(236px,1fr));gap:10px;margin-top:14px}
+.math-paper{
+  display:flex;flex-direction:column;gap:3px;text-align:left;
+  padding:12px 14px;border-radius:12px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);cursor:pointer;
+  transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.math-paper:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 8px 20px rgba(31,35,51,.10)}
+.math-paper .mp-ch{font-size:13.5px;font-weight:700}
+.math-paper .mp-t{font-size:12px;color:var(--muted)}
+.math-paper .mp-meta{font-size:11.5px;color:var(--accent);margin-top:2px}
+.cat-quiz{margin-left:auto;font-size:12px}
+.math-fbox{margin:12px 0}
+.math-f{
+  margin:0;padding:12px 14px;border-radius:10px;
+  background:linear-gradient(180deg,rgba(8,145,178,.075),rgba(8,145,178,.03));
+  border-left:3px solid var(--accent);
+  font-family:Consolas,Monaco,monospace;font-size:12.8px;line-height:1.95;
+  color:var(--ink);white-space:pre-wrap;overflow-x:auto;
+}
+.math-ex{margin:14px 0;padding:12px 14px;border-radius:10px;background:var(--seg-bg)}
+.math-ex-q{font-size:13.6px;line-height:1.85;margin:6px 0 8px;font-weight:600}
+.math-ex-a{font-size:13.3px;line-height:1.9;color:var(--note-ink);border-top:1px dashed var(--line);padding-top:8px}
+body[data-theme="fx-ocean"] .math-f{background:linear-gradient(180deg,rgba(8,145,178,.10),rgba(8,145,178,.04))}
 .note-wrap{padding:0 16px 16px}
 .note .desc{
   padding:0 0 14px;color:var(--muted);font-size:13.5px;line-height:1.8;
   border-bottom:1px dashed var(--line);margin-bottom:12px;
 }
-.nc-p{margin:0 0 11px;font-size:13.8px;line-height:1.9;color:#3b4157}
+.nc-p{margin:0 0 11px;font-size:13.8px;line-height:1.9;color:var(--note-ink)}
 .nc-p b,.nc-ul b{color:var(--ink);font-weight:600}
 .nc-h{
   margin:16px 0 8px;font-size:13.5px;font-weight:700;color:var(--accent);
   display:flex;align-items:center;gap:6px;
 }
 .nc-h::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--accent)}
-.nc-ul{margin:0 0 12px;padding-left:19px;font-size:13.6px;line-height:1.9;color:#3b4157}
+.nc-ul{margin:0 0 12px;padding-left:19px;font-size:13.6px;line-height:1.9;color:var(--note-ink)}
 .nc-ul li{margin:3px 0}
 .nc-ul li::marker{color:var(--accent)}
 .nc-note,.nc-warn{
@@ -345,7 +372,7 @@ details .desc{padding:0 16px 12px;color:var(--muted);font-size:13.5px;line-heigh
 .nc-out .nc-label{margin-top:10px}
 .nc-out pre{
   margin:0;font-family:Consolas,Monaco,monospace;font-size:12.8px;line-height:1.7;
-  color:#2f3547;white-space:pre-wrap;word-break:break-word;
+  color:var(--note-ink);white-space:pre-wrap;word-break:break-word;
 }
 .nc-tips{
   background:#fff5f2;border:1px solid #ffe2d8;border-radius:10px;
@@ -490,6 +517,14 @@ body[data-theme="fx-ocean"] .stat{background:rgba(255,255,255,.62)}
 /* 文字密集的列表区再压一层，保证能读 */
 body[data-theme="fx-ocean"] details,
 body[data-theme="fx-ocean"] .opt{background:rgba(255,255,255,.78)}
+/* 上面这条 .opt 白底会盖掉 .opt.right / .opt.wrong 的语义色，这里补回来 */
+body[data-theme="fx-ocean"] .opt.right{background:var(--ok-soft);border-color:var(--ok);color:var(--ink)}
+body[data-theme="fx-ocean"] .opt.wrong{background:var(--bad-soft);border-color:var(--bad);color:var(--ink)}
+body[data-theme="fx-ocean"] #quizBox{background:rgba(255,255,255,.88)}
+/* 长文笔记（C 语言 / 高数）再压一层，正文才能长时间看 */
+body[data-theme="fx-ocean"] #clangList details.note,
+body[data-theme="fx-ocean"] #mathList details.note{background:rgba(255,255,255,.86)}
+body[data-theme="fx-ocean"] .math-paper{background:rgba(255,255,255,.82)}
 body[data-theme="fx-ocean"] details .code{background:rgba(255,255,255,.86)}
 body[data-theme="fx-ocean"] .nc-note{background:rgba(224,247,250,.94);color:#155e75}
 body[data-theme="fx-ocean"] .nc-warn{background:rgba(255,249,235,.94)}
@@ -509,7 +544,7 @@ body[data-theme="fx-star"]{
   --seg-bg:#31355a;--seg-active:#3d4270;--topbar:rgba(30,33,58,.86);
   --hover-soft:#2e3253;--code-bg:#31355a;--code-ink:#a5b4fc;
   --accent-soft:rgba(139,92,246,.18);--shadow:0 2px 14px rgba(0,0,0,.35);
-  --accent:#8b5cf6;--accent-2:#6366f1;
+  --accent:#8b5cf6;--accent-2:#6366f1;--note-ink:#d5d9f7;
 }
 body[data-theme="fx-sakura"]{
   --bg-grad:linear-gradient(160deg,#fde9f4 0%,#f8e9f6 50%,#eee9fb 100%);
@@ -709,6 +744,7 @@ body[data-theme="fx-aurora"]{
     <button class="tab" data-tab="review">📒 生词本</button>
     <button class="tab" data-tab="quiz">✍️ 测验</button>
     <button class="tab" data-tab="clang">💻 C 语言</button>
+    <button class="tab" data-tab="math">📐 高数</button>
     <button class="tab" data-tab="linux">🐧 Linux 命令</button>
     <button class="tab" data-tab="timer">⏱️ 番茄钟</button>
     <button class="tab" data-tab="todo">✅ 待办</button>
@@ -745,6 +781,7 @@ body[data-theme="fx-aurora"]{
         <span class="chip-pill">背 20 个单词</span>
         <span class="chip-pill">单词测验 1 组</span>
         <span class="chip-pill">学 1 个 C 知识点并敲代码</span>
+        <span class="chip-pill">学 1 个高数知识点 + 做本章卷</span>
         <span class="chip-pill">完成 2 个番茄钟</span>
         <span class="chip-pill">学几个 Linux 命令</span>
         <span class="chip-pill">睡前复习生词本</span>
@@ -797,6 +834,7 @@ body[data-theme="fx-aurora"]{
       <div class="row" id="quizTypeRow2">
         <button class="btn ghost" data-qtype="c" onclick="startQuiz('c')">💻 C 语言测验（题库 138 · 抽 10 题）</button>
         <button class="btn ghost" data-qtype="linux" onclick="startQuiz('linux')">🐧 Linux 命令测验（10题）</button>
+        <button class="btn ghost" onclick="switchTab('math')">📐 高数（11 份章节卷，去高数页选）</button>
       </div>
     </div>
     <div class="card" id="quizBox" style="display:none"></div>
@@ -812,6 +850,23 @@ body[data-theme="fx-aurora"]{
       <button class="btn ghost sm" onclick="toggleAllNotes(false)">全部收起</button>
     </div>
     <div id="clangList"></div>
+  </section>
+
+  <section class="tab" id="tab-math">
+    <div class="card">
+      <h2>📐 高等数学 <small id="mathMeta">11 章 73 篇 · 每章配一份单元测验卷</small></h2>
+      <p class="muted" style="font-size:13px;line-height:1.8;margin-bottom:2px">
+        每篇都按「原理讲解 → 关键公式 → 例题 → 易错点」四段写。学完一章可以直接点下面的卷子自测，
+        题目的选项顺序每次都会打乱，错题会给出解析，方便回看对应知识点。
+      </p>
+      <div class="math-papers" id="mathPapers"></div>
+    </div>
+    <div class="clang-tools">
+      <input id="mathSearch" placeholder="搜知识点，如：极限 / 洛必达 / 分部积分 / 格林公式 / 收敛半径" oninput="filterMath(this.value)">
+      <button class="btn ghost sm" onclick="toggleAllMath(true)">全部展开</button>
+      <button class="btn ghost sm" onclick="toggleAllMath(false)">全部收起</button>
+    </div>
+    <div id="mathList"></div>
   </section>
 
   <section class="tab" id="tab-linux">
@@ -935,20 +990,28 @@ body[data-theme="fx-aurora"]{
 <script src="assets/data/words.js"></script>
 <script src="assets/data/c-notes.js"></script>
 <script src="assets/data/c-quiz.js"></script>
+<script src="assets/data/math-notes.js"></script>
+<script src="assets/data/math-quiz.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
 
 /* ===== 数据都在 assets/data/ 下，改内容不用碰这个文件 =====
-   words.js  ：四级 4594 词（大纲全量）+ 六级新增 1200 词，合计 5794 词
-   c-notes.js：C 语言 66 篇详解（原理 + 语法 + 代码 + 运行结果 + 易错点）
-   c-quiz.js ：C 语言 138 道题库（含逐题解析） */
+   words.js     ：四级 4594 词（大纲全量）+ 六级新增 1200 词，合计 5794 词
+   c-notes.js   ：C 语言 66 篇详解（原理 + 语法 + 代码 + 运行结果 + 易错点）
+   c-quiz.js    ：C 语言 138 道题库（含逐题解析）
+   math-notes.js：高等数学 11 章 73 篇（公式 + 例题 + 易错点）
+   math-quiz.js ：高等数学 11 份单元测验卷，每卷 10 题 */
 const WORDS=window.CET_WORDS||{cet4:[],cet6:[]};
 const CNOTES=window.C_NOTES||[];
 const CQUIZ=window.C_QUIZ||[];
+const MATHNOTES=window.MATH_NOTES||[];
+const MATHQUIZ=window.MATH_QUIZ||[];
 
 /* 文件名 map：测验历史显示用 */
 const QUIZ_NAMES={vocab4:"四级词汇",vocab6:"六级词汇",vocabmix:"四六级混合",vocab:"四六级词汇",c:"C 语言",linux:"Linux 命令"};
+/* 高数每章的卷子单独记名，历史里能分清新旧 */
+MATHQUIZ.forEach((p,i)=>{QUIZ_NAMES["math"+i]="高数·"+p.ch.replace(/^[^第]*/,"");});
 
 const LINUX_NOTES=[
 {t:"1. 命令的基本结构",d:"Linux 命令通用格式：命令 [-选项] [参数]。选项改变命令行为（-a 显示隐藏，-l 详细列表），参数是操作对象。一切操作从终端（Terminal）敲命令开始。",
@@ -1166,6 +1229,7 @@ function switchTab(name){
   if(name==="review")renderReview();
   if(name==="dashboard")renderDash();
   if(name==="words")renderWord();
+  if(name==="math"&&typeof MATHQUIZ!=="undefined")renderMathPapers();
 }
 $$("nav.tabs button").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
 /* 侧栏竖排时把开头的 emoji 单独包一层，让文字左缘对齐 */
@@ -1397,6 +1461,8 @@ function masterWord(lv,w){
 
 let quiz={list:[],idx:0,score:0,answered:false,type:null};
 function startQuiz(type){
+  /* 高数卷子是「一章一份」，按 type 里的下标转回去 */
+  if(/^math\d+$/.test(type)){startMathQuiz(parseInt(type.slice(4),10));return;}
   quiz={list:[],idx:0,score:0,answered:false,type};
   $$("[data-qtype]").forEach(b=>b.classList.toggle("ghost",b.dataset.qtype!==type));
   if(type==="vocab4"||type==="vocab6"||type==="vocabmix"){
@@ -1422,6 +1488,7 @@ function showQuizQ(){
   quiz.answered=false;
   const box=$("#quizBox");
   box.innerHTML=
+    (quiz.paperName?'<div class="muted" style="font-size:12.5px;margin-bottom:4px">📐 '+quiz.paperName+'</div>':'')+
     '<div class="muted" style="font-size:13px;margin-bottom:8px">第 '+(quiz.idx+1)+' / '+quiz.list.length+' 题 · 当前答对 '+quiz.score+' 题</div>'+
     '<div style="font-size:16px;font-weight:600;margin-bottom:6px">'+q.q+'</div>'+
     '<div class="bar"><i style="width:'+(quiz.idx/quiz.list.length*100)+'%"></i></div>'+
@@ -1584,6 +1651,116 @@ function renderLinux(){
     '<div class="desc">'+n.d+'</div>'+
     '<pre class="code">'+n.code+'</pre></details>'
   ).join("");
+}
+
+/* ================= 高等数学 ================= */
+/* 某章卷子的历史最好成绩（百分制），没做过返回 null */
+function bestMathScore(i){
+  let best=null;
+  (db.quizHistory||[]).forEach(h=>{
+    if(h.t==="math"+i&&h.total){
+      const p=Math.round(h.s/h.total*100);
+      if(best===null||p>best)best=p;
+    }
+  });
+  return best;
+}
+
+/* 只重画章节试卷卡（做完卷子回到高数页时刷新「最好 N 分」） */
+function renderMathPapers(){
+  const box=$("#mathPapers");
+  if(!box)return;
+  box.innerHTML=MATHQUIZ.map((p,i)=>{
+    const best=bestMathScore(i);
+    return '<button class="math-paper" onclick="startMathQuiz('+i+')">'+
+      '<span class="mp-ch">'+p.ch+'</span>'+
+      '<span class="mp-t">'+p.title+'</span>'+
+      '<span class="mp-meta">'+p.qs.length+' 题'+(best!==null?' · 最好 '+best+' 分':' · 还没做过')+'</span>'+
+    '</button>';
+  }).join("");
+}
+
+function renderMath(){
+  const groups=[],map={};
+  MATHNOTES.forEach(n=>{
+    if(!map[n.c]){map[n.c]=[];groups.push(n.c);}
+    map[n.c].push(n);
+  });
+  const meta=$("#mathMeta");
+  if(meta)meta.textContent=groups.length+" 章 "+MATHNOTES.length+" 篇 · "+MATHQUIZ.length+" 份单元测验卷";
+  renderMathPapers();
+  $("#mathList").innerHTML=groups.map(g=>{
+    const pi=MATHQUIZ.findIndex(p=>p.ch===g);
+    return '<h2 class="clang-cat">'+g+'<span>'+map[g].length+' 篇</span>'+
+      (pi>=0?'<button class="btn ghost sm cat-quiz" onclick="startMathQuiz('+pi+')">📝 本章测验 '+MATHQUIZ[pi].qs.length+' 题</button>':'')+
+      '</h2>'+
+      map[g].map(n=>
+        '<details class="note">'+
+        '<summary>'+n.t+'</summary>'+
+        '<div class="note-wrap">'+
+          '<div class="desc">'+n.d+'</div>'+
+          renderNoteBody(n.body)+
+          (n.f&&n.f.length?'<div class="math-fbox"><div class="nc-label">关键公式</div>'+
+            '<pre class="math-f">'+n.f.map(escHtml).join("\n")+'</pre></div>':"")+
+          (n.ex?'<div class="math-ex"><div class="nc-label">例题</div>'+
+            '<div class="math-ex-q">'+mdInline(n.ex.q)+'</div>'+
+            '<div class="math-ex-a"><b>解：</b>'+mdInline(n.ex.a)+'</div></div>':"")+
+          (n.tips&&n.tips.length?'<div class="nc-tips"><div class="nc-label">易错点</div><ul>'+
+            n.tips.map(t=>"<li>"+mdInline(t)+"</li>").join("")+'</ul></div>':"")+
+        '</div></details>'
+      ).join("");
+  }).join("");
+}
+
+function filterMath(kw){
+  kw=(kw||"").trim().toLowerCase();
+  let shown=0;
+  document.querySelectorAll("#mathList details.note").forEach(function(d){
+    const s=d.querySelector("summary"),w=d.querySelector(".note-wrap");
+    const txt=((s?s.textContent:"")+" "+(w?w.textContent:"")).toLowerCase();
+    const hit=!kw||txt.indexOf(kw)>=0;
+    d.style.display=hit?"":"none";
+    if(hit)shown++;
+  });
+  document.querySelectorAll("#mathList .clang-cat").forEach(function(h){
+    let box=h.nextElementSibling,n=0;
+    while(box&&box.classList&&box.classList.contains("note")){
+      if(box.style.display!=="none")n++;
+      box=box.nextElementSibling;
+    }
+    h.style.display=n?"":"none";
+    const badge=h.querySelector("span");
+    if(badge)badge.textContent=n+" 篇";
+  });
+  let tip=document.getElementById("mathEmpty");
+  if(!tip){
+    tip=document.createElement("div");
+    tip.id="mathEmpty";tip.className="empty";
+    $("#mathList").appendChild(tip);
+  }
+  tip.textContent="没有匹配「"+kw+"」的知识点，换个关键词试试";
+  tip.style.display=shown?"none":"block";
+}
+
+function toggleAllMath(open){
+  document.querySelectorAll("#mathList details.note").forEach(function(d){
+    if(d.style.display!=="none")d.open=open;
+  });
+}
+
+/* 开一份高数卷：选项顺序每轮打乱，避免「答案总在 B」 */
+function startMathQuiz(i){
+  const paper=MATHQUIZ[i];
+  if(!paper){toast("这份卷子没找到");return;}
+  quiz={list:[],idx:0,score:0,answered:false,type:"math"+i,paperName:paper.title};
+  quiz.list=paper.qs.map(function(q){
+    const order=shuffle(q.o.map(function(_,k){return k;}));
+    return {q:q.q,o:order.map(function(k){return q.o[k];}),a:order.indexOf(q.a),e:q.e};
+  });
+  switchTab("quiz");
+  $("#quizBox").style.display="block";
+  showQuizQ();
+  try{$("#quizBox").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}
 }
 
 function ensurePomoDay(){
@@ -2323,6 +2500,7 @@ function aiReply(t){
   if(/单词|词汇|背/.test(t)){switchTab("words");const a=statsFor("cet4"),b=statsFor("cet6");return "带你打开单词卡啦 🔤\n四级 "+a.known+" / "+a.total+"　六级 "+b.known+" / "+b.total+"\n两个等级分开背、分开测，先挑一个等级，20 个一组～";}
   if(/番茄|专注|效率|拖延|拖延症/.test(t)){switchTab("timer");return "番茄钟打开啦 ⏱️\n方法：25 分钟只做一件事，手机扣过去；结束立刻休息 5 分钟\n先点「▶ 开始」，小云会在这陪你～";}
   if(/c ?语言|指针|编程|代码|代码报错|error/.test(t)){switchTab("clang");return "C 语言笔记打开啦 💻\n小贴士：指针先画内存图（盒子=变量，便签=地址）；\n易错点：比较写 ==，printf 记得分号，scanf 别忘 &\n例题建议在 VS Code 里亲手敲一遍再跑～";}
+  if(/高数|微积分|极限|导数|微分|积分|级数|偏导|洛必达|拉格朗日|格林公式/.test(t)){switchTab("math");return "高数笔记打开啦 📐\n"+MATHNOTES.length+" 篇分 11 章，每章还配了一份单元卷子\n套路：先看「关键公式」→ 跟着例题走一遍 → 立刻做本章卷\n错题回头对照「易错点」，比闷头刷题管用～";}
   if(/测验|测试|quiz|检验/.test(t)){switchTab("quiz");return "测验页面已打开 ✍️\n10 道题做完出分，速度快说明掌握牢；\n错题别慌，回卡片/笔记看一眼再测，人就是会遗忘的嘛～";}
   if(/计划|安排|待办|todo|今天做什么/.test(t)){switchTab("todo");return "参考计划：⬇️\n1️⃣ 背 20 个单词　2️⃣ 测验一组\n3️⃣ 学 1 个 C 知识点并敲例题\n4️⃣ 两个番茄钟　5️⃣ 睡前刷生词本\n写进「待办」里面做完打钩很爽的！";}
   if(/打卡|激励|坚持|放弃|累|烦|不下去/.test(t)){switchTab("dashboard");return "已经很棒了，坚持最重要 🔥\n去仪表盘点一下「今日打卡」，\n然后挑最小的一步先动起来（5 个单词也算赢）！";}
@@ -2600,6 +2778,7 @@ function boot(){
   renderReview();
   renderSearch();
   renderClang();
+  renderMath();
   renderTodos();
   renderPomoStats();
   renderPomoTime();
