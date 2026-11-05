@@ -109,9 +109,46 @@ body{
   background:linear-gradient(135deg,var(--accent),var(--accent-2));
   color:#fff;font-weight:600;box-shadow:0 3px 10px rgba(0,0,0,.18);
 }
-section.tab{display:none;animation:fade .25s ease}
+section.tab{display:none;animation:fade .25s ease;white-space:normal}
 section.tab.show{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ========= 左侧竖向功能栏（桌面端） ========= */
+.nav-brand{display:none}
+.tab .ni{font-style:normal;margin-right:5px}
+@media (min-width:861px){
+  :root{--nav-w:212px}
+  .topbar{margin-left:var(--nav-w);justify-content:flex-end}
+  .topbar .brand{display:none}
+  #navTabs{
+    position:fixed;inset:0 auto 0 0;width:var(--nav-w);z-index:30;
+    display:flex;flex-direction:column;align-items:stretch;gap:3px;
+    margin:0;padding:18px 12px 22px;border-radius:0;border:0;
+    border-right:1px solid var(--line);
+    overflow-y:auto;overflow-x:hidden;
+    box-shadow:10px 0 34px rgba(23,32,48,.07);
+  }
+  #navTabs .nav-brand{
+    display:flex;align-items:center;gap:11px;flex:0 0 auto;
+    padding:2px 6px 16px;margin-bottom:10px;border-bottom:1px solid var(--line);
+  }
+  #navTabs .nav-brand .logo{width:38px;height:38px;border-radius:11px;font-size:20px}
+  #navTabs .nav-brand h1{font-size:15px;font-weight:700;letter-spacing:.3px}
+  #navTabs .nav-brand p{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap}
+  #navTabs .tab{
+    flex:0 0 auto;display:flex;align-items:center;gap:9px;
+    text-align:left;padding:11px 13px;border-radius:10px;font-size:14px;
+    transition:background .15s,color .15s,transform .15s;
+  }
+  #navTabs .tab .ni{flex:0 0 20px;width:20px;margin-right:0;text-align:center;font-style:normal;font-size:15px}
+  #navTabs .tab .nt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #navTabs .tab:hover{transform:translateX(2px)}
+  #navTabs .tab.active{transform:none}
+  main.container{
+    margin-left:calc(var(--nav-w) + max(0px,(100% - var(--nav-w) - 1080px)/2));
+    margin-right:auto;
+  }
+}
 
 .card{
   border-radius:var(--radius);box-shadow:var(--shadow);
@@ -648,6 +685,13 @@ body[data-theme="fx-aurora"]{
 <main class="container">
 
   <nav class="tabs" id="navTabs">
+    <div class="nav-brand">
+      <div class="logo"><span id="navBrandLogo"></span></div>
+      <div class="brand-text">
+        <h1>我的学习平台</h1>
+        <p>四六级 · C 语言</p>
+      </div>
+    </div>
     <button class="tab active" data-tab="dashboard">🏠 仪表盘</button>
     <button class="tab" data-tab="words">🔤 四六级单词</button>
     <button class="tab" data-tab="review">📒 生词本</button>
@@ -1110,6 +1154,12 @@ function switchTab(name){
   if(name==="words")renderWord();
 }
 $$("nav.tabs button").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
+/* 侧栏竖排时把开头的 emoji 单独包一层，让文字左缘对齐 */
+$$("#navTabs button.tab").forEach(b=>{
+  const txt=b.textContent.trim();
+  const m=txt.match(/^(\p{Extended_Pictographic}\uFE0F?)\s*(.+)$/u);
+  if(m)b.innerHTML='<i class="ni">'+m[1]+'</i><span class="nt">'+m[2]+'</span>';
+});
 $("#themeQuick")?.addEventListener("change",e=>setTheme(e.target.value));
 
 function dateCN(){
@@ -1970,6 +2020,8 @@ let petCtl=null,petRaf=null,petLast=0,talkIv=null,fabGrabbed=false,fabDragged=fa
 function applyAvatars(){
   $("#aiHeadAvatar").innerHTML='<img src="'+PET_THUMB+'" alt="小云">';
   $("#logoAvatar").innerHTML='<img src="'+PET_THUMB+'" alt="小云">';
+  const nb=$("#navBrandLogo");
+  if(nb)nb.innerHTML='<img src="'+PET_THUMB+'" alt="小云">';
 }
 function petPt(e){
   const r=$("#aiFab").getBoundingClientRect();
