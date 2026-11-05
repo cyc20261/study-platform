@@ -28,6 +28,9 @@
     exportSave: function () {},
     importSave: function () {},
     openChat: function () {},
+    petBox: null,
+    isPinned: function () { return false; },
+    togglePin: function () {},
     baseDate: null
   };
 
@@ -87,15 +90,24 @@
   /* ---------------- 气泡 ---------------- */
   var sayEl = null;
 
-  /* 气泡挂在 body 上、用 fixed 定位跟着桌宠走：
-     放在 #aiFab 里会被 124px 的按钮宽度限制，长句会挤成竖排。 */
+  /* 桌宠在屏幕上会走动，气泡 / 点击判定都要按「她此刻的包围盒」算，
+     拿不到就先退回整个舞台（老版是 124px 的小按钮）。 */
+  function petRect() {
+    var b = null;
+    try { b = H.petBox && H.petBox(); } catch (e) { b = null; }
+    if (b && b.width > 0 && b.height > 0) return b;
+    var fab = document.getElementById('aiFab');
+    if (!fab) return { left: 0, top: 0, width: 1, height: 1 };
+    var r = fab.getBoundingClientRect();
+    return { left: r.left, top: r.top, width: r.width, height: r.height };
+  }
+
+  /* 气泡挂在 body 上、用 fixed 定位跟着桌宠走。 */
   function placeSay() {
     if (!sayEl || !sayEl.classList.contains('on')) return;
-    var fab = document.getElementById('aiFab');
-    if (!fab) return;
-    var r = fab.getBoundingClientRect();
+    var r = petRect();
     var w = sayEl.offsetWidth;
-    var left = clamp(r.right - w + 8, 8, Math.max(8, window.innerWidth - w - 8));
+    var left = clamp(r.left + r.width / 2 - w / 2, 8, Math.max(8, window.innerWidth - w - 8));
     sayEl.style.left = left + 'px';
     sayEl.style.bottom = (window.innerHeight - r.top + 10) + 'px';
   }
@@ -559,6 +571,17 @@
     if (S.menuEl && !S.menuEl.contains(e.target)) closeMenu();
   }
 
+  /* 会自己走动的桌宠得能「拴住」，不然看资料时她一直在动 */
+  function pinItem() {
+    var pinned = false;
+    try { pinned = !!(H.isPinned && H.isPinned()); } catch (e) {}
+    return pinned
+      ? { ico: '🚶', label: '解开固定', sub: '让她继续走动',
+          fn: function () { closeMenu(); try { H.togglePin(); } catch (e) {} } }
+      : { ico: '📌', label: '固定住她', sub: '别让她乱跑',
+          fn: function () { closeMenu(); try { H.togglePin(); } catch (e) {} } };
+  }
+
   function openMenu(x, y) {
     closeMenu();
     var p = P();
@@ -570,6 +593,7 @@
       { ico: '🎖️', label: '成长与成就', sub: 'Lv' + p.growth.level, fn: function () { closeMenu(); openPanel(); } },
       { ico: '💬', label: '和她说说话', sub: '双击也可以', fn: function () { closeMenu(); H.openChat(); } },
       { sep: true },
+      pinItem(),
       { ico: '👋', label: '打个招呼', sub: '', fn: function () { closeMenu(); greet(); } }
     ];
     items.forEach(function (it) {
@@ -856,8 +880,7 @@
   function tap(e) {
     var t = nowMs();
     if (S.suppressTap) { S.suppressTap = false; return 'skipped'; }
-    var fab = document.getElementById('aiFab');
-    var r = fab ? fab.getBoundingClientRect() : { left: 0, top: 0, width: 1, height: 1 };
+    var r = petRect();
     var cx = (e && e.clientX) || r.left + r.width / 2;
     var cy = (e && e.clientY) || r.top + r.height * 0.35;
     var nx = (cx - r.left) / Math.max(1, r.width);

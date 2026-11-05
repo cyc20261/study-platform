@@ -522,19 +522,31 @@ body[data-theme="fx-aurora"]{
 
 /* ========= 鲸鱼娘小云（模型：Pal-AI-Lab/Coopanion，GPL-3.0） ========= */
 .ai-fab{
-  position:fixed;right:16px;bottom:0;z-index:45;
-  width:124px;height:156px;border:none;background:none;padding:0;
-  overflow:visible;cursor:pointer;
+  position:fixed;inset:0;z-index:29;
+  width:auto;height:auto;border:none;background:none;padding:0;
+  pointer-events:none;                /* 整层不挡操作，只有小云身体本身可点 */
   -webkit-tap-highlight-color:transparent;
 }
-#petStage{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+/* 桌面端把场地让到侧栏右边，免得她走到侧栏后面“消失” */
+@media (min-width:861px){ .ai-fab{left:var(--nav-w,212px)} }
+#petStage{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}
+#petG{pointer-events:auto;cursor:pointer}
 .pet-shadow{fill:#1d2340;opacity:.18}
 .fab-fallback{
-  display:block;width:104px;height:138px;margin:12px auto 0;
+  position:absolute;right:16px;bottom:0;width:104px;height:138px;
   object-fit:contain;
   filter:drop-shadow(0 8px 16px rgba(31,35,51,.22));
   transition:opacity .26s ease;
 }
+.pet-pin-badge{
+  position:absolute;transform:translate(-50%,-100%);
+  background:#fff;border:1.5px solid var(--accent);color:var(--accent);
+  border-radius:999px;padding:2px 10px;font-size:12px;font-weight:600;
+  box-shadow:0 4px 12px rgba(31,35,51,.16);white-space:nowrap;
+  pointer-events:auto;cursor:pointer;z-index:47;
+}
+/* 等级徽章由互动层创建，位置交给 petFollow() 每帧贴着她的头顶 */
+.ai-fab .pet-badge{top:auto;right:14px;bottom:150px}
 .ai-fab.enter #petStage{animation:petIn .9s cubic-bezier(.2,.9,.3,1.2) both}
 @keyframes petIn{from{opacity:0;transform:translateY(34px)}to{opacity:1;transform:none}}
 #petStage.pet-live{animation:petLive .5s ease both}
@@ -607,7 +619,7 @@ body[data-theme="fx-aurora"]{
 #aiInput:focus{border-color:var(--accent)}
 @media(max-width:640px){
   .ai-panel{right:12px;left:12px;width:auto;bottom:98px;height:min(62vh,540px)}
-  .ai-fab{right:14px;bottom:10px;width:70px;height:84px}
+  .fab-fallback{right:12px;width:78px;height:104px}
 }
 
 /* ========= 终端演示机 ========= */
@@ -888,14 +900,16 @@ body[data-theme="fx-aurora"]{
 
 </main>
 
-<button id="aiFab" class="ai-fab enter" title="AI 小助手「小云」·点我可以拖动她玩" onclick="petFabClick(event)">
+<!-- 整屏舞台：小云在里面自由走动；只有她身体本身接收点击（整层 pointer-events:none） -->
+<div id="aiFab" class="ai-fab enter" title="AI 小助手「小云」·点我可以拖动她玩">
   <svg id="petStage" aria-hidden="true">
     <ellipse id="petShadow" class="pet-shadow" cx="0" cy="0" rx="0" ry="0"/>
     <g id="petG"></g>
     <g id="petFx"></g>
   </svg>
+  <div id="petPin" class="pet-pin-badge hidden" title="点击解除固定">📌 已固定</div>
   <img id="fabFallback" class="fab-fallback hidden" src="assets/whale/whale/poster.webp" alt="小云" onerror="this.style.visibility='hidden'">
-</button>
+</div>
 
 <div id="aiPanel" class="ai-panel hidden">
   <div class="ai-head" id="aiHead">
@@ -2017,6 +2031,73 @@ function runPreset(i){
 /* ========= 鲸鱼娘小云（模型/运行时：Pal-AI-Lab/Coopanion 开源项目，GPL-3.0） ========= */
 const PET_THUMB="assets/whale/thumbs/deepseek.png";
 let petCtl=null,petRaf=null,petLast=0,talkIv=null,fabGrabbed=false,fabDragged=false,fabDownXY=null;
+let petPinned=false,petPosT=0;
+
+/* ---- 小云的场地就是整屏：她沿着屏幕底部自己走来走去 ---- */
+function petScale(){return window.innerWidth<760?0.42:0.54;}
+function petBounds(){return {W:window.innerWidth,H:window.innerHeight,floorY:window.innerHeight-4,S:petScale()};}
+/* 舞台铺满可视区（桌面端从侧栏右边开始），坐标 = 舞台坐标 + 舞台偏移 */
+function petStageRect(){
+  const st=$("#petStage");
+  return st?st.getBoundingClientRect():{left:0,top:0,width:window.innerWidth,height:window.innerHeight};
+}
+function petBox(){
+  if(!petCtl)return null;
+  try{
+    const R=petStageRect();
+    const L=petCtl.layout(),b=L.box;
+    return {left:b.x+R.left,top:b.y+R.top,width:b.w,height:b.h,cx:L.x+R.left,headY:L.bubble.y+R.top};
+  }catch(e){return null;}
+}
+function petSavePos(force){
+  if(!petCtl)return;
+  const t=Date.now();
+  if(!force&&t-petPosT<6000)return;
+  petPosT=t;
+  try{
+    const w=petStageRect().width||window.innerWidth;
+    db.petX=Math.max(0,Math.min(1,petCtl.pet.x/w));
+  }catch(e){}
+}
+function petSetPin(on,quiet){
+  petPinned=!!on;
+  db.petPin=petPinned?1:0;
+  try{petCtl&&petCtl.setRoam(petPinned?"off":"free");}catch(e){}
+  if(petPinned){try{petCtl&&(petCtl.pet.target=petCtl.pet.x);}catch(e){}}
+  $("#petPin")?.classList.toggle("hidden",!petPinned);
+  if(petPinned)petSavePos(true);
+  try{save();}catch(e){}
+  if(!quiet)toast(petPinned?"📌 已固定，小云不会再乱跑啦":"🚶 解开固定，小云又能自己溜达了");
+  return petPinned;
+}
+function petTogglePin(){return petSetPin(!petPinned);}
+$("#petPin")?.addEventListener("pointerdown",e=>e.stopPropagation());
+$("#petPin")?.addEventListener("click",e=>{e.stopPropagation();petSetPin(false);});
+window.petBox=petBox;window.petTogglePin=petTogglePin;
+/* 徽章 / 固定标签跟着她的头顶走（内部元素定位以舞台为原点，要减掉舞台偏移） */
+let petBadgeEl=null,petPinEl=null;
+function petFollow(){
+  const b=petBox();if(!b)return;
+  const R=petStageRect();
+  const bx=b.cx-R.left, by=b.top-R.top;
+  if(!petBadgeEl||!petBadgeEl.isConnected)petBadgeEl=document.querySelector("#aiFab .pet-badge");
+  const badge=petBadgeEl;
+  if(badge){badge.style.left=(bx+22)+"px";badge.style.top=(by-8)+"px";badge.style.right="auto";badge.style.bottom="auto";}
+  const pin=petPinEl||(petPinEl=$("#petPin"));
+  if(pin&&!pin.classList.contains("hidden")){
+    /* 默认挂在她头部左侧；太靠左就翻到右侧，别被气泡和屏幕边缘挤掉 */
+    const pw=pin.offsetWidth||78;
+    if(bx-12-pw>=4){
+      pin.style.transform="translate(-100%,0)";
+      pin.style.left=(bx-12)+"px";
+    }else{
+      pin.style.transform="translate(0,0)";
+      pin.style.left=(bx+36)+"px";
+    }
+    pin.style.top=(by+b.height*0.34)+"px";
+  }
+}
+
 function applyAvatars(){
   $("#aiHeadAvatar").innerHTML='<img src="'+PET_THUMB+'" alt="小云">';
   $("#logoAvatar").innerHTML='<img src="'+PET_THUMB+'" alt="小云">';
@@ -2041,27 +2122,45 @@ async function initPet(){
     /* 贴图合并成一张图集：原来 53 个独立 PNG 在公网要排队 30 秒以上 */
     const loadImage=await makeAtlasLoader("./assets/whale/whale/");
     const figure=await createWhaleFigure(undefined,{asset:p=>p,loadImage});
+    petPinned=!!db.petPin;
     petCtl=createPet({petG:$("#petG"),shadowEl:$("#petShadow"),fxG:$("#petFx")},{
-      figure,roam:"off",enter:"drop",
-      bounds:()=>{
-        const r=$("#aiFab").getBoundingClientRect();
-        return{W:r.width,H:r.height,floorY:r.height-8,S:Math.max(.3,Math.min(.8,r.height/300))};
-      },
+      figure,roam:petPinned?"off":"free",enter:"drop",
+      /* 聊天面板打开、或者被固定时，她就安安静静待着 */
+      dialogOpen:()=>{const p=$("#aiPanel");return !!(p&&!p.classList.contains("hidden"));},
+      bounds:petBounds,
     });
-    const fab=$("#aiFab");
-    fab.addEventListener("pointerdown",e=>{
+    /* 上次站在哪儿，回来还站那儿 */
+    if(typeof db.petX==="number"&&isFinite(db.petX)){
+      const w=petStageRect().width||window.innerWidth;
+      const x=Math.max(0.02,Math.min(0.98,db.petX))*w;
+      petCtl.pet.x=petCtl.pet.target=x;
+    }
+    $("#petPin")?.classList.toggle("hidden",!petPinned);
+
+    const stage=$("#petG"),fab=$("#aiFab");
+    stage.addEventListener("pointerdown",e=>{
       if(!petCtl)return;
       fabDownXY={x:e.clientX,y:e.clientY};fabDragged=false;
-      if(petCtl.pointerDown(petPt(e))){fabGrabbed=true;try{fab.setPointerCapture(e.pointerId);}catch(err){}}
+      if(petCtl.pointerDown(petPt(e))){
+        fabGrabbed=true;
+        try{stage.setPointerCapture(e.pointerId);}catch(err){}
+        petSavePos(true);
+      }
     });
-    fab.addEventListener("pointermove",e=>{
+    /* 拖动要跟住指针：舞台现在是整屏但只有她身上能收到事件，所以挂 window */
+    window.addEventListener("pointermove",e=>{
       if(!petCtl||!fabGrabbed)return;
       petCtl.pointerMove(petPt(e));
       if(fabDownXY&&Math.hypot(e.clientX-fabDownXY.x,e.clientY-fabDownXY.y)>8)fabDragged=true;
-    });
-    const up=()=>{if(petCtl)petCtl.pointerUp();fabGrabbed=false;};
-    fab.addEventListener("pointerup",up);
-    fab.addEventListener("pointerleave",()=>{if(fabGrabbed){up();}});
+    },{passive:true});
+    const up=()=>{
+      if(petCtl&&fabGrabbed){try{petCtl.pointerUp();}catch(err){}petSavePos(true);}
+      fabGrabbed=false;
+    };
+    window.addEventListener("pointerup",up);
+    window.addEventListener("pointercancel",up);
+    stage.addEventListener("click",e=>petFabClick(e));
+
     petLast=performance.now();
     petRaf=requestAnimationFrame(petLoop);
     /* 3D 就绪：静态立绘淡出，动起来的形象淡入 */
@@ -2070,6 +2169,20 @@ async function initPet(){
       setTimeout(()=>fb.classList.add("hidden"),280);
     }
     $("#petStage")?.classList.add("pet-live");
+    /* 视角变了要按新尺寸重新铺场地 */
+    window.addEventListener("resize",()=>{try{petCtl&&petCtl.resize();}catch(e){}});
+    window.addEventListener("pagehide",()=>petSavePos(true));
+    /* 只提示一次：她会自己走，看不惯就右键「固定住她」 */
+    if(!db.petTipShown&&!petPinned){
+      setTimeout(()=>{
+        try{
+          if(!db.petTipShown){
+            db.petTipShown=1;save();
+            toast("小云会自己溜达，右键她可以「固定住她」📌");
+          }
+        }catch(e){}
+      },7000);
+    }
   }catch(e){
     $("#petStage")?.remove();
     if(fb){fb.classList.remove("hidden");fb.style.opacity="1";}
@@ -2079,7 +2192,7 @@ function petLoop(now){
   if(!petCtl){petRaf=null;return;}
   const dt=Math.min(.05,(now-petLast)/1000);petLast=now;
   // 单帧出错不能终止整个动画循环，否则小云会定格不再动
-  try{petCtl.step(dt);petCtl.render();}
+  try{petCtl.step(dt);petCtl.render();petFollow();petSavePos();}
   catch(err){console.error("[pet] 帧异常：",err);}
   petRaf=requestAnimationFrame(petLoop);
 }
@@ -2101,11 +2214,16 @@ function fabWave(){
 }
 function sparkBurst(emo){
   const fab=$("#aiFab");if(!fab)return;
+  const R=petStageRect();
+  const b=petBox()||{left:innerWidth-140,top:innerHeight-170,width:120,height:150,cx:innerWidth-80};
+  const bx=b.cx-R.left, by=b.top-R.top;
   for(let i=0;i<6;i++){
     const s=document.createElement("span");
     s.className="xy-spark";s.textContent=emo;
-    s.style.left=(15+Math.random()*70)+"%";
-    s.style.bottom=(30+Math.random()*45)+"%";
+    /* 舞台是整屏，改按她的实际位置撒，别再按容器百分比 */
+    s.style.left=(bx-45+Math.random()*90)+"px";
+    s.style.top=(by+b.height*0.35+Math.random()*b.height*0.4)+"px";
+    s.style.bottom="auto";
     s.style.setProperty("--dx",((Math.random()-.5)*70)+"px");
     s.style.setProperty("--rot",(Math.random()*120-60)+"deg");
     s.style.animationDelay=(Math.random()*.25)+"s";
@@ -2502,7 +2620,10 @@ function boot(){
       toast:(m)=>toast(m),
       exportSave:()=>{try{exportSave();}catch(e){toast("导出失败");}},
       importSave:()=>{try{pickImportSave();}catch(e){toast("导入失败");}},
-      openChat:()=>{ if($("#aiPanel").classList.contains("hidden")) toggleAi(); }
+      openChat:()=>{ if($("#aiPanel").classList.contains("hidden")) toggleAi(); },
+      petBox:()=>{try{return petBox();}catch(e){return null;}},
+      isPinned:()=>petPinned,
+      togglePin:()=>petTogglePin()
     });
   }
 }
