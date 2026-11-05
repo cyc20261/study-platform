@@ -381,6 +381,63 @@ body[data-theme^="photo"] .tabs{border-color:rgba(255,255,255,.65);backdrop-filt
 .logo img{display:block;width:100%;height:100%;object-fit:cover}
 .logo svg{display:block;width:100%;height:100%}
 
+/* ========= 浅海生态 · 动态背景（素材 assets/ocean，图由 AI 生成） ========= */
+#oceanLayer{position:fixed;inset:0;z-index:-3;display:none;pointer-events:none;overflow:hidden;
+  background:linear-gradient(170deg,#e2f5f7 0%,#cbeef2 42%,#a9dbe5 78%,#8fcbd9 100%)}
+body[data-theme="fx-ocean"]{background:transparent}
+body[data-theme="fx-ocean"] #oceanLayer{display:block}
+.oc{position:absolute}
+.oc-floor{inset:-7%;background:url(assets/ocean/floor.webp) center/cover no-repeat;
+  animation:ocFloat 82s ease-in-out infinite alternate;will-change:transform;
+  filter:saturate(1.14) contrast(1.05) brightness(1.02) hue-rotate(14deg)}
+@keyframes ocFloat{
+  0%{transform:scale(1.03) translate3d(-1.3%,-.9%,0)}
+  52%{transform:scale(1.09) translate3d(1%,1.2%,0)}
+  100%{transform:scale(1.045) translate3d(1.5%,-.6%,0)}
+}
+.oc-cau{inset:-34%;background-image:url(assets/ocean/caustics.webp);background-repeat:repeat;
+  mix-blend-mode:screen;will-change:transform;opacity:0}
+.oc-cau.a{background-size:26% auto;animation:ocCauA 44s linear infinite}
+.oc-cau.b{background-size:41% auto;animation:ocCauB 61s linear infinite}
+@keyframes ocCauA{from{transform:translate3d(0,0,0)}to{transform:translate3d(-13%,-9%,0)}}
+@keyframes ocCauB{from{transform:translate3d(-9%,6%,0)}to{transform:translate3d(8%,-6%,0)}}
+.oc-cau.a{opacity:.30}
+.oc-cau.b{opacity:.17}
+.oc-tint{inset:0;background:
+  radial-gradient(112% 74% at 50% -12%,rgba(255,255,255,.30),rgba(255,255,255,0) 58%),
+  linear-gradient(180deg,rgba(198,242,250,.12) 0%,rgba(90,175,195,.04) 42%,rgba(12,74,96,.16) 100%)}
+.oc-water{inset:0;background:linear-gradient(158deg,rgba(0,150,200,.07) 0%,rgba(6,120,165,.03) 45%,rgba(4,92,132,.10) 100%);
+  mix-blend-mode:multiply;opacity:.42}
+.oc-vig{inset:0;box-shadow:inset 0 0 220px 34px rgba(10,60,80,.25)}
+body[data-theme="fx-ocean"]{
+  --bg-grad:linear-gradient(170deg,#e2f5f7,#cbeef2);
+  --card:rgba(255,255,255,.60);--ink:#0f2c37;--muted:#4f6f7a;--line:rgba(255,255,255,.58);
+  --seg-bg:rgba(255,255,255,.55);--seg-active:#ffffff;
+  --topbar:rgba(255,255,255,.64);--hover-soft:rgba(255,255,255,.46);
+  --code-bg:rgba(255,255,255,.74);--code-ink:#0e7490;
+  --accent:#0891b2;--accent-2:#0d9488;--accent-soft:rgba(224,247,250,.9);
+  --shadow:0 8px 30px rgba(10,58,76,.16);
+}
+body[data-theme="fx-ocean"] .topbar,
+body[data-theme="fx-ocean"] .card,
+body[data-theme="fx-ocean"] .tabs{
+  backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);
+  border-color:rgba(255,255,255,.66);
+}
+body[data-theme="fx-ocean"] .stat{background:rgba(255,255,255,.62)}
+/* 文字密集的列表区再压一层，保证能读 */
+body[data-theme="fx-ocean"] details,
+body[data-theme="fx-ocean"] .opt{background:rgba(255,255,255,.78)}
+body[data-theme="fx-ocean"] details .code{background:rgba(255,255,255,.86)}
+body[data-theme="fx-ocean"] .nc-note{background:rgba(224,247,250,.94);color:#155e75}
+body[data-theme="fx-ocean"] .nc-warn{background:rgba(255,249,235,.94)}
+body[data-theme="fx-ocean"] .nc-p,
+body[data-theme="fx-ocean"] .nc-ul{color:#334c57}
+body[data-theme="fx-ocean"] .card{background:rgba(255,255,255,.64)}
+body[data-theme="fx-ocean"] .topbar,
+body[data-theme="fx-ocean"] .card,
+body[data-theme="fx-ocean"] .tabs{backdrop-filter:blur(26px) saturate(1.7);-webkit-backdrop-filter:blur(26px) saturate(1.7)}
+
 /* ========= 动态壁纸主题（Canvas 引擎，见脚本 FX 部分） ========= */
 #fxCanvas{position:fixed;inset:0;z-index:-1;display:none;pointer-events:none}
 body[data-theme^="fx"] #fxCanvas{display:block}
@@ -514,6 +571,14 @@ body[data-theme="fx-aurora"]{
 <body data-theme="">
 
 <div id="bgLayer" aria-hidden="true"></div>
+<div id="oceanLayer" aria-hidden="true">
+  <div class="oc oc-floor"></div>
+  <div class="oc oc-cau a"></div>
+  <div class="oc oc-cau b"></div>
+  <div class="oc oc-tint"></div>
+  <div class="oc oc-water"></div>
+  <div class="oc oc-vig"></div>
+</div>
 <canvas id="fxCanvas" aria-hidden="true"></canvas>
 
 <header class="topbar">
@@ -545,6 +610,7 @@ body[data-theme="fx-aurora"]{
       <option value="photo-sea">海风少女</option>
       </optgroup>
       <optgroup label="✨ 动态壁纸 · 60fps">
+      <option value="fx-ocean">🌊 浅海 · 生态</option>
       <option value="fx-star">🌌 星空 · 流转</option>
       <option value="fx-sakura">🌸 樱花 · 飘落</option>
       <option value="fx-aurora">🌈 极光 · 流彩</option>
@@ -2107,6 +2173,7 @@ function fxPetal(scatter){
     col:["#f9a8c9","#fbc4d8","#f7a1b8"][Math.floor(Math.random()*3)]};
 }
 function fxInit(){
+  if(fxTheme==="fx-ocean"){ocLoad();ocSpawn();return;}
   fxParts=[];fxShoot=null;fxShootCd=180;
   const W=FX.width,H=FX.height;
   if(fxTheme==="fx-star"){
@@ -2173,9 +2240,128 @@ function fxLoop(){
       c.fillRect(x-b.r,y-b.r,b.r*2,b.r*2);
     }
   }
+  else if(fxTheme==="fx-ocean"){ocFrame(c,W,H);}
   c.globalAlpha=1;
   fxRaf=requestAnimationFrame(fxLoop);
 }
+/* ========= 浅海生态 · 前景动态（鱼群 / 气泡 / 浮游颗粒） ========= */
+const OC={img:{},fish:[],bub:[],dust:[],started:false,tick:0,slow:0};
+function ocMob(){return window.innerWidth<760}
+function ocLoad(){
+  if(OC.started)return;
+  OC.started=true;
+  [["f1","assets/ocean/fish1.webp"],["f2","assets/ocean/fish2.webp"]].forEach(function(p){
+    const im=new Image();
+    im.decoding="async";
+    im.onload=function(){OC.img[p[0]]=im;if(!OC.fish.length)ocSpawn();};
+    im.src=p[1];
+  });
+}
+function ocSpawn(){
+  const W=FX.width,H=FX.height,mob=ocMob();
+  OC.fish=[];
+  const n=mob?4:7;
+  for(let i=0;i<n;i++){
+    const d=Math.random();
+    OC.fish.push({
+      k:Math.random()<0.55?"f1":"f2",
+      x:Math.random()*W,
+      y:H*(0.06+Math.random()*0.86),
+      s:(mob?0.30:0.34)+d*0.62,
+      dir:Math.random()<0.5?-1:1,
+      sp:(W/1000)*(0.26+d*0.80)*(mob?0.72:1),
+      ph:Math.random()*6.2832,
+      amp:(4+d*16)*(H/900),
+      rot:(Math.random()-0.5)*0.10,
+      a:0.20+d*0.42
+    });
+  }
+  OC.bub=[];
+  const bn=mob?9:17;
+  for(let i=0;i<bn;i++)OC.bub.push({
+    x:Math.random()*W,y:Math.random()*H,
+    r:(1.3+Math.random()*3.2)*(W/1400),
+    v:(0.22+Math.random()*0.62)*(H/900),
+    ph:Math.random()*6.2832,a:0.14+Math.random()*0.30
+  });
+  OC.beams=[];
+  const bn2=mob?2:4;
+  for(let i=0;i<bn2;i++)OC.beams.push({
+    x:0.12+Math.random()*0.76, w:W*(0.05+Math.random()*0.09),
+    rot:0.16+Math.random()*0.26, ph:Math.random()*6.2832,
+    sp:0.0035+Math.random()*0.004, a:0.55+Math.random()*0.45
+  });
+  OC.dust=[];
+  const dn=mob?24:52;
+  for(let i=0;i<dn;i++)OC.dust.push({
+    x:Math.random()*W,y:Math.random()*H,
+    r:0.6+Math.random()*1.5,
+    vx:(Math.random()-0.5)*0.16,vy:-0.04-Math.random()*0.16,
+    a:0.10+Math.random()*0.34,ph:Math.random()*6.2832
+  });
+}
+function ocFrame(c,W,H){
+  if(ocMob()&&((OC.slow=(OC.slow+1)%2)===1))return;   /* 手机上 30fps */
+  const dpr=W/Math.max(1,window.innerWidth);
+  const im1=OC.img.f1,im2=OC.img.f2;
+  for(const f of OC.fish){
+    f.ph+=0.018+f.s*0.008;
+    f.x+=f.sp*f.dir;
+    const y=f.y+Math.sin(f.ph)*f.amp;
+    if(f.dir>0&&f.x>W+220)f.x=-220;
+    if(f.dir<0&&f.x<-220)f.x=W+220;
+    const im=f.k==="f1"?im1:im2;
+    if(!im)continue;
+    const w=im.width*0.17*f.s*dpr,h=im.height*0.17*f.s*dpr;
+    c.save();
+    c.globalAlpha=f.a;
+    c.translate(f.x,y);
+    c.rotate(f.rot+Math.sin(f.ph*0.8)*0.05);
+    c.scale(f.dir,1);
+    c.drawImage(im,-w/2,-h/2,w,h);
+    c.restore();
+  }
+  for(const b of OC.bub){
+    b.y-=b.v;b.ph+=0.03;
+    const x=b.x+Math.sin(b.ph)*6*dpr;
+    if(b.y<-10){b.y=H+10;b.x=Math.random()*W;b.r=(1.3+Math.random()*3.2)*(W/1400);}
+    c.beginPath();c.arc(x,b.y,b.r,0,6.2832);
+    c.fillStyle="rgba(255,255,255,"+(b.a*0.42)+")";c.fill();
+    c.beginPath();c.arc(x-b.r*0.3,b.y-b.r*0.32,b.r*0.34,0,6.2832);
+    c.fillStyle="rgba(255,255,255,"+b.a+")";c.fill();
+  }
+  for(const d of OC.dust){
+    d.x+=d.vx*dpr;d.y+=d.vy*dpr;d.ph+=0.02;
+    if(d.y<-8){d.y=H+8;d.x=Math.random()*W;}
+    if(d.x<-8)d.x=W+8;
+    if(d.x>W+8)d.x=-8;
+    c.globalAlpha=d.a*(0.55+0.45*Math.sin(d.ph));
+    c.fillStyle="#ffffff";
+    c.beginPath();c.arc(d.x,d.y,d.r*dpr,0,6.2832);c.fill();
+  }
+  /* 水面斜射下来的光柱：缓慢摆动，强度呼吸 */
+  OC.t=(OC.t||0)+1;
+  if(OC.beams&&OC.beams.length){
+    c.save();
+    c.globalCompositeOperation="lighter";
+    for(const bm of OC.beams){
+      const k=0.055+0.035*Math.sin(OC.t*bm.sp+bm.ph);
+      c.save();
+      c.translate(W*bm.x,-H*0.12);
+      c.rotate(bm.rot+0.05*Math.sin(OC.t*bm.sp*0.6+bm.ph));
+      const g=c.createLinearGradient(0,0,0,H*1.35);
+      g.addColorStop(0,"rgba(255,255,255,"+(k*1.5*bm.a).toFixed(4)+")");
+      g.addColorStop(0.45,"rgba(220,250,255,"+(k*0.9*bm.a).toFixed(4)+")");
+      g.addColorStop(1,"rgba(255,255,255,0)");
+      c.fillStyle=g;
+      c.fillRect(-bm.w/2,0,bm.w,H*1.35);
+      c.restore();
+    }
+    c.restore();
+  }
+  c.globalAlpha=1;
+}
+
 function fxStart(theme){
   if(fxRaf){cancelAnimationFrame(fxRaf);fxRaf=null;}
   fxTheme=(theme&&theme.indexOf("fx-")===0)?theme:"";
@@ -2191,6 +2377,8 @@ document.addEventListener("visibilitychange",()=>{
 window.addEventListener("resize",()=>{if(fxTheme){fxResize();fxInit();}});
 
 function boot(){
+  /* 第一次打开时给浅海生态，之后完全尊重用户自己的选择 */
+  if(db.themeInit!==1){db.themeInit=1;if(!db.theme)db.theme="fx-ocean";}
   setTheme(db.theme||"");
   applyAvatars();
   /* 先把同一形象的静态立绘挂出来，首屏立刻有东西看 */
