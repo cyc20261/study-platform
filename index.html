@@ -2866,8 +2866,9 @@ function ocFrame(c,W,H){
     c.save();
     c.globalAlpha=f.a;
     c.translate(f.x,y);
-    c.rotate(f.rot+Math.sin(f.ph*0.8)*0.05);
-    c.scale(f.dir,1);
+    c.rotate((f.rot+Math.sin(f.ph*0.8)*0.05)*f.dir);
+    /* 贴图是头朝左的：向右游（dir=1）要水平翻转，否则就是尾巴朝前倒着游 */
+    c.scale(-f.dir,1);
     c.drawImage(im,-w/2,-h/2,w,h);
     c.restore();
   }
@@ -2928,9 +2929,11 @@ document.addEventListener("visibilitychange",()=>{
 window.addEventListener("resize",()=>{if(fxTheme){fxResize();fxInit();}});
 
 function boot(){
-  /* 第一次打开时给浅海生态，之后完全尊重用户自己的选择 */
-  if(db.themeInit!==1){db.themeInit=1;if(!db.theme)db.theme="fx-ocean";}
-  setTheme(db.theme||"");
+  /* 浅海生态设为常态壁纸：老存档里如果还停在别的主题，这次升级后一次性切回来；
+     之后用户在设置里换主题仍然作数，不会被反复改回去 */
+  if(db.oceanDefault!==1){db.oceanDefault=1;db.theme="fx-ocean";db.themeInit=1;}
+  if(db.themeInit!==1){db.themeInit=1;db.theme="fx-ocean";}
+  setTheme(db.theme||"fx-ocean");
   applyAvatars();
   /* 先把同一形象的静态立绘挂出来，首屏立刻有东西看 */
   {const fb0=$("#fabFallback");if(fb0){fb0.classList.remove("hidden");fb0.style.opacity="1";}}
