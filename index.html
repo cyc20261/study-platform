@@ -242,15 +242,16 @@ a.tx{color:var(--accent);cursor:pointer;text-decoration:none;font-size:13px}
   font-size:14px;outline:none;background:var(--card);color:var(--ink);
 }
 #wordSearch:focus{border-color:var(--accent)}
-.srch-item{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.srch-item{padding:9px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
 .srch-item:last-child{border-bottom:none}
-.srch-item .sw{font-weight:700;min-width:104px}
-.srch-item .sp{color:var(--muted);font-size:12.5px;min-width:118px}
-.srch-item .sm{flex:1;min-width:0}
+.srch-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.srch-row .sw{font-weight:700;min-width:104px}
+.srch-row .sp{color:var(--muted);font-size:12.5px;min-width:118px}
+.srch-row .sm{flex:1 1 220px;min-width:220px;word-break:break-word}
 @media(max-width:640px){
-  .srch-item{flex-wrap:wrap;gap:3px 10px}
-  .srch-item .sw,.srch-item .sp{min-width:auto}
-  .srch-item .sm{flex:1 1 100%}
+  .srch-row{gap:3px 10px}
+  .srch-row .sw,.srch-row .sp{min-width:auto}
+  .srch-row .sm{flex:1 1 100%;min-width:0}
 }
 
 /* ========= 测验 ========= */
@@ -766,7 +767,7 @@ body[data-theme="fx-aurora"]{
 #ttyInput:focus{border-color:var(--accent)}
 /* 例句语境（背诵卡 / 速查 / 解析共用） */
 .sent{font-size:12.5px;color:var(--muted);margin-top:7px;line-height:1.7}
-.srch-item .sent{flex:1 1 100%;margin-top:0;padding-top:2px}
+.srch-item .sent{margin-top:5px;padding-top:0;line-height:1.6;word-break:break-word}
 /* ===== 学习足迹卡（等级 + 热力图 + 周报） ===== */.fp-lv{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
 .fp-badge{flex:none;width:46px;height:46px;border-radius:14px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;color:#fff;font-weight:700;
@@ -1564,11 +1565,12 @@ function renderSearch(){
   box.innerHTML='<div class="muted" style="font-size:12px;margin:6px 0">匹配 '+hits.length+' 条'+(hits.length>=60?"（仅显示前 60 条）":"")+'</div>'+
     hits.map(h=>{
       const st=db.words[h.lv][h.x.w];
-      return '<div class="srch-item">'+lvTag(h.lv)+
+      return '<div class="srch-item"><div class="srch-row">'+lvTag(h.lv)+
         '<span class="sw">'+h.x.w+'</span>'+
         '<span class="sp">'+h.x.p+'</span>'+
-        '<span class="sm">'+h.x.m+'</span>'+sentHtml(h.x.w)+
+        '<span class="sm">'+h.x.m+'</span>'+
         '<button class="btn small ghost" onclick="markHard(\''+h.lv+'\',\''+h.x.w+'\')">'+(st===1?"已掌握":(st===2?"在生词本":"＋ 生词本"))+'</button>'+
+        '</div>'+sentHtml(h.x.w)+
         '</div>';
     }).join("");
 }
