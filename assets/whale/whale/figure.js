@@ -493,11 +493,16 @@ export async function createWhaleFigure(base = new URL('./', import.meta.url), o
   // moves her head instead. Only flight, dragging and the jump's crouch and landing tip the whole group,
   // running keeps half its lean. The shares ease between modes so the group never snaps.
   // dancing sways her mostly as a whole, the rest of the sway goes to the neck
-  const GROUP = { air: [1, 1], drag: [1, 1], crouch: [1, 1], land: [1, 1], walk: [1, .5], run: [1, .5], dance: [.6, 0] };
+  const GROUP = { air: [1, 1], drag: [1, 1], crouch: [1, 1], land: [1, 1], walk: [1, .5], run: [1, .5], dance: [.6, 0],
+    // 飞与游：整个人跟着转（游的那 70° 就是绕脚底轴转过去的）
+    fly: [1, 1], swim: [1, 1] };
   // the ninja run leans her whole body forward from the soles, in a straight line: bent at the waist instead,
   // the bodice comes away from the skirt and its bow and the tops of the legs show at the waist
   let wTilt = 0, wLean = 0, facing = 1;
   let finMood = 0, tailMood = 0, wagAmp = 0, sitK = 0, walkK = 0, runK = 0, swingK = 0;
+  // 飞/游（取自上游「鲸鱼娘 Plus」）：fitK 是整体姿态权重，wingPhase / swimPhase 是两套自行累积的节拍，
+  // 累积而不是读 t*rate，节奏中途变化才不会跳相。
+  let flyK = 0, swimK = 0, wingPhase = 0, swimPhase = 0;
   const groupTilt = (mode, tilt, lean) => tilt * wTilt + lean * wLean + runK * 14 * facing;
   const st = { z: {}, alpha: {} };
 
@@ -559,10 +564,13 @@ export async function createWhaleFigure(base = new URL('./', import.meta.url), o
     lastT = t;
     const mode = o.mode || 'idle', face = o.face || 'neutral';
     facing = Math.sign(o.facing || 1);
-    const walking = mode === 'walk' || mode === 'run', held = mode === 'drag', airborne = mode === 'air';
+    const walking = mode === 'walk' || mode === 'run', held = mode === 'drag', airborne = mode === 'air' || mode === 'fly';
 
     /* body: the kit's `low` is how far the hips sink (sitting, the walk's bob), in these units */
     sitK = lerp(sitK, clamp(o.sit ?? 0, 0, 1), ease(12, dt));
+    // 飞/游的姿态权重：比其它模式慢，起落和放平都要看得见过程
+    flyK = lerp(flyK, mode === 'fly' ? 1 : 0, ease(4, dt));
+    swimK = lerp(swimK, mode === 'swim' ? 1 : 0, ease(5, dt));
     const low = o.low || 0;
     const lowV = (low - prevLow) / Math.max(dt, 1e-3); prevLow = low;
     const breath = Math.sin(t * (mode === 'sleep' ? 1.7 : 2.4));
@@ -573,6 +581,8 @@ export async function createWhaleFigure(base = new URL('./', import.meta.url), o
     tiltT += HEAD_TILT[face] || 0;
     if (face === 'dizzy') tiltT += 3 * Math.sin(t * 4.5);
     if (held) tiltT += o.swing * .25;
+    // 游的时候头要抬起来：整个人已经放平了，这一下是下巴往上翘
+    tiltT -= swimK * 10;
     headTilt = sp.head.step(tiltT, dt);
     // what the kit meant for the whole body and the group did not take goes to the neck (forward +)
     const [gT, gL] = GROUP[mode] || [0, 0];
@@ -589,7 +599,15 @@ export async function createWhaleFigure(base = new URL('./', import.meta.url), o
     const bow = g?.kind === 'bow' ? env(.25, .7) : 0;        // the upper body tips forward about the waist
     const shiver = g?.kind === 'shiver' ? env(.08, .85) : 0; // arms hugged in, trembling, fins down
     const flap = g?.kind === 'flap' ? env(.05, .75) : 0;     // fins, tail, ahoge and arms all flutter
-    const gNeck = nod * 7 + shake * 2.5 + bow * 10 + wave * 4, gYaw = shake * 1.1;
+    /* 四个新增的手势（动作表见 KIT_MOTIONS）：摸头缩脖、举手欢呼、伸懒腰、探头张望 */
+    const pat = g?.kind === 'pat' ? env(.05, .86) : 0;       // 被摸头：缩脖子、下巴收、手往怀里收
+    const cheer = g?.kind === 'cheer' ? env(.12, .8) : 0;    // 欢呼：双手举过头顶，还轻轻蹦一下
+    const stretch = g?.kind === 'stretch' ? env(.1, .8) : 0; // 伸懒腰：手举高往后拉，腰背反向弓起
+    const peek = g?.kind === 'peek' ? env(.08, .82) : 0;     // 探头：上身探出去，脖子往前送
+    const gNeck = nod * 7 + shake * 2.5 + bow * 10 + wave * 4 + pat * 7 + peek * 9 - stretch * 7 - cheer * 3,
+      gYaw = shake * 1.1;
+    // 欢呼那一下的小跳：只抬身体，脚不离地（脚由 kit 的 legs 给定）
+    const hop = cheer * 7 * Math.max(0, Math.sin(gk * Math.PI * 2));
     const headA = headTilt + gNeck;
     const tiltVel = (headA - prevTilt) / Math.max(dt, 1e-3); prevTilt = headA;
     const yawVel = (gYaw - prevYaw) / Math.max(dt, 1e-3); prevYaw = gYaw;
@@ -600,21 +618,30 @@ export async function createWhaleFigure(base = new URL('./', import.meta.url), o
     /* springs */
     const sway = clamp(o.swing / 26, -1.6, 1.6);
     const up = airborne || held ? 1 : 0;
-    const hair = sp.hair.step(sway * 1.1 - tiltVel * .004 - yawVel * .02 + (walking ? -.25 : 0) - runK * .5, dt);
-    const hairY = sp.hairY.step(up * -1 + lowV * .006, dt);
-    const bangs = sp.bangs.step(sway * .7 - tiltVel * .004 - yawVel * .03, dt);
-    const skirt = sp.skirt.step(sway * .8 + (walking ? -.2 : 0), dt);
-    const flare = sp.skirtY.step(up * .8 + sitK * .6 + clamp(-lowV * .01, -.3, .6), dt);
+    // 两套节拍：飞的扇翅 / 游的划水。相位自己累加，节奏变了也不会相位跳变。
+    wingPhase += flyK * 6.5 * dt;
+    swimPhase += (swimK > .01 ? Math.PI * 2 * .95 : 0) * dt;
+    const hair = sp.hair.step(sway * 1.1 - tiltVel * .004 - yawVel * .02 + (walking ? -.25 : 0) - runK * .5 + flyK * (.3 + Math.sin(t * 2.1) * .28) + swimK * (.5 + Math.sin(t * 1.8) * .2), dt);
+    const hairY = sp.hairY.step(up * -1 + flyK * 1.3 + swimK * 1.15 + lowV * .006, dt);
+    const bangs = sp.bangs.step(sway * .7 - tiltVel * .004 - yawVel * .03 + flyK * (.16 + Math.sin(t * 2.3) * .14) + swimK * (.22 + Math.sin(t * 2.0) * .12), dt);
+    const skirt = sp.skirt.step(sway * .8 + (walking ? -.2 : 0) + flyK * (.26 + Math.sin(t * 1.7) * .16) + swimK * (.3 + Math.sin(t * 1.5) * .16), dt);
+    const flare = sp.skirtY.step(up * .8 + flyK * .3 + swimK * .35 + sitK * .6 + clamp(-lowV * .01, -.3, .6), dt);
     const [fm, wg] = MOOD[face] || MOOD.neutral;
-    finMood = lerp(finMood, lerp(fm, -.6, shiver), ease(6, dt));
+    // 被摸头时鳍垂下来，欢呼时翘起来
+    finMood = lerp(finMood, lerp(fm, -.6, shiver) - pat * .5 + cheer * .5, ease(6, dt));
     wagAmp = lerp(wagAmp, wg, ease(3, dt));
     tailMood = lerp(tailMood, mode === 'sleep' || face === 'sad' || face === 'cry' || face === 'scared' ? -1 : 0, ease(3, dt));
     // fast flutters go on after the springs, which would smooth them away
-    const fins = sp.fins.step(finMood * 14 + sway * 10, dt) + (face === 'angry' ? 2.5 * Math.sin(t * 40) : 0) + flap * 13 * Math.sin(t * 26);
+    // 飞的扇翅：越飞越快，节奏靠 wingPhase 累积；比她原本的轻颤更低更慢，每一拍都看得清
+    const wingAge = Math.min(1, (o.modeT || 0) / 1.1);
+    const wingOn = flyK;
+    const flyWing = wingOn * (10 + 9 * wingAge) * Math.sin(wingPhase);
+    const fins = sp.fins.step(finMood * 14 + sway * 10, dt) + (face === 'angry' ? 2.5 * Math.sin(t * 40) : 0) + flap * 13 * Math.sin(t * 26)
+      + flyWing + swimK * 5.5 * Math.sin(swimPhase + .6);
     const ahoge = sp.ahoge.step(-tiltVel * .12 - yawVel * .5 + sway * 18 + (face === 'surprised' ? -16 : 0) + (face === 'confused' ? 20 : 0) + (mode === 'sleep' ? 22 : 0) - hairY * 12, dt)
-      + flap * 12 * Math.sin(t * 19);
+      + flyK * 6 * Math.sin(t * 2.5) + swimK * 5 * Math.sin(swimPhase * .9 + 1.4) + flap * 12 * Math.sin(t * 19);
     const tail = sp.tail.step(sway * 14 + tailMood * 12, dt) + wagAmp * 13 * Math.sin(t * (4 + 5 * wagAmp)) + Math.sin(t * 1.3) * 3
-      + flap * 14 * Math.sin(t * 17);
+      + flyK * 7 * Math.sin(t * 1.6) + swimK * (9 + 3 * Math.sin(t * .7)) * Math.sin(swimPhase) + flap * 14 * Math.sin(t * 17);
 
     /* legs: the kit hands hip→foot segments sized for Coo; keep their angle (forward = foot to the right) */
     const legA = o.legs.map(l => -Math.atan2(l[2] - l[0], Math.max(4, l[3] - l[1])) * 180 / Math.PI);
@@ -630,6 +657,14 @@ export async function createWhaleFigure(base = new URL('./', import.meta.url), o
     // `swing` is whether the walk swings the arms: a pose that sets both arms holds them still
     let aN = 4, aF = -2, swing = walking ? 1 : 0;
     if (airborne) { aN = 40; aF = -30; }
+    // 飞：她是被托起来的，手臂该贴身垂着；「张开」放在转平的身体上会变成举在胸前，像在摆拍
+    if (flyK > .01) { aN = lerp(aN, 2, flyK); aF = lerp(aF, -2, flyK); }
+    // 游：小幅交替划水，和腿同一个拍子
+    if (swimK > .01) {
+      const pad = Math.sin(swimPhase);
+      aN = lerp(aN, 44 + 26 * pad, swimK);
+      aF = lerp(aF, -(44 - 26 * pad), swimK);
+    }
     if (held) { aN = (70 + 16 * Math.sin(t * 13)) * L.heldArms; aF = (-45 - 12 * Math.sin(t * 13 + 1.3)) * L.heldArms; }
     if (sitK > .5 && !walking) { aN = lerp(aN, -4, sitK); aF = lerp(aF, -6, sitK); }
     if (face === 'happy' || face === 'love') { aN += 12 + 5 * Math.sin(t * 8); aF -= 8 + 4 * Math.sin(t * 8); }
@@ -640,6 +675,11 @@ export async function createWhaleFigure(base = new URL('./', import.meta.url), o
     if (runK > .001) { aN = lerp(aN, 38, runK); aF = lerp(aF, 32, runK); }
     if (wave) aN = lerp(aN, 108, wave);
     if (shiver) { aN = lerp(aN, -10, shiver); aF = lerp(aF, 8, shiver); }
+    // 新增手势的手臂姿态（放在后面，盖住表情带来的加成）
+    if (pat > .001) { aN = lerp(aN, -12, pat); aF = lerp(aF, 10, pat); swing = 0; }
+    if (cheer > .001) { aN = lerp(aN, 126, cheer); aF = lerp(aF, 118, cheer); swing = 0; }
+    if (stretch > .001) { aN = lerp(aN, 146, stretch); aF = lerp(aF, 140, stretch); swing = 0; }
+    if (peek > .001) { aN = lerp(aN, 36, peek); aF = lerp(aF, -14, peek); swing = 0; }
     // each arm swings against the leg on its side. The swing goes on after the arm springs, which settle at about
     // 1.2 Hz: the walk's 2.1 Hz stride would come out of them about 120° late, each arm moving with its own leg.
     swingK = lerp(swingK, swing, ease(8, dt));
@@ -649,8 +689,8 @@ export async function createWhaleFigure(base = new URL('./', import.meta.url), o
 
     /* deformer states */
     // the kit sinks the hips 29 when seated; the sitting drawing's lowest point is 19.4 above the soles
-    st.body = { a: -sway * 1.2 + (held ? o.swing * .15 : 0), ty: low - 9.6 * sitK, sx: (1 + .006 * breath + .04 * plop) * (1 - .03 * shiver), sy: 1 - .012 * breath - .06 * plop };
-    st.waist = { a: bow * 20 };
+    st.body = { a: -sway * 1.2 + (held ? o.swing * .15 : 0) - peek * 2.5, ty: low - 9.6 * sitK - hop + pat * 2.5, sx: (1 + .006 * breath + .04 * plop) * (1 - .03 * shiver), sy: 1 - .012 * breath - .06 * plop + stretch * .02 };
+    st.waist = { a: bow * 20 - stretch * 7 + peek * 6 };
     st.skirt = {
       fn: (u, v) => {
         const k = v * v;
@@ -830,7 +870,7 @@ export async function createWhaleFigure(base = new URL('./', import.meta.url), o
     draw,
     groupTilt,
     /** The gestures she draws herself, from the frame's `gesture` (the kit leaves them off the body). */
-    gestures: ['nod', 'shake', 'wave', 'bow'],
+    gestures: ['nod', 'shake', 'wave', 'bow', 'pat', 'cheer', 'stretch', 'peek'],
     setScheme,
     /** Forgets the motion state (springs, clocks), for callers that replay a timeline from its start. */
     /**
@@ -859,6 +899,7 @@ export async function createWhaleFigure(base = new URL('./', import.meta.url), o
       endFade();
       for (const k in sp) { sp[k].x = 0; sp[k].v = 0; }
       lastT = null; rootWas = {}; prevTilt = 0; prevYaw = 0; prevLow = 0; headTilt = 0; wTilt = 0; wLean = 0; finMood = 0; tailMood = 0; wagAmp = 0; sitK = 0; walkK = 0; runK = 0; swingK = 0;
+      flyK = 0; swimK = 0; wingPhase = 0; swimPhase = 0;
       prevLook = null; prevShut = 0; Object.assign(hl, { dx: 0, dy: 0, scale: 1, quiver: 0, alpha: 1 });
     },
     /** Loads every scheme's and outfit's textures, so later switches are immediate. */

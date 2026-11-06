@@ -86,14 +86,20 @@ export const FACES = {
 export const KIT_EXPRESSIONS = ['neutral', 'happy', 'wink', 'love', 'shy', 'surprised', 'angry', 'sad', 'sleepy', 'thinking',
   'smug', 'pout', 'worried', 'determined', 'flustered', 'scared', 'excited', 'cry', 'confused'];
 export const KIT_MOTIONS = ['stand', 'jump', 'hop', 'look', 'turn', 'nod', 'shake', 'spin', 'sit', 'sleep', 'dizzy', 'walk', 'run',
-  'wave', 'bow', 'shiver', 'flap', 'dance'];
+  'wave', 'bow', 'shiver', 'flap', 'dance',
+  // 来自上游「鲸鱼娘 Plus」分支的飞与游：只摘了自洽的公式，没有搬那套窗口物理（perch-physics）
+  'fly', 'soar', 'swim',
+  // 自绘手势（figure 从 frame.gesture 画，kit 只管计时）
+  'pat', 'cheer', 'stretch', 'peek'];
 /** The tone each face plays as it comes on (the host's synthesized sounds, web/sound.js), filed as a face sound. */
 const FACE_TONES = {
   happy: 'happy', wink: 'wink', love: 'love', surprised: 'surprised', angry: 'angry', sad: 'sad', shy: 'shy', sleepy: 'yawn',
   smug: 'wink', worried: 'hmm', determined: 'pop', flustered: 'shy', scared: 'surprised', excited: 'sparkle', cry: 'sad', confused: 'hmm',
 };
 /** Body modes in which the figure travels across the stage or squashes fast (dancing steps and sways on the spot). */
-const MOVING_MODES = new Set(['drag', 'air', 'crouch', 'land', 'walk', 'run', 'dance']);
+const MOVING_MODES = new Set(['drag', 'air', 'crouch', 'land', 'walk', 'run', 'dance', 'fly', 'swim']);
+/** 会离开地面的模式：换动作前必须先落回地面，否则她会停在半空。 */
+const AIRBORNE_MODES = new Set(['fly', 'swim']);
 /** Points on the body in logo units, for a figure that names none: where the eyes look from, where a tear starts,
  *  where z's and hearts start ([x from, x to, y]), the bubble's spot. `tears` (one start under each eye) has no default. */
 const ANCHORS = { gaze: [140, 117], tear: [166, 136], z: [196, 40], hearts: [90, 175, 34], bubble: [128, 0] };
@@ -181,7 +187,7 @@ export function createPet(els, opts) {
     pet.target = clamp(pet.target, minX(), maxX());
     pet.gy = freeGround ? clamp(pet.gy, minY(), floorY) : floorY;
     pet.targetY = freeGround ? clamp(pet.targetY, minY(), floorY) : floorY;
-    if (pet.mode !== 'air' && pet.mode !== 'drag') pet.fy = pet.gy;
+    if (pet.mode !== 'air' && pet.mode !== 'drag' && !AIRBORNE_MODES.has(pet.mode)) pet.fy = pet.gy;
   }
 
   function toStage(lx, ly) {
@@ -212,6 +218,12 @@ export function createPet(els, opts) {
     if (prev !== m) onEvent('mode', { mode: m });
   }
   const busy = () => pet.mode === 'drag' || pet.mode === 'air' || pet.mode === 'crouch';
+  /** 飞/游的时候被别的动作打断，会停在半空：先把她放回地面再说。 */
+  function settle() {
+    if (!AIRBORNE_MODES.has(pet.mode)) return;
+    pet.fy = floorY; pet.vy = 0; pet.vx = 0; pet.speed = 0;
+    pet.flyPhase = null; pet.swimPhase = null; pet.tiltV = 0;
+  }
   function pickTarget(minDist) {
     for (let i = 0; i < 12; i++) {
       const x = rnd(minX(), maxX());
@@ -225,6 +237,8 @@ export function createPet(els, opts) {
   /** Runs a motion. Returns false when the body cannot take it now (in the air, being dragged). */
   function act(a) {
     if (busy()) return false;
+    // 飞/游之外的任何动作，都先让她落回地面
+    if (a !== 'fly' && a !== 'soar' && a !== 'swim') settle();
     pet.expr = null; pet.lastAct = a;
     const seated = pet.mode === 'sleep' || pet.mode === 'sit';
     switch (a) {
@@ -246,6 +260,40 @@ export function createPet(els, opts) {
       case 'shiver': pulse('shiver', 1.8); play('shiver', 'move'); break;
       case 'flap': setMode('crouch', { jumpV: 540, jumpVx: 0 }); pulse('flap', 1.4); holdFace('happy', 1.6); play('chirps', 'move'); break;
       case 'dance': setMode('dance', { dur: 3.2 }); holdFace('happy', 3.4); play('dance', 'move'); break;
+
+      /* ---- 飞：`fly` 原地垂直升起悬停，`soar` 边升边换位置（两端各挑一个落点） ---- */
+      case 'fly': case 'soar': {
+        if (seated) setMode('wake', { startle: true });
+        const cruise = a === 'soar';
+        const up = rnd(230, 320) * S;
+        setMode('fly', {
+          flyTo: Math.max(minY() + 40 * S, pet.fy - up),
+          flyUntil: T + (cruise ? rnd(5.5, 7.5) : rnd(3.4, 4.4)),
+          flyPhase: 'up', flyCruise: cruise,
+          flyTX: cruise ? pickTarget(200) : null, flySpeed: 0,
+        });
+        holdFace(cruise ? 'excited' : 'happy', cruise ? 8 : 6);
+        play('whoosh', 'move');
+        break;
+      }
+      /* ---- 游：整个人放平，在水里横向巡游，嘴边冒泡 ---- */
+      case 'swim': {
+        if (seated) setMode('wake', { startle: true });
+        setMode('swim', {
+          swimTo: Math.max(minY() + 60 * S, floorY - rnd(170, 215) * S),
+          swimUntil: T + rnd(6, 8.5),
+          swimPhase: 'in', swimTX: pickTarget(180), swimSpeed: rnd(70, 140),
+          swimBubbleAt: T + .45,
+        });
+        holdFace('happy', 8);
+        play('whoosh', 'move');
+        break;
+      }
+      /* ---- 四个自绘手势：缩脖/欢呼/伸懒腰/探头 ---- */
+      case 'pat': if (!seated) setMode('idle'); pulse('pat', 1.3); holdFace('shy', 1.5); break;
+      case 'cheer': if (!seated) setMode('idle'); pet.sqv -= 2.2; pulse('cheer', 1.4); holdFace('excited', 1.6); break;
+      case 'stretch': if (!seated) setMode('idle'); pulse('stretch', 1.8); holdFace('sleepy', 2.0); break;
+      case 'peek': if (!seated) setMode('idle'); pulse('peek', 1.5); holdFace('surprised', 1.7); break;
       default: {
         // a gesture of the pack's own, drawn by its figure from frame.gesture
         const m = words[a]?.motion;
@@ -311,6 +359,7 @@ export function createPet(els, opts) {
    */
   function walkTo(x, run, walkId, y) {
     if (busy()) return false;
+    settle();
     if (pet.mode === 'sleep' || pet.mode === 'sit') setMode('wake', { startle: true });
     const target = clamp(x, minX(), maxX());
     const targetY = freeGround && typeof y === 'number' && Number.isFinite(y) ? clamp(y, minY(), floorY) : pet.gy;
@@ -529,6 +578,91 @@ export function createPet(els, opts) {
         if (mt > pet.dur) { setMode('idle'); pet.nextAt = T + rnd(1.5, 3); }
         break;
       }
+      case 'fly': {
+        // 升 → 悬停 → 落。悬停时整个人随呼吸上下浮，`soar` 还会顺便换个位置。
+        // 没有重力：`pet.fy` 由这里直接推，落回地面才交给 land()。
+        if (!pet.flyPhase) pet.flyPhase = 'up';
+        lookT = [3, 1];
+        if (pet.flyPhase === 'up') {
+          pet.fy = lerp(pet.fy, pet.flyTo, ease(3, dt));
+          leanT = 7 * Math.sign(pet.facing || 1);
+          tiltT = -3;
+          if (pet.flyTo - pet.fy < 2) { pet.flyPhase = 'hover'; pet.flyAt = T; }
+        } else if (pet.flyPhase === 'hover') {
+          pet.fy = pet.flyTo + Math.sin(T * 2.1) * 4.5 * S;
+          tiltT = 2.2 * Math.sin(T * 1.4);
+          leanT = 2 * Math.sin(T * .9);
+          if (pet.flyCruise && pet.flyTX != null) {
+            const dx = pet.flyTX - pet.x, dist = Math.abs(dx);
+            if (dist > 8) {
+              const v = Math.min(220, dist * 4 + 40);
+              pet.flySpeed = lerp(pet.flySpeed, v, ease(3, dt));
+              pet.x += Math.sign(dx) * Math.min(dist, pet.flySpeed * dt);
+              pet.facing = Math.sign(dx) || pet.facing;
+              tiltT += 3.5 * Math.sign(dx);
+            } else if (T > pet.flyAt + 1.1) {
+              // 再挑一个落点，别在原地悬着
+              pet.flyTX = pickTarget(220); pet.flySpeed = 0; pet.flyAt = T;
+            }
+          }
+          if (T > pet.flyUntil) { pet.flyPhase = 'down'; play('whoosh', 'move'); }
+        } else {
+          pet.flySpeed = lerp(pet.flySpeed, 260, ease(3, dt));
+          pet.fy = Math.min(floorY, pet.fy + pet.flySpeed * dt);
+          leanT = -2; tiltT = 0;
+          lookT = [1, 3];
+          if (floorY - pet.fy < 2) {
+            pet.fy = floorY; pet.flyPhase = null; pet.vy = 0;
+            land(); pet.nextAt = T + 1.6;
+          }
+        }
+        break;
+      }
+      case 'swim': {
+        // 身体绕脚底轴放平（~70°），render 再把身体中心补回原位，看起来就是「横躺着游」。
+        if (!pet.swimPhase) pet.swimPhase = 'in';
+        tiltT = pet.facing * (70 + 7 * Math.sin(T * .85));
+        tk = 42; tc = 13;
+        leanT = 3 * Math.sin(T * 1.1);
+        pet.phase += Math.PI * 2 * (1.05 + .7 * clamp(pet.speed / 160, 0, 1)) * dt;
+        if (pet.swimPhase === 'in') {
+          pet.fy = lerp(pet.fy, pet.swimTo, ease(2.6, dt));
+          lookT = [2, -1];
+          if (Math.abs(pet.swimTo - pet.fy) < 6 * S) pet.swimPhase = 'cruise';
+        } else if (pet.swimPhase === 'cruise') {
+          const dx = pet.swimTX - pet.x, dy = pet.swimTo - pet.fy, dist = Math.hypot(dx, dy);
+          if (dist > 6) {
+            pet.speed = lerp(pet.speed, Math.min(190, dist * 4 + 60), ease(3, dt));
+            const go = Math.min(dist, pet.speed * dt);
+            pet.x += dx / dist * go; pet.fy += dy / dist * go;
+            if (Math.abs(dx) > 4) pet.facing = Math.sign(dx) || pet.facing;
+            lookT = [clamp(dx / 60, -3, 3), clamp(dy / 60, -2, 2)];
+          } else {
+            pet.swimTX = pickTarget(200); pet.swimSpeed = rnd(60, 130);
+          }
+          if (T > pet.swimUntil) pet.swimPhase = 'out';
+        } else {
+          pet.speed = lerp(pet.speed, 230, ease(3, dt));
+          tiltT = pet.facing * 70 * clamp((pet.fy - floorY + 70 * S) / (70 * S), 0, 1);
+          lookT = [2, 2];
+          pet.fy = Math.min(floorY, pet.fy + pet.speed * dt);
+          if (floorY - pet.fy < 2) {
+            pet.fy = floorY; pet.swimPhase = null; pet.speed = 0; pet.vy = 0;
+            land(); pet.nextAt = T + 1.4;
+          }
+        }
+        // 嘴边每 1~2 秒冒两个泡泡，边升边晃
+        if (T > (pet.swimBubbleAt || 0)) {
+          const [mx, my] = A.mouth ?? [150, 140];
+          const mouth = toStage(mx, my);
+          for (let i = 0; i < 2; i++) {
+            emit('bubble', { x: mouth.x + rnd(-4, 4) * S, y: mouth.y + rnd(-3, 3) * S },
+              { vx: rnd(-8, 8) * S, vy: rnd(-40, -24) * S, life: rnd(1.1, 1.8), seed: rnd(0, 6.28) });
+          }
+          pet.swimBubbleAt = T + rnd(1.1, 2.4);
+        }
+        break;
+      }
       case 'drag': {
         pet.dx = lerp(pet.dx, pointer.x, ease(28, dt));
         pet.dy = lerp(pet.dy, Math.min(pointer.y, floorY - 245 * S), ease(28, dt));
@@ -593,7 +727,7 @@ export function createPet(els, opts) {
     pet.gap[1] = lerp(pet.gap[1], fc.gap[1], ease(8, dt));
     // turning reads as a quick card flip rather than a mirror snap
     pet.faceVis = lerp(pet.faceVis, pet.facing, ease(15, dt));
-    if (m !== 'walk' && m !== 'run' && m !== 'dance') pet.phase = lerp(pet.phase, Math.round(pet.phase / Math.PI) * Math.PI, ease(6, dt));
+    if (m !== 'walk' && m !== 'run' && m !== 'dance' && m !== 'swim') pet.phase = lerp(pet.phase, Math.round(pet.phase / Math.PI) * Math.PI, ease(6, dt));
     pointer.vx *= Math.exp(-dt * 6);
 
     // secondary motion for ears/antenna/scarf: lags behind horizontal movement
@@ -671,12 +805,19 @@ export function createPet(els, opts) {
     const sx = (1 + pet.sq * .7) * (1 - .05 * pet.stretch) * (1 - .009 * br);
     const sy = (1 - pet.sq) * (1 + .09 * pet.stretch) * (1 + .016 * br);
     const ax = 128, ay = drag ? 36 : 256;
-    let AX = drag ? pet.dx : pet.x, AY = drag ? pet.dy : pet.fy;
-    if (fc.shake) AX += Math.sin(T * 60) * 1.4;
-    else if (pet.pulse?.kind === 'shiver') AX += Math.sin(T * 75) * 1.1 * envelope((T - pet.pulse.t0) / pet.pulse.dur, .08, .85);
     // a figure may keep tilt and lean off the whole group and bend its own parts instead
     const kx = S * pet.faceVis * sx, ky = S * sy, lean = pet.lean * pet.faceVis;
     const rot = custom?.groupTilt ? custom.groupTilt(pet.mode, pet.tilt, lean) : pet.tilt + lean;
+    let AX = drag ? pet.dx : pet.x, AY = drag ? pet.dy : pet.fy;
+    if (fc.shake) AX += Math.sin(T * 60) * 1.4;
+    else if (pet.pulse?.kind === 'shiver') AX += Math.sin(T * 75) * 1.1 * envelope((T - pet.pulse.t0) / pet.pulse.dur, .08, .85);
+    // 游的时候她绕脚底轴转平了，身体会被甩到一边：按旋转量把这一下补回来，
+    // 读起来才是「横躺着漂在原处」，不是「滑到右下角去了」。
+    if (pet.mode === 'swim') {
+      const r = rot * Math.PI / 180;
+      AX -= 128 * ky * Math.sin(r);
+      AY += 128 * ky * (Math.cos(r) - 1);
+    }
     pet.xf = { AX, AY, ax, ay, kx, ky, rot };
     petG.setAttribute('transform', `translate(${f(AX)} ${f(AY)}) rotate(${f(rot)}) scale(${kx.toFixed(4)} ${ky.toFixed(4)}) translate(${-ax} ${-ay})`);
 
@@ -719,6 +860,9 @@ export function createPet(els, opts) {
         s += `<g opacity="${f(op)}" transform="translate(${f(p.x + Math.sin(p.age * 3) * 8)} ${f(p.y)}) scale(${f(z)})"><path ${zPaint} fill="none" stroke-width="2.4" stroke-linecap="round" d="M3 4V-9L9 -6"/><circle ${zPaint} fill="none" stroke-width="3.6" cx="0" cy="4.5" r="1.8"/></g>`;
       } else if (p.type === 'drop') {
         s += `<path class="tearf" transform="translate(${f(p.x)} ${f(p.y)}) scale(${f(.9 * sc)})" d="${DROP}"/>`;
+      } else if (p.type === 'bubble') {
+        const op = .8 * (1 - a * a), r = (3.2 + 7 * a) * sc;
+        s += `<circle class="p-bubble" cx="${f(p.x + Math.sin(p.age * 3.2 + (p.seed || 0)) * 5)}" cy="${f(p.y)}" r="${f(r)}" fill="none" stroke-width="${f(1.5 / (sc || 1) * 1.4)}" opacity="${f(op)}"/>`;
       }
     }
     fxG.innerHTML = s;
@@ -748,7 +892,7 @@ export function createPet(els, opts) {
     press = { x: p.x, y: p.y, t: now(p) };
     pointer.samples = [{ t: now(p), x: p.x, y: p.y }];
     // caught while falling or flying: held at once, since the body would fall on while the pointer moved the drag threshold
-    if (pet.mode === 'air') grab();
+    if (pet.mode === 'air' || AIRBORNE_MODES.has(pet.mode)) grab();
     return true;
   }
   /** Returns the cursor the stage should show. */
@@ -910,10 +1054,10 @@ export function createPet(els, opts) {
 /* ---------- the body a pack hands the figure frame ---------- */
 /** Colours of what the kit draws itself (shadow, particles; z's take the `eye` class without a figure colour). */
 const KIT_CSS = `
-:root{--shadow:rgba(27,22,38,.12);--tear:#5AAEF0;--heart:#F0567A;--dust:#A39DB0;--skin-eye:#00A870}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--shadow:rgba(0,0,0,.32);--tear:#6BBDF7;--heart:#FF6F93;--dust:#5B6472;--skin-eye:#2FD59B}}
-:root[data-theme="dark"]{--shadow:rgba(0,0,0,.32);--tear:#6BBDF7;--heart:#FF6F93;--dust:#5B6472;--skin-eye:#2FD59B}
-.shadow{fill:var(--shadow)} .tearf{fill:var(--tear)} .p-heart{stroke:var(--heart)} .p-dust{stroke:var(--dust)} .eye{stroke:var(--skin-eye)}
+:root{--shadow:rgba(27,22,38,.12);--tear:#5AAEF0;--heart:#F0567A;--dust:#A39DB0;--bubble:#8FD8F5;--skin-eye:#00A870}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--shadow:rgba(0,0,0,.32);--tear:#6BBDF7;--heart:#FF6F93;--dust:#5B6472;--bubble:#6FBEE8;--skin-eye:#2FD59B}}
+:root[data-theme="dark"]{--shadow:rgba(0,0,0,.32);--tear:#6BBDF7;--heart:#FF6F93;--dust:#5B6472;--bubble:#6FBEE8;--skin-eye:#2FD59B}
+.shadow{fill:var(--shadow)} .tearf{fill:var(--tear)} .p-heart{stroke:var(--heart)} .p-dust{stroke:var(--dust)} .p-bubble{stroke:var(--bubble)} .eye{stroke:var(--skin-eye)}
 svg.kit{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible}
 `;
 const SVGNS = 'http://www.w3.org/2000/svg';

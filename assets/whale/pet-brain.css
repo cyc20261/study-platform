@@ -64,6 +64,30 @@
 .pet-menu .pm-sub{margin-left:auto;font-size:11px;color:var(--muted,#7a8099)}
 .pet-menu hr{border:0;border-top:1px solid var(--line,#e8eaf3);margin:5px 4px}
 
+/* ---------- 动作面板：一格一个动作，点一下她就做 ---------- */
+.pet-acts{
+  position:fixed;z-index:2000;width:238px;
+  background:var(--card,#fff);color:var(--ink,#1f2333);
+  border:1px solid var(--line,#e8eaf3);border-radius:16px;
+  box-shadow:0 18px 44px rgba(20,22,40,.22);
+  padding:8px;font-size:12px;animation:petMenuIn .16s ease;
+}
+.pet-acts .pa-hd{
+  display:flex;align-items:center;gap:6px;
+  padding:3px 7px 8px;font-size:11.5px;font-weight:700;color:var(--muted,#7a8099);
+}
+.pet-acts .pa-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.pet-acts button{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:9px 4px 7px;border:0;border-radius:11px;cursor:pointer;
+  background:var(--hover-soft,#f7f8fd);color:inherit;font:inherit;line-height:1.2;
+  transition:transform .12s ease,background .12s ease;
+}
+.pet-acts button:hover{background:var(--accent-soft,#eef0fe);transform:translateY(-1px)}
+.pet-acts button:active{transform:scale(.94)}
+.pet-acts .pa-e{font-size:19px;line-height:1}
+.pet-acts .pa-t{font-size:11px;font-weight:600}
+
 /* ---------- 成长面板 ---------- */
 .pet-panel{
   position:fixed;right:26px;bottom:104px;z-index:1200;

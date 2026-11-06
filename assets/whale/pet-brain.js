@@ -33,6 +33,7 @@
     togglePin: function () {},
     openWardrobe: function () {},
     dance: function () {},
+    act: function () {},
     wearTop: function () { return null; },
     baseDate: null
   };
@@ -48,6 +49,7 @@
     lastTapAt: 0,
     recent: [],
     menuEl: null,
+    actsEl: null,
     panelEl: null,
     game: null,
     timer: 0,
@@ -574,10 +576,68 @@
   /* ---------------- 菜单 ---------------- */
   function closeMenu() {
     if (S.menuEl) { S.menuEl.remove(); S.menuEl = null; }
+    if (S.actsEl) { S.actsEl.remove(); S.actsEl = null; }
     document.removeEventListener('pointerdown', onDocDown, true);
   }
   function onDocDown(e) {
-    if (S.menuEl && !S.menuEl.contains(e.target)) closeMenu();
+    if (S.menuEl && S.menuEl.contains(e.target)) return;
+    if (S.actsEl && S.actsEl.contains(e.target)) return;
+    closeMenu();
+  }
+
+  /* ---------------- 动作面板 ----------------
+     动作全来自深寻鲸鱼娘的动作表：飞 / 游 / 盘旋是从上游「Plus」分支摘来的，
+     其余四个（摸头、欢呼、伸懒腰、探头）是照同一套骨架自绘的手势。
+     上游那批窗口攀爬（perch / climb / cling）要一整套窗口物理，这里没搬。 */
+  var ACTS = [
+    { id: 'fly',     e: '🕊️', t: '飞起来' },
+    { id: 'swim',    e: '🌊', t: '游一圈' },
+    { id: 'soar',    e: '☁️', t: '盘旋' },
+    { id: 'pat',     e: '🙈', t: '摸摸头' },
+    { id: 'cheer',   e: '🙌', t: '欢呼' },
+    { id: 'stretch', e: '🙆', t: '伸懒腰' },
+    { id: 'peek',    e: '👀', t: '探头看' },
+    { id: 'wave',    e: '👋', t: '打招呼' },
+    { id: 'dance',   e: '💃', t: '跳个舞', dance: true },
+    { id: 'spin',    e: '🌀', t: '转个圈' },
+    { id: 'dizzy',   e: '😵', t: '装晕' },
+    { id: 'sit',     e: '🪑', t: '坐下' }
+  ];
+
+  function openActs() {
+    closeMenu();
+    var el = document.createElement('div');
+    el.className = 'pet-acts';
+    el.innerHTML = '<div class="pa-hd">🎬 让小云做点什么</div><div class="pa-grid"></div>';
+    var grid = el.querySelector('.pa-grid');
+    ACTS.forEach(function (a) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML = '<span class="pa-e"></span><span class="pa-t"></span>';
+      b.querySelector('.pa-e').textContent = a.e;
+      b.querySelector('.pa-t').textContent = a.t;
+      b.addEventListener('click', function () {
+        closeMenu();
+        S.lastInteract = nowMs();
+        try {
+          if (a.dance) H.dance(); else H.act(a.id);
+        } catch (e) {}
+        if (a.id === 'sit') say('坐一会儿，你看书我就安静待着～', { ms: 2600 });
+        else if (a.id === 'swim') say('水里凉快，你要不要也歇会儿？', { ms: 2600 });
+        else if (a.id === 'fly') say('飞起来啦——看得好远！', { ms: 2400 });
+      });
+      grid.appendChild(b);
+    });
+    document.body.appendChild(el);
+    var box = null;
+    try { box = H.petBox && H.petBox(); } catch (e) {}
+    var r = el.getBoundingClientRect();
+    var px = box ? box.cx : window.innerWidth - 120;
+    var py = box ? box.top : window.innerHeight - 260;
+    el.style.left = clamp(px - r.width / 2, 8, window.innerWidth - r.width - 8) + 'px';
+    el.style.top = clamp(py - r.height - 12, 8, window.innerHeight - r.height - 8) + 'px';
+    S.actsEl = el;
+    setTimeout(function () { document.addEventListener('pointerdown', onDocDown, true); }, 0);
   }
 
   /* 会自己走动的桌宠得能「拴住」，不然看资料时她一直在动 */
@@ -604,6 +664,7 @@
       { sep: true },
       { ico: '🎀', label: '给她打扮', sub: '舞狮头套 / 猫耳…', fn: function () { closeMenu(); try { H.openWardrobe(); } catch (e) {} } },
       { ico: '💃', label: '跳个舞', sub: '来一段两步舞', fn: function () { closeMenu(); try { H.dance(); } catch (e) {} } },
+      { ico: '🎬', label: '挑个动作', sub: '飞 / 游 / 欢呼…', fn: function () { openActs(); } },
       pinItem(),
       { ico: '👋', label: '打个招呼', sub: '', fn: function () { closeMenu(); greet(); } }
     ];

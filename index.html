@@ -2843,16 +2843,13 @@ function petWearApply(id,quiet){
   return petWearId;
 }
 /* 挂进 #petG；figure 重挂（切配色/服装）时会清空 petG，每帧检查一次补回去。
-   插在 #petFx 前面，让表情粒子和特效仍然盖在配饰上。 */
+   #petFx 是 #petStage 的子层（stage 坐标系），不在 #petG 里——装饰追加到 #petG 末尾
+   就一定画在形象之后，而 stage 级特效（petFx）仍盖在最上层。 */
 function petWearPlace(){
   if(!petAccG||!petAccImg)return;
   const g=document.getElementById("petG");
   if(!g)return;
-  if(petAccG.parentNode!==g){
-    const fx=document.getElementById("petFx");
-    if(fx&&fx.parentNode===g)g.insertBefore(petAccG,fx);
-    else g.appendChild(petAccG);
-  }
+  if(petAccG.parentNode!==g)g.appendChild(petAccG);
 }
 function closeWardrobe(){
   document.getElementById("wardMask")?.remove();
@@ -3006,6 +3003,25 @@ function petDance(){
   petDanceIv=setInterval(()=>{n++;if(n>=3){clearInterval(petDanceIv);petDanceIv=null;return;}go();},3400);
 }
 window.petDance=petDance;
+/* 动作面板的统一入口：飞、游要按住自动溜达，手势原地做就行 */
+function petAct(name){
+  if(!petCtl)return;
+  const air=name==="fly"||name==="soar"||name==="swim";
+  try{petCtl.holdRoam(air?9:4);petCtl.doWord(name);}catch(e){}
+}
+window.petAct=petAct;
+/* 验收脚本用：把她的实时状态读出来（模式、脚底高度、整体旋转、手势） */
+window.petDebug=()=>{
+  if(!petCtl)return null;
+  const p=petCtl.pet;
+  try{
+    return {mode:p.mode,fy:+p.fy.toFixed(1),x:+p.x.toFixed(1),t:+petCtl.time.toFixed(2),
+      rot:+(petCtl.pet.xf?petCtl.pet.xf.rot:0).toFixed(1),
+      pulse:p.pulse?p.pulse.kind:null,
+      floor:petCtl.bounds.floorY,S:petCtl.bounds.S,
+      box:petCtl.layout().box};
+  }catch(e){return {err:String(e)};}
+};
 function petFabClick(e){ if(fabDragged){fabDragged=false;return;} if(window.PetBrain)PetBrain.tap(e); else toggleAi(); }
 function fabTalking(on){
   const fab=$("#aiFab");if(fab)fab.classList.toggle("talking",on);
@@ -3437,6 +3453,7 @@ function boot(){
       togglePin:()=>petTogglePin(),
       openWardrobe:()=>{try{openWardrobe();}catch(e){console.error(e);}},
       dance:()=>{try{petDance();}catch(e){}},
+      act:(id)=>{try{petAct(id);}catch(e){}},
       wearTop:()=>{try{return petAccImg?petAccImg.getBoundingClientRect().top:null;}catch(e){return null;}}
     });
   }
