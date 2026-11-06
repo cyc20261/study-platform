@@ -664,6 +664,18 @@ body[data-theme="fx-aurora"]{
 }
 .ward-item:focus{outline:none}
 .ward-item:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* D4：未解锁配饰 */
+.ward-item.ward-locked .ward-thumb{opacity:.42;filter:grayscale(.6)}
+.ward-item.ward-locked .ward-name{color:var(--muted);font-weight:500}
+.ward-price{
+  position:absolute;right:6px;top:-8px;font-size:10.5px;font-weight:700;
+  background:var(--accent);color:#fff;border-radius:999px;padding:1.5px 7px;
+  box-shadow:0 2px 6px rgba(8,145,178,.3);
+}
+.ward-price-no{background:var(--muted);opacity:.75}
+.ward-foot{grid-column:1/-1;font-size:11.5px;color:var(--muted);margin-top:6px;padding-top:8px;
+  border-top:1px dashed var(--line);line-height:1.6}
+.ward-foot b{color:var(--ink)}
 @media (max-width:640px){
   .ward-grid{grid-template-columns:repeat(3,1fr);gap:8px}
   .ward{padding:16px 14px 14px;border-radius:18px}
@@ -777,6 +789,41 @@ body[data-theme="fx-aurora"]{
 .fp-xp .top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
 .fp-metas{font-size:12px;color:var(--muted);margin-top:4px}
 .fp-metas a.tx{margin-left:0}
+/* D4：鱼干 / 好感度 / 喂食 / 配饰收集 —— 一行轻量投放，不新增卡片 */
+.fp-pet{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 2px;
+  padding:8px 10px;border-radius:12px;background:var(--accent-soft);border:1px solid var(--line)}
+.fp-chip{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+.fp-chip b{color:var(--ink);font-size:12.5px}
+.fp-favbar{display:inline-block;width:56px;height:5px;border-radius:99px;background:var(--seg-bg);
+  overflow:hidden;vertical-align:middle;margin-left:2px}
+.fp-favbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
+.fp-feed{margin-left:auto;white-space:nowrap}
+.fp-feed:disabled{opacity:.5;cursor:not-allowed}
+/* 喂食飘心：跟随桌宠位置向上散开 */
+.lv-fx{position:fixed;transform:translate(-50%,-50%);pointer-events:none;z-index:9999}
+.lv-fx span{position:absolute;left:0;top:0;font-size:17px;animation:lvUp 1.5s ease-out forwards}
+@keyframes lvUp{
+  0%{opacity:0;transform:translate(0,0) scale(.6)}
+  22%{opacity:1;transform:translate(calc(var(--dx) * .35),-16px) scale(1.05)}
+  100%{opacity:0;transform:translate(var(--dx),-74px) scale(.86)}
+}
+/* E2：能力雷达卡 */
+.radar-card{border:1px solid var(--line);border-radius:14px;padding:12px 14px 10px;background:var(--card-2,var(--seg-bg))}
+.radar-t{font-size:13px;font-weight:700;margin-bottom:6px}
+.radar-t .muted{font-weight:400;font-size:11.5px}
+.radar-body{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.radar{width:300px;max-width:100%;height:auto;flex:none}
+.radar-side{flex:1;min-width:180px}
+.radar-row{display:flex;align-items:baseline;gap:8px;font-size:12px;padding:3px 0;
+  border-bottom:1px dashed var(--line)}
+.radar-row:last-child{border-bottom:none}
+.radar-row span{min-width:76px;color:var(--ink)}
+.radar-row b{color:var(--accent);min-width:38px;text-align:right}
+.radar-row i{font-style:normal;color:var(--muted);font-size:11px}
+.radar-row-off{opacity:.5}
+.radar-row-off b{color:var(--muted)}
+.radar-foot{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.6}
+@media(max-width:640px){.radar{width:100%}}
 .hm{display:flex;gap:3px;overflow-x:auto;padding:2px 0 6px}
 .hm-col{display:flex;flex-direction:column;gap:3px;flex:none}
 .hm-c{width:10px;height:10px;border-radius:2.5px;background:rgba(120,130,150,.14)}
@@ -960,6 +1007,7 @@ body[data-theme="fx-aurora"]{
         <b>答得顺会一题比一题难，卡住了会自动降下来</b>；你答错过的知识点会被记住，
         下次优先考你。
       </p>
+      <div id="radarBox" style="margin-top:12px"></div>
       <div id="qprofBox" style="margin-top:12px"></div>
       <div class="row" id="catSubjectRow" style="margin-top:10px">
         <button class="btn" data-subj="c" onclick="askLevel('c')">💻 C 语言 · 按我的水平出题</button>
@@ -1302,6 +1350,16 @@ function normalize(d){
   d.xp=d.xp||{v:0};
   d.act=d.act||{};
   d.srs=d.srs||{cet4:{},cet6:{}};
+  /* ===== D4 桌宠联动：鱼干 / 好感度 / 配饰解锁 ===== */
+  d.coin=d.coin||{v:0};
+  d.fav=d.fav||{v:0};
+  if(typeof d.coin.v!=="number"||!isFinite(d.coin.v)||d.coin.v<0)d.coin.v=0;
+  if(typeof d.fav.v!=="number"||!isFinite(d.fav.v)||d.fav.v<0)d.fav.v=0;
+  d.coin.v=Math.floor(d.coin.v);d.fav.v=Math.floor(d.fav.v);
+  d.accOwn=d.accOwn||{};
+  d.accOwn.cat=true;                        // 黑猫耳朵：默认赠送
+  d.accOwn.lion=true;                       // 醒狮头套：默认赠送
+  if(d.petWear)d.accOwn[d.petWear]=true;    // 老用户正戴着的，白送，不会被突然摘走
   {const ks=Object.keys(d.act).sort();                     // 账本只留 400 天，热力图够用
    if(ks.length>400)ks.slice(0,ks.length-400).forEach(k=>delete d.act[k]);}
   for(const k in d.wrong){const w=d.wrong[k];              // 旧错题补重做档期字段
@@ -1600,8 +1658,22 @@ function streakDoneToday(){return streakDays().includes(today());}
    所有学习行为都从 addAct 过一笔：w=背词 q=做题 m=专注分钟 ck=打卡 xp=经验。 */
 function actToday(){const t=today();if(!db.act[t])db.act[t]={w:0,q:0,m:0,xp:0};return db.act[t];}
 function addAct(kind,n,xp){
-  const a=actToday();a[kind]=(a[kind]||0)+n;xp=xp||0;
+  const a=actToday();const before=a[kind]||0;
+  a[kind]=(a[kind]||0)+n;xp=xp||0;
   if(xp){a.xp+=xp;db.xp.v+=xp;}
+  /* D4 鱼干掉落（统一在这里发，所有学习行为都走这条路）：
+     打卡 +5 · 每满 5 个单词 +2 · 每满 5 道题 +2 · 每 10 分钟专注 +4 · 模考 +15 */
+  let coin=0;
+  if(kind==="ck")coin=5;
+  else if(kind==="w"||kind==="q"){
+    if(Math.floor(before/5)!==Math.floor(a[kind]/5))coin=2;
+  }
+  else if(kind==="m")coin=Math.round(n/10*4);
+  else if(kind==="mk")coin=15;
+  if(coin){
+    a.coin=(a.coin||0)+coin;
+    db.coin.v=(db.coin.v||0)+coin;
+  }
 }
 /* 等级阶梯：每一级要的累计 XP。标题按段取，两级换一个称号 */
 const XP_LADDER=[0,100,250,450,700,1000,1350,1750,2200,2700,3250,3850,4500,5200,6000,7000,8000,9000,10500,12000,14000,16500,19500,23000,27000];
@@ -1626,6 +1698,8 @@ function renderFootprint(){
   const ach=xpAch();
   const hm=footprintHeatmap();
   const wk=footprintWeek();
+  const ft=favTier();
+  const coinN=db.coin.v||0;
   box.innerHTML=
     '<div class="fp-lv"><div class="fp-badge" title="学习等级">Lv'+l+'<small>'+xpTitle(l)+'</small></div>'+
     '<div class="fp-xp"><div class="top"><span><b>'+v+'</b> XP</span><span class="muted">'+need+'</span></div>'+
@@ -1633,6 +1707,14 @@ function renderFootprint(){
     '<div class="fp-metas">🎖️ 成就 <b>'+ach.n+'</b>'+(ach.t?' / '+ach.t:'')+
     '　<a class="tx" onclick="openAchWall()">查看成就墙</a>'+
     '　·　🔄 今日到期复习 <b>'+dueWords().length+'</b> 词　📕 到期重做 <b>'+dueWrongKeys().length+'</b> 题</div></div></div>'+
+    /* D4：鱼干 / 好感度 / 配饰收集 */
+    '<div class="fp-pet">'+
+      '<span class="fp-chip" title="学习就会掉鱼干：打卡 +5、每 5 个单词 +2、每 5 道题 +2、专注 10 分钟 +4、模考 +15">🐟 鱼干 <b>'+coinN+'</b></span>'+
+      '<span class="fp-chip" title="喂小云一次花 '+FEED_COST+' 条鱼干，涨 '+FEED_FAV+' 点好感">'+ft.icon+' 好感 <b>'+ft.v+'</b> · '+ft.name+
+        '<i class="fp-favbar"><i style="width:'+ft.pct+'%"></i></i></span>'+
+      '<span class="fp-chip">🎀 配饰 <b>'+accOwnCount()+'</b> / '+PET_ACC.length+'　<a class="tx" onclick="openWardrobe()">打开衣柜</a></span>'+
+      '<button class="btn sm fp-feed" onclick="feedPet()"'+(coinN<FEED_COST?' disabled':'')+'>喂一条（'+FEED_COST+'🐟）</button>'+
+    '</div>'+
     hm+'<div class="wk">'+wk+'</div>';
 }
 /* 热力图：最近 182 天按周排列，深浅按当天 XP 分四档 */
@@ -1672,6 +1754,70 @@ function footprintWeek(){
 function openAchWall(){
   if(window.PetBrain&&window.PetBrain.panel)window.PetBrain.panel();
   else toast("小云还没醒来，等她出现后就能看成就墙啦");
+}
+
+/* ===== D4 桌宠联动：学习掉鱼干 → 喂小云涨好感 → 鱼干解锁配饰 ===== */
+const ACC_PRICE={bunny:60,sakura:90,grad:120,headset:150,crown:180,halo:220};  // cat/lion 免费
+const ACC_FREE=["cat","lion"];
+const FEED_COST=10,FEED_FAV=8;
+const FAV_TIERS=[[0,"陌生","🐟"],[50,"眼熟","🐠"],[150,"亲近","💙"],[300,"灵魂伴侣","💖"]];
+function favTier(){
+  const v=db.fav.v||0;
+  let i=0;
+  for(let k=0;k<FAV_TIERS.length;k++)if(v>=FAV_TIERS[k][0])i=k;
+  const cur=FAV_TIERS[i],nx=FAV_TIERS[i+1]||null;
+  return {i:i,lv:i+1,v:v,name:cur[1],icon:cur[2],
+    next:nx?nx[0]:null,
+    pct:nx?Math.min(100,Math.round((v-cur[0])/(nx[0]-cur[0])*100)):100};
+}
+function accOwned(id){return ACC_FREE.indexOf(id)>=0||!!db.accOwn[id];}
+function accPrice(id){return ACC_PRICE[id]||0;}
+function accOwnCount(){return PET_ACC.filter(d=>accOwned(d.id)).length;}
+function accBuy(id){
+  const d=petAccById(id);if(!d)return false;
+  if(accOwned(id)){toast("「"+d.name+"」已经在你的衣柜里啦");return true;}
+  const p=accPrice(id);
+  if((db.coin.v||0)<p){
+    toast("鱼干不够：还差 "+(p-(db.coin.v||0))+" 条（学习就会掉，别急着刷）");
+    return false;
+  }
+  db.coin.v-=p;db.accOwn[id]=true;save();
+  renderFootprint();renderWardrobe();
+  toast("用 "+p+" 鱼干换到了「"+d.name+"」🎉");
+  return true;
+}
+/* 喂小云：扣鱼干、涨好感、说句话、飘爱心 */
+function feedPet(){
+  if((db.coin.v||0)<FEED_COST){
+    toast("鱼干不够啦～还差 "+(FEED_COST-(db.coin.v||0))+" 条，去背几个单词就有了");
+    return;
+  }
+  db.coin.v-=FEED_COST;
+  db.fav.v=(db.fav.v||0)+FEED_FAV;
+  save();renderFootprint();
+  petLoveFx();
+  const t=favTier();
+  const lines=["啊呜～好香的鱼干！","谢谢！吃饱了陪你学习～","再来一条嘛…（小声）","这条鱼干，我记住你啦！"];
+  fabBubble(lines[(db.fav.v/FEED_FAV|0)%lines.length]+"（好感 +"+FEED_FAV+" · "+t.name+"）",2600);
+}
+/* 飘爱心：定位到桌宠身上，向上飘散后自毁 */
+function petLoveFx(){
+  const host=$("#aiFab")||$("#petStage");
+  if(!host)return;
+  const r=host.getBoundingClientRect();
+  const layer=document.createElement("div");
+  layer.className="lv-fx";
+  layer.style.left=(r.left+r.width/2)+"px";
+  layer.style.top=(r.top+r.height*0.3)+"px";
+  for(let i=0;i<5;i++){
+    const s=document.createElement("span");
+    s.textContent=i%2?"💗":"✨";
+    s.style.setProperty("--dx",(Math.random()*70-35)+"px");
+    s.style.animationDelay=(i*90)+"ms";
+    layer.appendChild(s);
+  }
+  document.body.appendChild(layer);
+  setTimeout(()=>layer.remove(),1800);
 }
 
 function checkIn(){
@@ -1763,6 +1909,7 @@ function markWord(st){
   if(st===1){toast("棒！"+cur.w+" 已掌握");}
   nextWord();
   renderReview();
+  renderFootprint();                       // 背词掉鱼干，数字要立刻可见
   if(window.PetBrain)PetBrain.study(st===1?"word":"wrong",{word:picked});
 }
 function nextWord(){
@@ -2416,7 +2563,7 @@ function feedStat(type,q,ok){
     else we.due=shiftDay(today(),7);        // 做对一轮 → 一周后验证
   }
   addAct("q",1,ok?1:0);
-  save();renderQProf();renderWrongBox();
+  save();renderQProf();renderWrongBox();renderFootprint();
 }
 /* 错题本重做：只挑今天到期（due<=今天）的题，跨科目混合出卷 */
 function dueWrongKeys(){
@@ -2447,6 +2594,66 @@ function jumpMath(ch){
     else{const p=MATHQUIZ.findIndex(x=>x.ch===ch);if(p>=0)startMathQuiz(p);}},80);
 }
 /* ---------- 能力画像 ---------- */
+/* E2 能力雷达：六科掌握度（用自适应测评的 θ 值），没测过的轴留中心并标「未测」 */
+const RADAR_AXES=[["c","C 语言"],["math","高数"],["vocab4","四级词汇"],
+                  ["vocab6","六级词汇"],["exam4","四级考试题"],["exam6","六级考试题"]];
+function radarData(){
+  return RADAR_AXES.map(([s,name])=>{
+    const p=prof(s);
+    return {s:s,name:name,n:p.n,th:p.th,
+      v:p.n?Math.max(.06,Math.min(1,p.th)):.03,
+      acc:p.n?accOf(p):null};
+  });
+}
+function radarSvg(){
+  const ax=radarData(),cx=180,cy=152,R=98,N=ax.length;
+  const pt=(i,r)=>{const a=(-90+i*360/N)*Math.PI/180;
+    return [cx+Math.cos(a)*r,cy+Math.sin(a)*r];};
+  let g="";
+  [.25,.5,.75,1].forEach(k=>{
+    g+='<polygon points="'+ax.map((_,i)=>pt(i,R*k).map(n=>n.toFixed(1)).join(",")).join(" ")+
+       '" fill="none" stroke="currentColor" stroke-opacity="'+(k===1?".24":".10")+'" stroke-width="1"/>';
+  });
+  ax.forEach((_,i)=>{const p=pt(i,R);
+    g+='<line x1="'+cx+'" y1="'+cy+'" x2="'+p[0].toFixed(1)+'" y2="'+p[1].toFixed(1)+
+       '" stroke="currentColor" stroke-opacity=".10"/>';});
+  const dpts=ax.map((a,i)=>pt(i,R*a.v));
+  g+='<polygon points="'+dpts.map(p=>p.map(n=>n.toFixed(1)).join(",")).join(" ")+
+     '" fill="var(--accent)" fill-opacity=".20" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/>';
+  g+=dpts.map(p=>'<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+
+     '" r="3.3" fill="var(--accent)" stroke="#fff" stroke-width="1.2"/>').join("");
+  g+=ax.map((a,i)=>{
+    const p=pt(i,R+13),deg=-90+i*360/N,cos=Math.cos(deg*Math.PI/180),sin=Math.sin(deg*Math.PI/180);
+    const anchor=cos>.25?"start":(cos<-.25?"end":"middle");
+    const dy=sin>.75?11:(sin<-.75?-4:4);
+    const val=a.n?Math.round(a.th*100)+"%":"未测";
+    return '<text x="'+p[0].toFixed(1)+'" y="'+(p[1]+dy).toFixed(1)+'" text-anchor="'+anchor+
+      '" font-size="11.5" fill="currentColor" opacity="'+(a.n?".86":".42")+'">'+a.name+'</text>'+
+      '<text x="'+p[0].toFixed(1)+'" y="'+(p[1]+dy+13).toFixed(1)+'" text-anchor="'+anchor+
+      '" font-size="10.5" fill="var(--accent)" opacity="'+(a.n?".85":".35")+'">'+val+'</text>';
+  }).join("");
+  return '<svg class="radar" viewBox="0 0 360 320" role="img" aria-label="六科能力雷达图">'+
+    '<g color="var(--ink)">'+g+'</g></svg>';
+}
+function renderRadar(){
+  const box=$("#radarBox");if(!box)return;
+  const ax=radarData(),done=ax.filter(a=>a.n).length;
+  if(!done){
+    box.innerHTML='<div class="radar-card"><div class="radar-t">🕸️ 能力雷达 <span class="muted">六科掌握度</span></div>'+
+      '<div class="nc-note" style="margin:0">还没测过任何科目 —— 先随便选一科做 10 道题，雷达就会亮起来。</div></div>';
+    return;
+  }
+  const tip=ax.filter(a=>a.n).map(a=>a.name+' '+Math.round(a.th*100)+'%').join(' · ');
+  box.innerHTML='<div class="radar-card"><div class="radar-t">🕸️ 能力雷达 <span class="muted">六科掌握度 · 已测 '+done+'/6</span></div>'+
+    '<div class="radar-body">'+radarSvg()+
+    '<div class="radar-side">'+
+      ax.map(a=>'<div class="radar-row'+(a.n?"":" radar-row-off")+'">'+
+        '<span>'+a.name+'</span>'+
+        '<b>'+Math.round(a.th*100)+'%</b>'+
+        '<i>'+(a.n?('练 '+a.n+' 题'+(a.acc!=null?' · 正确率 '+Math.round(a.acc*100)+'%':'')):'还没测')+'</i></div>').join("")+
+    '</div></div>'+
+    '<div class="radar-foot">越靠外越强 · 数值来自自适应测评（越答越准）'+(tip?'<span class="muted">　'+tip+'</span>':'')+'</div></div>';
+}
 function renderQProf(){
   const box=$("#qprofBox");if(!box)return;
   const rows=[];
@@ -2461,6 +2668,7 @@ function renderQProf(){
   });
   box.innerHTML=rows.length?'<div class="lvhead" style="margin-top:0">你的能力画像（每次作答都会更新）</div>'+rows.join(""):
     '<div class="nc-note">还没有测评记录 —— 选个科目，先告诉我你的程度，10 道题就能定位。</div>';
+  renderRadar();
 }
 function renderWrongBox(){
   const box=$("#wrongBox");if(!box)return;
@@ -3311,6 +3519,10 @@ function petAccById(id){for(let i=0;i<PET_ACC.length;i++)if(PET_ACC[i].id===id)r
 function petPreloadAcc(d){if(!d)return;const im=new Image();im.src=d.file;}
 function petWearApply(id,quiet){
   const d=petAccById(id);
+  if(d&&!accOwned(d.id)){
+    if(!quiet)toast("「"+d.name+"」还没解锁，去衣柜用 "+accPrice(d.id)+" 鱼干换它 🐟");
+    return petWearId;
+  }
   petWearId=d?d.id:"";
   db.petWear=petWearId;
   if(!petAccG){
@@ -3353,33 +3565,63 @@ function petWearPlace(){
 function closeWardrobe(){
   document.getElementById("wardMask")?.remove();
   document.removeEventListener("keydown",wardEsc,true);
+  wardPending=null;
 }
 function wardEsc(e){if(e.key==="Escape")closeWardrobe();}
+let wardPending=null;   /* 未解锁配饰的「再点一次确认购买」暂存 */
+/* 衣柜网格单独渲染：购买成功后原地刷新，不用关掉重开 */
+function renderWardrobe(){
+  const grid=document.getElementById("wardGrid");
+  if(!grid)return;
+  const all=[{id:"",name:"不戴",empty:true}].concat(PET_ACC);
+  const coin=db.coin.v||0;
+  grid.innerHTML=all.map(d=>{
+    const on=(d.id||"")===petWearId;
+    const owned=d.empty||accOwned(d.id);
+    const price=owned?0:accPrice(d.id);
+    const afford=coin>=price;
+    return '<button type="button" class="ward-item'+(on?" on":"")+(d.empty?" ward-empty":"")+
+      (owned?"":" ward-locked")+'" data-deco="'+d.id+'" title="'+(d.desc||d.name)+
+      (owned?"":'（需 '+price+' 鱼干）')+'">'+
+      (d.tag?'<span class="ward-tag">'+d.tag+"</span>":"")+
+      (owned?"":'<span class="ward-price'+(afford?"":" ward-price-no")+'">🐟 '+price+"</span>")+
+      (d.empty?'<div class="ward-thumb"><img src="'+PET_THUMB+'" alt=""></div>':'<div class="ward-thumb"><img src="'+d.file+'" alt="'+d.name+'"></div>')+
+      '<div class="ward-name">'+(owned?'':'🔒 ')+d.name+"</div></button>";
+  }).join("")+
+  '<div class="ward-foot">🐟 鱼干 <b>'+coin+'</b> · 已解锁 <b>'+accOwnCount()+'</b> / '+PET_ACC.length+
+  '　<span class="muted">学习就会掉鱼干：打卡 +5、每 5 个单词 +2、每 5 道题 +2</span></div>';
+}
 function openWardrobe(){
   closeWardrobe();
   PET_ACC.forEach(petPreloadAcc);
   const mask=document.createElement("div");
   mask.className="ward-mask";mask.id="wardMask";
-  const all=[{id:"",name:"不戴",empty:true}].concat(PET_ACC);
   mask.innerHTML='<div class="ward" role="dialog" aria-modal="true" aria-label="给小云打扮">'+
     '<div class="ward-head"><h3>🎀 给小云打扮</h3><button class="ward-x" aria-label="关闭">✕</button></div>'+
-    '<div class="ward-sub">挑一件戴在她头上，再点一次就摘下来。配饰是画在她身上的，走路、蹦跳、转身都跟着一起动。选择会存进存档。</div>'+
-    '<div class="ward-grid">'+all.map(d=>{
-      const on=(d.id||"")===petWearId;
-      return '<button type="button" class="ward-item'+(on?" on":"")+(d.empty?" ward-empty":"")+'" data-deco="'+d.id+'" title="'+(d.desc||d.name)+'">'+
-        (d.tag?'<span class="ward-tag">'+d.tag+"</span>":"")+
-        (d.empty?'<div class="ward-thumb"><img src="'+PET_THUMB+'" alt=""></div>':'<div class="ward-thumb"><img src="'+d.file+'" alt="'+d.name+'"></div>')+
-        '<div class="ward-name">'+d.name+"</div></button>";
-    }).join("")+"</div></div>";
+    '<div class="ward-sub">挑一件戴在她头上，再点一次就摘下来。配饰是画在她身上的，走路、蹦跳、转身都跟着一起动。'+
+    '黑猫耳朵和醒狮头套是默认送的，其余用<b>鱼干</b>解锁（点一次看价、再点一次买下）。</div>'+
+    '<div class="ward-grid" id="wardGrid"></div></div>';
   document.body.appendChild(mask);
+  renderWardrobe();
   mask.addEventListener("click",e=>{
     if(e.target===mask||e.target.closest(".ward-x")){closeWardrobe();return;}
     const btn=e.target.closest(".ward-item");
     if(!btn)return;
     const id=btn.getAttribute("data-deco")||"";
+    /* 未解锁：第一次点提示价格，第二次点成交 */
+    if(id&&!accOwned(id)){
+      if(wardPending===id){wardPending=null;if(accBuy(id))renderWardrobe();}
+      else{
+        wardPending=id;
+        const p=accPrice(id),have=db.coin.v||0;
+        toast('「'+petAccById(id).name+'」要 '+p+' 鱼干（你有 '+have+'）'+(have>=p?'，再点一次就买下':'，先去学一会儿吧'));
+      }
+      return;
+    }
     /* 点正在戴的那件 = 摘下来 */
     petWearApply(id&&id===petWearId?"":id);
     mask.querySelectorAll(".ward-item").forEach(b=>b.classList.toggle("on",(b.getAttribute("data-deco")||"")===petWearId));
+    wardPending=null;
   });
   document.addEventListener("keydown",wardEsc,true);
 }
