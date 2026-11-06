@@ -799,6 +799,20 @@ body[data-theme="fx-aurora"]{
 .fp-favbar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2))}
 .fp-feed{margin-left:auto;white-space:nowrap}
 .fp-feed:disabled{opacity:.5;cursor:not-allowed}
+/* 头顶状态条（借 dsh-pet：学习状态 / 待办常驻头顶）
+   注意：不能塞进 #petStage——那是 <svg>，里面的 HTML div 不会被渲染（宽高为 0）。
+   挂到 body 上用 fixed 定位，坐标直接用 getBoundingClientRect 的视口值。 */
+.pet-state{position:fixed;left:0;top:0;transform:translate(-50%,-100%);
+  display:none;align-items:center;gap:5px;max-width:200px;
+  padding:3px 9px 4px;border-radius:999px;font-size:11.5px;line-height:1.4;
+  background:var(--card);color:var(--ink);border:1px solid var(--line);
+  box-shadow:0 2px 8px rgba(30,60,90,.14);white-space:nowrap;
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  pointer-events:none;z-index:9000}
+.pet-state.on{display:inline-flex}
+.pet-state b{font-size:11px;font-weight:400}
+.pet-state span{overflow:hidden;text-overflow:ellipsis;font-weight:600}
+@media(max-width:640px){.pet-state{max-width:150px;font-size:11px}}
 /* 喂食飘心：跟随桌宠位置向上散开 */
 .lv-fx{position:fixed;transform:translate(-50%,-50%);pointer-events:none;z-index:9999}
 .lv-fx span{position:absolute;left:0;top:0;font-size:17px;animation:lvUp 1.5s ease-out forwards}
@@ -1000,25 +1014,6 @@ body[data-theme="fx-aurora"]{
   </section>
 
   <section class="tab" id="tab-quiz">
-    <div class="card">
-      <h2>🎯 智能测评 <small>先问你什么水平，再按水平出题</small></h2>
-      <p class="muted" style="font-size:13px;line-height:1.8;margin-bottom:2px">
-        选科目 → 说明你现在的程度 → 出 10 道题。题目难度从你选的档位起步，
-        <b>答得顺会一题比一题难，卡住了会自动降下来</b>；你答错过的知识点会被记住，
-        下次优先考你。
-      </p>
-      <div id="radarBox" style="margin-top:12px"></div>
-      <div id="qprofBox" style="margin-top:12px"></div>
-      <div class="row" id="catSubjectRow" style="margin-top:10px">
-        <button class="btn" data-subj="c" onclick="askLevel('c')">💻 C 语言 · 按我的水平出题</button>
-        <button class="btn ghost" data-subj="math" onclick="askLevel('math')">📐 高数</button>
-        <button class="btn ghost" data-subj="vocab4" onclick="askLevel('vocab4')">🔤 四级单词</button>
-        <button class="btn ghost" data-subj="vocab6" onclick="askLevel('vocab6')">🔤 六级单词</button>
-        <button class="btn ghost" data-subj="exam4" onclick="askLevel('exam4')">📝 四级考试题</button>
-        <button class="btn ghost" data-subj="exam6" onclick="askLevel('exam6')">📝 六级考试题</button>
-      </div>
-      <div id="wrongBox" style="margin-top:12px"></div>
-    </div>
     <div class="card" id="quizBox" style="display:none"></div>
     <div class="card">
       <h2>📚 自由练习 <small>固定 10 题，想刷就刷，不计入水平评估</small></h2>
@@ -1051,6 +1046,25 @@ body[data-theme="fx-aurora"]{
         <button class="btn ghost" onclick="startMock('c20')">💻 C 语言 20 题（25 分钟）</button>
       </div>
       <div class="row" id="mockMathRow" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <h2>🎯 智能测评 <small>先问你什么水平，再按水平出题</small></h2>
+      <p class="muted" style="font-size:13px;line-height:1.8;margin-bottom:2px">
+        选科目 → 说明你现在的程度 → 出 10 道题。题目难度从你选的档位起步，
+        <b>答得顺会一题比一题难，卡住了会自动降下来</b>；你答错过的知识点会被记住，
+        下次优先考你。
+      </p>
+      <div id="radarBox" style="margin-top:12px"></div>
+      <div id="qprofBox" style="margin-top:12px"></div>
+      <div class="row" id="catSubjectRow" style="margin-top:10px">
+        <button class="btn" data-subj="c" onclick="askLevel('c')">💻 C 语言 · 按我的水平出题</button>
+        <button class="btn ghost" data-subj="math" onclick="askLevel('math')">📐 高数</button>
+        <button class="btn ghost" data-subj="vocab4" onclick="askLevel('vocab4')">🔤 四级单词</button>
+        <button class="btn ghost" data-subj="vocab6" onclick="askLevel('vocab6')">🔤 六级单词</button>
+        <button class="btn ghost" data-subj="exam4" onclick="askLevel('exam4')">📝 四级考试题</button>
+        <button class="btn ghost" data-subj="exam6" onclick="askLevel('exam6')">📝 六级考试题</button>
+      </div>
+      <div id="wrongBox" style="margin-top:12px"></div>
     </div>
   </section>
 
@@ -1917,6 +1931,7 @@ function nextWord(){
   rebuildQueue();
   cur=queue.pop();
   renderWord();renderDash();
+  if(cur)petMarkState("📖","背单词",120000);
 }
 
 function renderReview(){
@@ -2036,6 +2051,7 @@ function mockTick(){
   if(!quiz||!quiz.mock)return;
   quiz.left--;
   if(quiz.left<=0){stopMockTick();toast("⏰ 时间到，自动交卷");finishQuiz();return;}
+  petMarkState("⏱","模考 "+mockFmt(quiz.left),100000);
   const el=$("#mockLeft");
   if(el){el.textContent=mockFmt(quiz.left);
     const bar=document.querySelector("#quizBox .mockbar");
@@ -2137,6 +2153,9 @@ function startQuiz(type){
 }
 function showQuizQ(){
   if(quiz.idx>=quiz.list.length){finishQuiz();return;}
+  petMarkState(quiz.mock?"⏱":"📝","第 "+(quiz.idx+1)+"/"+quiz.list.length+" 题",120000);
+  /* 题库/模考入口都在答题区下方，开卷时把它带到视野里 */
+  if(quiz.idx===0){try{$("#quizBox").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}}
   const q=quiz.list[quiz.idx];
   quiz.answered=false;
   const box=$("#quizBox");
@@ -2984,6 +3003,7 @@ function stopPomoTick(){
 }
 function pomoTick(){
   pomo.left--;
+  if(pomo.mode==="work")petMarkState("🍅","专注 "+mockFmt(Math.max(0,pomo.left)),80000);
   if(pomo.left<=0){
     stopPomoTick();
     beep();
@@ -3487,6 +3507,57 @@ $("#petPin")?.addEventListener("click",e=>{e.stopPropagation();petSetPin(false);
 window.petBox=petBox;window.petTogglePin=petTogglePin;
 /* 徽章 / 固定标签跟着她的头顶走（内部元素定位以舞台为原点，要减掉舞台偏移） */
 let petBadgeEl=null,petPinEl=null;
+/* ===== 睡觉模式 + 头顶状态条（借 dsh-pet：睡下即静音、状态常驻头顶） ===== */
+let petAsleep=false,petStateEl=null,petStateUntil=0;
+let petStateIcon="",petStateText="";
+function petWakePet(){
+  /* 原地 wake 过渡：walkTo 到当前 x 会触发内核的 wake（startle 惊起） */
+  if(!petCtl)return;
+  try{petCtl.walkTo(petCtl.pet.x);}catch(e){}
+}
+let petStateKey="";
+function petStateSync(){
+  if(!petStateEl){
+    petStateEl=document.createElement("div");
+    petStateEl.className="pet-state";
+    petStateEl.id="petState";
+    document.body.appendChild(petStateEl);
+  }
+  let icon="",text="";
+  if(petAsleep){icon="💤";text="睡着中";}
+  else if(Date.now()<petStateUntil){icon=petStateIcon;text=petStateText;}
+  else{
+    /* 空闲时挂最紧急的那条未完成待办（dsh-pet 的 todos 挂头顶） */
+    const td=(db.todos||[]).filter(x=>!x.done)[0];
+    if(td){icon="📌";text=String(td.text||"").slice(0,16);}
+  }
+  const key=icon+"|"+text;                    /* 内容没变就别重绘，避免每秒抖一下 */
+  if(!icon){
+    if(petStateKey||petStateEl.classList.contains("on")){
+      petStateKey="";petStateEl.classList.remove("on");
+    }
+    return;
+  }
+  if(key!==petStateKey){
+    petStateKey=key;
+    petStateEl.innerHTML="<b>"+icon+"</b><span>"+text+"</span>";
+  }
+  petStateEl.classList.add("on");
+}
+function petMarkState(icon,text,ttl){
+  const same=(icon===petStateIcon&&text===petStateText&&Date.now()<petStateUntil);
+  petStateIcon=icon;petStateText=text;
+  petStateUntil=Date.now()+(ttl||60000);
+  if(!same)petStateSync();          // 每秒钟的倒计时只续期，不重绘
+}
+function petClearState(){petStateUntil=0;petStateSync();}
+window.petMarkState=petMarkState;window.petClearState=petClearState;
+/* 状态条自己会过期：到点就撤回，空闲时跟着待办变化刷新 */
+setInterval(()=>{
+  if(petAsleep)return;
+  if(petStateUntil>0){if(Date.now()>=petStateUntil)petClearState();}
+  else if(petStateEl)petStateSync();
+},1000);
 function petFollow(){
   const b=petBox();if(!b)return;
   const R=petStageRect();
@@ -3506,6 +3577,17 @@ function petFollow(){
       pin.style.left=(bx+36)+"px";
     }
     pin.style.top=(by+b.height*0.34)+"px";
+  }
+  if(petStateEl&&petStateEl.classList.contains("on")){
+    /* 气泡优先：气泡在说话时把状态条顶到气泡上面，别叠在一起 */
+    let top=b.top+2;
+    const bub=document.querySelector(".pet-say.on");
+    if(bub){
+      const br=bub.getBoundingClientRect();
+      if(br.height)top=Math.min(top,br.top-4);
+    }
+    petStateEl.style.left=b.cx+"px";          /* fixed 定位：直接用视口坐标 */
+    petStateEl.style.top=Math.max(6,top)+"px";
   }
   petWearPlace();
 }
@@ -4196,8 +4278,13 @@ function boot(){
       openWardrobe:()=>{try{openWardrobe();}catch(e){console.error(e);}},
       dance:()=>{try{petDance();}catch(e){}},
       act:(id)=>{try{petAct(id);}catch(e){}},
+      /* 睡觉：叫醒走内核 wake 过渡，睡/醒状态回写存档 */
+      wake:()=>{try{petWakePet();}catch(e){}},
+      onSleep:(on)=>{petAsleep=!!on;db.petAsleep=on?1:0;petStateSync();try{save();}catch(e){}},
       wearTop:()=>{try{return petAccImg?petAccImg.getBoundingClientRect().top:null;}catch(e){return null;}}
     });
+    /* 首拉补状态：上次关页面时她还在睡，这次继续睡 */
+    if(db.petAsleep){try{PetBrain.sleep(true);}catch(e){}}
   }
 }
 /* 启动：先取服务端记忆，与本地缓存比 savedAt，谁新用谁 */

@@ -54,7 +54,13 @@
     game: null,
     timer: 0,
     idleNudgedAt: 0,
-    sessionStart: Date.now()
+    sessionStart: Date.now(),
+    /* 睡觉模式（借 dsh-pet 的做法：睡下后完全安静、只偶尔说梦话、点一下叫醒） */
+    asleep: false,
+    dreamTimer: 0,
+    lastDreamAt: 0,
+    voice: false,          /* 语音朗读开关，默认关 */
+    voiceLang: 'zh-CN'
   };
 
   function $(sel) { return document.querySelector(sel); }
@@ -126,6 +132,8 @@
   function say(text, opts) {
     if (!text) return '';
     opts = opts || {};
+    /* 睡着时完全安静——只有梦话（opts.dream）能穿透 */
+    if (S.asleep && !opts.dream) return '';
     var line = C.applyNames(text, TITLE, SELF);
     // 源头台词里有「本 鲸鱼娘」这类写法，换成自称后会多一个空格
     line = line.replace(/本\s+小云/g, '本小云');
@@ -143,7 +151,40 @@
     S.sayTimer = setTimeout(function () {
       if (sayEl) sayEl.classList.remove('on');
     }, opts.ms || 3200);
+    if (S.voice && !opts.noVoice) speakOut(line);
     return line;
+  }
+
+  /* ---------------- 语音朗读（Web Speech，纯浏览器、零依赖） ---------------- */
+  function speakOut(text) {
+    try {
+      if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+      // 去掉 emoji 与语气符号，避免念成「笑脸」之类
+      var t = String(text)
+        .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}\u{2190}-\u{21FF}]/gu, '')
+        .replace(/\s+/g, ' ').trim().slice(0, 60);
+      if (!t) return;
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(t);
+      u.lang = S.voiceLang;
+      u.rate = 1.05;
+      u.pitch = 1.15;
+      u.volume = 0.9;
+      var vs = window.speechSynthesis.getVoices() || [];
+      var zh = null;
+      for (var i = 0; i < vs.length; i++) {
+        if (/^zh|Chinese/i.test(vs[i].lang || '')) { zh = vs[i]; break; }
+      }
+      if (zh) u.voice = zh;
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+  function voiceSet(on) {
+    S.voice = !!on;
+    try {
+      if (!S.voice && window.speechSynthesis) window.speechSynthesis.cancel();
+    } catch (e) {}
+    return S.voice;
   }
 
   /* ---------------- 台词挑取：避免短时间内重复 ---------------- */
@@ -424,6 +465,14 @@
       return;
     }
 
+    /* 开始学习 = 该醒着了：静默唤醒（不抢后面学习那句台词） */
+    if (S.asleep) {
+      S.asleep = false;
+      stopDream();
+      try { H.wake(); } catch (e) {}
+      try { if (H.onSleep) H.onSleep(false); } catch (e2) {}
+    }
+
     var res = null, line = '', hold = 2800;
 
     if (kind === 'word') {
@@ -548,6 +597,13 @@
   function ambient() {
     var p = P();
     var t = nowMs();
+    /* 睡着时一律不打扰：不衰减以外什么都不做（饱食度照常随时间走） */
+    if (S.asleep) {
+      p.growth = C.computeGrowth(p.growth, { type: 'tick', deltaMin: 1 }, t, p.stats.pat).growth;
+      p.meta.lastSeen = t;
+      commit();
+      return false;
+    }
     var idleMin = (t - S.lastInteract) / 60000;
     var g = p.growth;
 
@@ -571,6 +627,70 @@
     p.meta.lastSeen = t;
     commit();
     return speak;
+  }
+
+  /* ---------------- 睡觉模式 ----------------
+     借 dsh-pet 的契约：右键/S 键睡下 → 完全安静（随机动作、碎碎念、气泡全停，
+     工作状态与余额类的打扰一律不弹），只按周期说梦话；点一下或菜单叫醒。
+     底层睡姿用内核自带的 act('sleep')，唤醒走 walkTo(原地) 的 wake 过渡。 */
+  var SLEEP_LINES = [
+    '呼…那我先眯一会儿，有事戳我一下就好。',
+    '好，睡啦。你学习的时候我就在旁边打盹～',
+    '唔…三分钟后叫我…（大概率会睡很久）',
+    '那我趴一会儿。别学太晚哦。'
+  ];
+  var WAKE_LINES = [
+    '唔…几点了？（揉眼睛）',
+    '醒了醒了！刚才梦见一堆鱼干…',
+    '呼啊——我睡了多久？你学到哪儿了？',
+    '（伸了个懒腰）好啦，继续陪你。'
+  ];
+  var DREAMS = [
+    '呼…鱼干…再来一条…',
+    '唔…abandon…放弃…（说梦话）',
+    '……指针别乱指……',
+    '（梦话）这道题我会…我会的…',
+    '呼…小云是最棒的鲸鱼娘…',
+    '……再背五个就睡……'
+  ];
+  function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+  function sleep(on) {
+    if (on === undefined) on = !S.asleep;
+    on = !!on;
+    if (on === S.asleep) return S.asleep;
+    closeMenu();
+    closePanel();
+    if (on) {
+      say(rand(SLEEP_LINES), { ms: 3000, noVoice: true });
+      S.asleep = true;
+      S.lastDreamAt = nowMs();
+      try { H.act('sleep'); } catch (e) {}
+      startDream();
+    } else {
+      S.asleep = false;
+      stopDream();
+      S.lastInteract = nowMs();
+      try { H.wake(); } catch (e) { try { H.act('stretch'); } catch (e2) {} }
+      say(rand(WAKE_LINES), { ms: 3000 });
+    }
+    commit();
+    /* 通知宿主持久化睡/醒状态（刷新后还睡着，和 dsh-pet 的首拉补状态一致） */
+    try { if (H.onSleep) H.onSleep(S.asleep); } catch (e) {}
+    return S.asleep;
+  }
+  function startDream() {
+    stopDream();
+    S.dreamTimer = setInterval(function () {
+      if (!S.asleep) return;
+      // 不是每一轮都说，太规律反而吵
+      if (Math.random() < 0.45) {
+        say(rand(DREAMS), { ms: 4200, dream: true, noVoice: true });
+      }
+    }, 60000);
+  }
+  function stopDream() {
+    if (S.dreamTimer) { clearInterval(S.dreamTimer); S.dreamTimer = 0; }
   }
 
   /* ---------------- 菜单 ---------------- */
@@ -640,9 +760,22 @@
     setTimeout(function () { document.addEventListener('pointerdown', onDocDown, true); }, 0);
   }
 
+  function sleepItem() {
+    return S.asleep
+      ? { ico: '☀️', label: '叫醒她', sub: 'S 键 / 点一下也行',
+          fn: function () { sleep(false); } }
+      : { ico: '😴', label: '让她睡下', sub: 'S 键 · 睡着就不打扰了',
+          fn: function () { sleep(true); } };
+  }
+  function voiceItem() {
+    return S.voice
+      ? { ico: '🔇', label: '关掉朗读', sub: '让她安静说话',
+          fn: function () { closeMenu(); voiceSet(false); commit(); say('好，我安静一点。', { ms: 2200, noVoice: true }); } }
+      : { ico: '🔊', label: '让她念出来', sub: '用系统语音读气泡',
+          fn: function () { closeMenu(); voiceSet(true); commit(); say('那我说的话就念给你听啦～', { ms: 2600 }); } };
+  }
   /* 会自己走动的桌宠得能「拴住」，不然看资料时她一直在动 */
-  function pinItem() {
-    var pinned = false;
+  function pinItem() {    var pinned = false;
     try { pinned = !!(H.isPinned && H.isPinned()); } catch (e) {}
     return pinned
       ? { ico: '🚶', label: '解开固定', sub: '让她继续走动',
@@ -656,13 +789,16 @@
     var p = P();
     var el = document.createElement('div');
     el.className = 'pet-menu';
-    var items = [
+    /* 睡着时只留「叫醒 / 固定」，其余菜单项一律不接——拒绝打扰 */
+    var items = S.asleep ? [sleepItem(), pinItem()] : [
       { ico: '🍰', label: '投喂小点心', sub: '饱食度 +30', fn: feed },
       { ico: '🫧', label: '接蛋糕小游戏', sub: '30 秒', fn: function () { closeMenu(); openGame(); } },
       { ico: '🎖️', label: '成长与成就', sub: 'Lv' + p.growth.level, fn: function () { closeMenu(); openPanel(); } },
       { ico: '💬', label: '和她说说话', sub: '双击也可以', fn: function () { closeMenu(); H.openChat(); } },
       { sep: true },
       { ico: '🎬', label: '挑个动作', sub: '飞 / 游 / 欢呼…', fn: function () { openActs(); } },
+      sleepItem(),
+      voiceItem(),
       pinItem(),
       { ico: '👋', label: '打个招呼', sub: '', fn: function () { closeMenu(); greet(); } }
     ];
@@ -950,6 +1086,8 @@
   function tap(e) {
     var t = nowMs();
     if (S.suppressTap) { S.suppressTap = false; return 'skipped'; }
+    /* 睡着时单击就是叫醒，不播点击回应（dsh-pet 的做法） */
+    if (S.asleep) { sleep(false); return 'wake'; }
     var r = petRect();
     var cx = (e && e.clientX) || r.left + r.width / 2;
     var cy = (e && e.clientY) || r.top + r.height * 0.35;
@@ -1011,6 +1149,15 @@
     setInterval(placeSay, 160);
     window.addEventListener('resize', placeSay);
 
+    /* S 键切换睡 / 醒（输入框里打字不算，带修饰键也不算） */
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 's' && e.key !== 'S') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      var t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      try { sleep(); } catch (err) {}
+    });
+
     window.addEventListener('beforeunload', function () {
       try { var p = P(); p.meta.lastSeen = nowMs(); commit(); } catch (e) {}
     });
@@ -1031,6 +1178,17 @@
     panel: openPanel,
     menu: openMenu,
     game: openGame,
+    /* 睡觉模式（借 dsh-pet）：sleep(true/false/空=切换) · asleep() 查询 */
+    sleep: sleep,
+    asleep: function () { return !!S.asleep; },
+    /* 语音朗读开关 */
+    voice: voiceSet,
+    voiceOn: function () { return !!S.voice; },
+    /* 说一句「工作状态」：睡着时不打扰，返回是否真的说了 */
+    status: function (text, opts) {
+      if (S.asleep) return '';
+      return say(text, opts);
+    },
     closeAll: function () { closePanel(); closeMenu(); },
     stats: function () {
       var p = P();
