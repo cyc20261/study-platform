@@ -764,8 +764,10 @@ body[data-theme="fx-aurora"]{
   padding:9px 12px;font-family:Consolas,Monaco,monospace;font-size:13px;outline:none;
 }
 #ttyInput:focus{border-color:var(--accent)}
-/* ===== 学习足迹卡（等级 + 热力图 + 周报） ===== */
-.fp-lv{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+/* 例句语境（背诵卡 / 速查 / 解析共用） */
+.sent{font-size:12.5px;color:var(--muted);margin-top:7px;line-height:1.7}
+.srch-item .sent{flex:1 1 100%;margin-top:0;padding-top:2px}
+/* ===== 学习足迹卡（等级 + 热力图 + 周报） ===== */.fp-lv{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
 .fp-badge{flex:none;width:46px;height:46px;border-radius:14px;display:flex;flex-direction:column;
   align-items:center;justify-content:center;color:#fff;font-weight:700;
   background:linear-gradient(135deg,var(--accent),var(--accent-2));font-size:15px;line-height:1.1}
@@ -1160,7 +1162,8 @@ body[data-theme="fx-aurora"]{
 
 <script src="assets/whale-moe-core.js"></script>
 <script src="assets/whale/pet-brain.js?v=20261106c"></script>
-<script src="assets/data/words.js"></script>
+<script src="assets/data/words.js?v=20261107a"></script>
+<script src="assets/data/word-sent.js?v=20261107a"></script>
 <script src="assets/data/c-notes.js"></script>
 <script src="assets/data/c-quiz.js"></script>
 <script src="assets/data/math-notes.js"></script>
@@ -1531,6 +1534,20 @@ function renderLvProgress(){
 }
 
 /* 词库速查：两个等级分开展示、分别入生词本 */
+/* A3 例句语境：word-sent.js 提供（.build/cet/merge_sent.py 合并），背诵卡/速查/测验解析共用 */
+function sentOf(w){
+  if(!window.WORD_SENT)return null;
+  const t=WORD_SENT.cet4[w]||WORD_SENT.cet6[w]||"";
+  const i=t.indexOf("|");
+  return i<0?null:{en:t.slice(0,i),zh:t.slice(i+1)};
+}
+function sentHtml(w){
+  const s=sentOf(w);if(!s)return "";
+  return '<div class="sent">💬 '+s.en+'<br><span style="opacity:.8">'+s.zh+'</span></div>';
+}
+function sentText(w){
+  const s=sentOf(w);return s?(s.en+"　"+s.zh):"";
+}
 function renderSearch(){
   const box=$("#searchResult");
   if(!box)return;
@@ -1550,7 +1567,7 @@ function renderSearch(){
       return '<div class="srch-item">'+lvTag(h.lv)+
         '<span class="sw">'+h.x.w+'</span>'+
         '<span class="sp">'+h.x.p+'</span>'+
-        '<span class="sm">'+h.x.m+'</span>'+
+        '<span class="sm">'+h.x.m+'</span>'+sentHtml(h.x.w)+
         '<button class="btn small ghost" onclick="markHard(\''+h.lv+'\',\''+h.x.w+'\')">'+(st===1?"已掌握":(st===2?"在生词本":"＋ 生词本"))+'</button>'+
         '</div>';
     }).join("");
@@ -1721,6 +1738,7 @@ function renderWord(){
     '<div class="p">'+cur.p+'</div>'+
     (seen?'<div style="margin-top:8px"><span class="chip-pill">'+(seen===1?"已掌握 ✓":"生词本中 ⚠")+'</span></div>':"")+
     '<div class="m'+(revealed?" show":"")+'">'+cur.m+'</div>'+
+    (revealed?sentHtml(cur.w):"")+
     (revealed?"":'<div class="hidden-tip">💡 先看单词想想意思，再点击下方「显示释义」检查自己</div>');
   if(!revealed){
     btns.innerHTML='<button class="btn" onclick="revealMeaning()">显示释义</button>';
@@ -1823,7 +1841,7 @@ function startSrsQuiz(){
     const distract=shuffle(pool.filter(x=>x.m!==item.m)).slice(0,3).map(x=>x.m);
     const opts=shuffle([item.m,...distract]);
     return {q:lvTag(p.lv)+' 复习 <b>'+item.w+'</b> <span class="muted">'+item.p+'</span> 的意思是：',
-      o:opts,a:opts.indexOf(item.m),e:null,_id:null};
+      o:opts,a:opts.indexOf(item.m),e:sentText(item.w)||null,_id:null};
   }).filter(Boolean);
   if(!quiz.list.length){toast("今天没有到期的生词");return;}
   $("#quizBox").style.display="block";
@@ -1947,7 +1965,7 @@ function startQuiz(type){
       const tag=lv?lvTag(lv):lvTag(CET4SET.has(item.w)?"cet4":"cet6");
       const sid=lv?(lv==="cet4"?"vocab4":"vocab6"):(CET4SET.has(item.w)?"vocab4":"vocab6");
       return {q:tag+' 单词 <b>'+item.w+'</b> <span class="muted">'+item.p+'</span> 的意思是：',
-        o:opts,a:opts.indexOf(item.m),e:null,_id:sid+h32(item.w)};
+        o:opts,a:opts.indexOf(item.m),e:sentText(item.w)||null,_id:sid+h32(item.w)};
     });
     $("#quizBox").style.display="block";
   }else if(type==="exam4"||type==="exam6"){
@@ -2141,7 +2159,7 @@ function materialize(it,s){
   return {id:it.id,cat:it.cat,d:it.d,
     q:'单词 <b>'+it.w+'</b> <span class="muted">'+it.p+'</span> 的意思是：',
     o:opts,a:opts.indexOf(it.m),
-    e:'<b>'+it.w+'</b> '+it.m+' —— 回到单词卡看一眼它常出现的语境，记得更牢。'};
+    e:'<b>'+it.w+'</b> '+it.m+' —— 回到单词卡看一眼它常出现的语境，记得更牢。'+(sentText(it.w)?'<br>💬 '+sentText(it.w):"")};
 }
 
 /* ---------- 第一步：问程度 ---------- */
