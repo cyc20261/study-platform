@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>我的学习平台 · 四六级 + C语言</title>
 <link rel="icon" type="image/jpeg" href="assets/xiaoyun/03.jpg">
-<link rel="stylesheet" href="assets/whale/pet-brain.css">
+<link rel="stylesheet" href="assets/whale/pet-brain.css?v=20261106b">
 <!-- 3D 桌宠的模块链是串行 import（figure.js 又要 rig.js），公网上这一串能占好几秒。
      提前并行预取，进入页面时就和首屏资源同时下载。 -->
-<link rel="modulepreload" href="assets/whale/kit/body.js">
+<link rel="modulepreload" href="assets/whale/kit/body.js?v=20261106b">
 <link rel="modulepreload" href="assets/whale/kit/rig.js">
-<link rel="modulepreload" href="assets/whale/whale/figure.js">
+<link rel="modulepreload" href="assets/whale/whale/figure.js?v=20261106b">
 <link rel="modulepreload" href="assets/whale/atlas-loader.js">
 <link rel="preload" as="image" href="assets/whale/whale/atlas.webp">
 <link rel="preload" as="image" href="assets/whale/whale/poster.webp">
@@ -1096,14 +1096,14 @@ body[data-theme="fx-aurora"]{
 <div id="toast"></div>
 
 <script src="assets/whale-moe-core.js"></script>
-<script src="assets/whale/pet-brain.js"></script>
+<script src="assets/whale/pet-brain.js?v=20261106b"></script>
 <script src="assets/data/words.js"></script>
 <script src="assets/data/c-notes.js"></script>
 <script src="assets/data/c-quiz.js"></script>
 <script src="assets/data/math-notes.js"></script>
 <script src="assets/data/math-quiz.js"></script>
 <script src="assets/data/cet-exam.js"></script>
-<script src="assets/data/pet-acc.js"></script>
+<script src="assets/data/pet-acc.js?v=20261106b"></script>
 <script>
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
@@ -2903,8 +2903,8 @@ async function initPet(){
   try{
     if(!window.WebGL2RenderingContext&&!window.WebGLRenderingContext)throw new Error("no webgl");
     const [{createPet},{createWhaleFigure},{makeAtlasLoader}]=await Promise.all([
-      import("./assets/whale/kit/body.js"),
-      import("./assets/whale/whale/figure.js"),
+      import("./assets/whale/kit/body.js?v=20261106b"),
+      import("./assets/whale/whale/figure.js?v=20261106b"),
       import("./assets/whale/atlas-loader.js"),
     ]);
     /* 贴图合并成一张图集：原来 53 个独立 PNG 在公网要排队 30 秒以上 */
