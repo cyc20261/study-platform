@@ -271,6 +271,33 @@ a.tx{color:var(--accent);cursor:pointer;text-decoration:none;font-size:13px}
 body[data-theme="starry"] .opt.right,body[data-theme="midnight"] .opt.right{background:rgba(34,192,122,.16);border-color:#22c07a}
 body[data-theme="starry"] .opt.wrong,body[data-theme="midnight"] .opt.wrong{background:rgba(229,72,77,.16);border-color:#f4777b}
 
+/* ===== 自适应测评 ===== */
+.qdiff{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;
+  padding:2px 9px;border-radius:99px;letter-spacing:.2px;vertical-align:2px}
+.qdiff.d1{background:var(--ok-soft);color:var(--ok)}
+.qdiff.d2{background:var(--seg-bg);color:var(--accent)}
+.qdiff.d3{background:var(--bad-soft);color:var(--bad)}
+.qmeter{display:flex;align-items:center;gap:9px;margin:12px 0 0;font-size:12px;color:var(--muted)}
+.qmeter .bar{flex:1;margin:0;height:6px}
+.qmeter b{color:var(--accent);font-size:12.5px}
+.prof{display:flex;justify-content:space-between;gap:10px;align-items:center;
+  padding:10px 0;border-bottom:1px dashed var(--line);font-size:13.5px}
+.prof:last-child{border-bottom:none}
+.prof b{font-size:14px}
+.prof .mini{font-size:11.5px;color:var(--muted);margin-top:2px}
+.qcat{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:12.5px}
+.qcat .nm{width:92px;flex:none;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qcat .bar{flex:1;margin:0;height:6px}
+.qcat .pc{width:46px;text-align:right;flex:none;font-variant-numeric:tabular-nums}
+.qcat .bar i.low{background:linear-gradient(90deg,#e5484d,#f4777b)}
+.qcat .bar i.mid{background:linear-gradient(90deg,#e8a33d,#f2c14e)}
+.lvl-card{display:block;width:100%;text-align:left;margin:8px 0;padding:13px 15px;
+  border:1px solid var(--line);border-radius:12px;background:var(--card);cursor:pointer;
+  font-size:14px;transition:all .15s;color:var(--ink);font-family:inherit}
+.lvl-card:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 14px rgba(31,35,51,.07)}
+.lvl-card b{display:block;font-size:14.5px;margin-bottom:3px}
+.lvl-card span{color:var(--muted);font-size:12.5px;line-height:1.6}
+
 /* ========= C 语言笔记 ========= */
 details{
   border:1px solid var(--line);border-radius:14px;padding:0;margin-bottom:10px;
@@ -880,22 +907,36 @@ body[data-theme="fx-aurora"]{
 
   <section class="tab" id="tab-quiz">
     <div class="card">
-      <h2>选择测验类型</h2>
-      <p class="muted" style="font-size:12.5px;margin-bottom:8px">词汇：四级与六级各自出题、各自选项，绝不混入对方词库</p>
+      <h2>🎯 智能测评 <small>先问你什么水平，再按水平出题</small></h2>
+      <p class="muted" style="font-size:13px;line-height:1.8;margin-bottom:2px">
+        选科目 → 说明你现在的程度 → 出 10 道题。题目难度从你选的档位起步，
+        <b>答得顺会一题比一题难，卡住了会自动降下来</b>；你答错过的知识点会被记住，
+        下次优先考你。
+      </p>
+      <div id="qprofBox" style="margin-top:12px"></div>
+      <div class="row" id="catSubjectRow" style="margin-top:10px">
+        <button class="btn" data-subj="c" onclick="askLevel('c')">💻 C 语言 · 按我的水平出题</button>
+        <button class="btn ghost" data-subj="math" onclick="askLevel('math')">📐 高数</button>
+        <button class="btn ghost" data-subj="vocab4" onclick="askLevel('vocab4')">🔤 四级词汇</button>
+        <button class="btn ghost" data-subj="vocab6" onclick="askLevel('vocab6')">🔤 六级词汇</button>
+      </div>
+      <div id="wrongBox" style="margin-top:12px"></div>
+    </div>
+    <div class="card" id="quizBox" style="display:none"></div>
+    <div class="card">
+      <h2>📚 自由练习 <small>固定 10 题，想刷就刷，不计入水平评估</small></h2>
       <div class="row" id="quizTypeRow">
-        <button class="btn" data-qtype="vocab4" onclick="startQuiz('vocab4')">🔤 四级词汇测验（10题）</button>
-        <button class="btn ghost" data-qtype="vocab6" onclick="startQuiz('vocab6')">🔤 六级词汇测验（10题）</button>
+        <button class="btn" data-qtype="vocab4" onclick="startQuiz('vocab4')">🔤 四级词汇（10题）</button>
+        <button class="btn ghost" data-qtype="vocab6" onclick="startQuiz('vocab6')">🔤 六级词汇（10题）</button>
         <button class="btn ghost" data-qtype="vocabmix" onclick="startQuiz('vocabmix')">🎲 四六级混合（10题）</button>
       </div>
       <div class="sep" style="margin:12px 0"></div>
-      <p class="muted" style="font-size:12.5px;margin-bottom:8px">编程与系统</p>
       <div class="row" id="quizTypeRow2">
-        <button class="btn ghost" data-qtype="c" onclick="startQuiz('c')">💻 C 语言测验（题库 138 · 抽 10 题）</button>
-        <button class="btn ghost" data-qtype="linux" onclick="startQuiz('linux')">🐧 Linux 命令测验（10题）</button>
+        <button class="btn ghost" data-qtype="c" onclick="startQuiz('c')">💻 C 语言（题库 138 · 抽 10 题）</button>
+        <button class="btn ghost" data-qtype="linux" onclick="startQuiz('linux')">🐧 Linux 命令（10题）</button>
         <button class="btn ghost" onclick="switchTab('math')">📐 高数（11 份章节卷，去高数页选）</button>
       </div>
     </div>
-    <div class="card" id="quizBox" style="display:none"></div>
   </section>
 
   <section class="tab" id="tab-clang">
@@ -1148,6 +1189,9 @@ function normalize(d){
   d.words=d.words||{cet4:{},cet6:{}};
   d.todos=d.todos||[];
   d.quizHistory=d.quizHistory||[];
+  /* 自适应测评：每个科目的能力估计 θ、分类正确率、错题本 */
+  d.qprof=d.qprof||{};
+  d.wrong=d.wrong||{};
   d.pomo=d.pomo||{date:"",count:0,total:0};
   d.streak=d.streak||{last:"",count:0};
   d.theme=typeof d.theme==="string"?d.theme:"";
@@ -1289,6 +1333,7 @@ function switchTab(name){
   if(name==="dashboard")renderDash();
   if(name==="words")renderWord();
   if(name==="math"&&typeof MATHQUIZ!=="undefined")renderMathPapers();
+  if(name==="quiz"){try{renderQProf();renderWrongBox();}catch(e){}}
 }
 $$("nav.tabs button").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
 /* 侧栏竖排时把开头的 emoji 单独包一层，让文字左缘对齐 */
@@ -1567,6 +1612,7 @@ function pickOpt(i){
   }
   if(i===right){quiz.score++;toast("回答正确！");}
   else{$("#opt"+i).classList.add("wrong");toast("答错了，正确答案已标绿");}
+  try{feedStat(quiz.type,q,i===right);}catch(e){}
   const ex=$("#quizExplain");
   if(q.e){ex.style.display="block";ex.innerHTML='<div class="sep"></div><div style="font-size:13.5px;line-height:1.8">📖 解析：'+q.e+'</div>';}
   $("#qNext").style.display="inline-block";
@@ -1596,6 +1642,366 @@ function finishQuiz(){
     '<button class="btn ghost" onclick="switchTab(\'dashboard\')">回仪表盘</button>'+
     '</div></div>';
 }
+
+/* ================= 自适应测评（CAT）=================
+   题库固定，但「考谁、考多难」不该固定：学霸和刚入门的拿到同一张卷，
+   要么做不动，要么没意思。这里给每道题算难度 d∈[0,1]，再维护能力估计 θ∈[0,1]：
+     期望正确率 p = 1 / (1 + e^(-5(θ-d)))      // 答对概率只取决于「水平 − 难度」
+     答完一题 θ ← θ + 0.22 × (实际 − p)         // 做对加分、做错扣分，幅度自动缩放
+   下一题挑 |d − (θ+0.10)| 最小的 —— 比当前水平高一点点，跳一跳够得着；
+   再给「历史正确率低的分类」加权优先，这才是按学习情况出题。
+   θ 存进 db.qprof，跨会话累积，做得越多越准。 */
+const SUBJ={c:"C 语言",math:"高数",vocab4:"四级词汇",vocab6:"六级词汇"};
+/* 知识点难度基线：指针 / 内存 / 算法天然比「基础 / 类型」难 */
+const CAT_D={"基础":.12,"类型":.20,"运算符":.28,"输入输出":.24,"流程控制":.30,
+  "数组":.44,"函数":.44,"字符串":.50,"结构体":.55,"指针":.70,"内存":.72,
+  "文件":.60,"调试":.66,"预处理":.58,"算法":.82};
+const LVTH={begin:.26,mid:.48,hard:.70,probe:.50};
+let QBANK=null,AQ=null;
+
+function h32(s){
+  let h=2166136261;
+  for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}
+  return (h>>>0).toString(36);
+}
+function cDiff(q){
+  let d=CAT_D[q.cat]; if(d==null)d=.5;
+  d+=Math.min(Math.max((q.q.length-30)/220,0),.12);      // 题干越长信息量越大，通常越难
+  if(/指针|malloc|sizeof|->|递归|位运算|链表|野指针/.test(q.q))d+=.04;
+  return Math.min(.95,Math.max(.06,d));
+}
+function mDiff(ch,i){
+  const m=/第\s*(\d+)\s*章/.exec(ch);
+  const n=m?+m[1]:1;
+  const base=[0,.16,.30,.42,.52,.58,.58,.56,.68,.74,.78,.74][n]||.5;
+  return Math.min(.95,base+(i/9)*.10);                   // 同一章里后面的题再难一点
+}
+function wDiff(w){
+  const l=(w||"").length;
+  return Math.min(.92,Math.max(.08,.10+Math.max(0,l-4)*.075));
+}
+function bank(){
+  if(QBANK)return QBANK;
+  const B={c:[],math:[],vocab4:[],vocab6:[]};
+  CQUIZ.forEach(q=>B.c.push({id:"c"+h32(q.q),cat:q.cat||"基础",d:cDiff(q),q:q.q,o:q.o,a:q.a,e:q.e}));
+  MATHQUIZ.forEach(p=>{
+    const m=/第\s*\d+\s*章[^ ]*/.exec(p.ch);
+    const ch=m?m[0]:p.ch;
+    p.qs.forEach((q,i)=>B.math.push({id:"m"+h32(q.q),cat:ch,d:mDiff(p.ch,i),q:q.q,o:q.o,a:q.a,e:q.e}));
+  });
+  ["cet4","cet6"].forEach(lv=>{
+    const key=lv==="cet4"?"vocab4":"vocab6";
+    (WORDS[lv]||[]).forEach(w=>B[key].push({id:key+h32(w.w),cat:lv==="cet4"?"四级":"六级",
+      d:Math.min(.95,wDiff(w.w)+(lv==="cet6"?.14:0)),w:w.w,p:w.p,m:w.m}));
+  });
+  QBANK=B;return B;
+}
+function prof(s){
+  db.qprof=db.qprof||{};
+  let p=db.qprof[s];
+  if(!p){p=db.qprof[s]={th:.5,n:0,cat:{},items:{}};}
+  p.cat=p.cat||{};p.items=p.items||{};
+  if(typeof p.th!=="number"||!isFinite(p.th))p.th=.5;
+  return p;
+}
+function accOf(p){let r=0,t=0;for(const k in p.cat){r+=p.cat[k][0];t+=p.cat[k][1];}return t?r/t:0;}
+const BANDS=[[.34,"入门","🌱"],[.58,"进阶","🌿"],[1.01,"冲刺","🔥"]];
+function band(th){for(let i=0;i<BANDS.length;i++)if(th<BANDS[i][0])return BANDS[i];return BANDS[2];}
+function dText(d){return d<.4?"基础":(d<.68?"进阶":"挑战");}
+function dClass(d){return d<.4?"d1":(d<.68?"d2":"d3");}
+
+/* 选下一题：目标难度 = θ + 0.10；弱项分类再减 0.10 距离（等于优先出） */
+function pickCat(s,ref,used,opt){
+  opt=opt||{};
+  const B=bank()[s];
+  let pool=B.filter(it=>!used[it.id]);
+  if(opt.review)pool=B.filter(it=>!used[it.id]&&db.wrong[s+":"+it.id]);
+  if(opt.weak&&pool.length>3){
+    const w=pool.filter(it=>{const c=ref.cat[it.cat];return c&&c[1]>=2&&c[0]/c[1]<.65;});
+    if(w.length>=3)pool=w;
+  }
+  if(!pool.length)return null;
+  const target=opt.target!=null?opt.target:Math.min(.92,ref.th+.10);
+  const scored=pool.map(it=>{
+    let sc=Math.abs(it.d-target);
+    const c=ref.cat[it.cat];
+    if(c&&c[1]>=2){
+      const r=c[0]/c[1];
+      if(r<.6)sc-=.10;
+      else if(r>.88)sc+=.07;
+    }
+    return [sc,it];
+  }).sort((a,b)=>a[0]-b[0]);
+  const top=scored.slice(0,Math.min(4,scored.length));   // 前 4 名里随机，避免每次都同一套
+  return top[Math.floor(Math.random()*top.length)][1];
+}
+/* 词汇题库只有词条，选项在出题时现配（同一级别内部，绝不跨级） */
+function materialize(it,s){
+  if(it.o)return it;
+  const pool=(WORDS[s==="vocab4"?"cet4":"cet6"]||[]).filter(x=>x.m!==it.m);
+  const dis=shuffle(pool.slice()).slice(0,3).map(x=>x.m);
+  const opts=shuffle([it.m].concat(dis));
+  return {id:it.id,cat:it.cat,d:it.d,
+    q:'单词 <b>'+it.w+'</b> <span class="muted">'+it.p+'</span> 的意思是：',
+    o:opts,a:opts.indexOf(it.m),
+    e:'<b>'+it.w+'</b> '+it.m+' —— 回到单词卡看一眼它常出现的语境，记得更牢。'};
+}
+
+/* ---------- 第一步：问程度 ---------- */
+function askLevel(s){
+  AQ={pending:s};
+  const p=prof(s),b=band(p.th);
+  const prior=p.n>=5?('<div class="nc-note" style="margin-bottom:10px">上次记录：练过 '+p.n+' 题，正确率 '+
+    Math.round(accOf(p)*100)+'%，系统估你在「'+b[2]+' '+b[1]+'」。这次按你的实际感觉选就行，答几题会自动校正。</div>'):'';
+  $("#quizBox").style.display="block";
+  $("#quizBox").innerHTML=
+    '<div style="font-size:16.5px;font-weight:700;margin-bottom:4px">'+SUBJ[s]+' · 你现在学到哪一步？</div>'+
+    '<div class="muted" style="font-size:12.5px;line-height:1.7;margin-bottom:10px">先选一个最接近的档位，再出题。难度从这一档起步，答得顺会往上走，卡住了会自动降。</div>'+
+    prior+
+    lvlCard("begin","🌱 刚开始学","概念还没串起来，看到代码有点懵 —— 从最基础的题起步")+
+    lvlCard("mid","🌿 学过一轮","能看懂讲解、能照着写，但独立做题会卡 —— 基础+进阶混着考")+
+    lvlCard("hard","🔥 准备考试 / 想提分","概念都熟了，想要有难度的题 —— 直接从进阶往挑战拉")+
+    lvlCard("probe","🤔 我说不准，先摸底","出 5 道难度从易到难的摸底题，测完再给你定位")+
+    '<div style="margin-top:12px"><button class="btn ghost" onclick="closeQuizBox()">先不测</button></div>';
+  try{$("#quizBox").scrollIntoView({behavior:"smooth",block:"start"});}catch(e){}
+}
+function lvlCard(k,t,d){
+  return '<button class="lvl-card" onclick="startCat(\''+AQ.pending+'\',\''+k+'\')"><b>'+t+'</b><span>'+d+'</span></button>';
+}
+
+/* ---------- 第二步：开考 ---------- */
+function startCat(s,lvl,opt){
+  opt=opt||{};
+  const p=prof(s);
+  const th0=LVTH[lvl]||.5;
+  /* 有历史就按 7:3 融合，别让一次手滑把长期估计带跑 */
+  const th=p.n>=8?Math.round((p.th*.7+th0*.3)*100)/100:th0;
+  AQ={subj:s,level:lvl,th:th,total:opt.total||(lvl==="probe"?5:10),idx:0,score:0,
+      used:{},answered:false,cur:null,ans:[],probe:lvl==="probe",
+      weak:!!opt.weak,review:!!opt.review,priorN:p.n};
+  $$("[data-subj]").forEach(b=>b.classList.toggle("ghost",b.dataset.subj!==s));
+  catShow();
+}
+function catShow(){
+  if(!AQ)return;
+  if(AQ.idx>=AQ.total){catFinish();return;}
+  const p=prof(AQ.subj),ref={th:AQ.th,cat:p.cat};
+  let it;
+  if(AQ.review){
+    it=pickCat(AQ.subj,ref,AQ.used,{review:true});
+    if(!it){toast("错题都清完了，厉害 🎉");closeQuizBox();renderWrongBox();return;}
+  }else if(AQ.probe){
+    /* 摸底：难度按 15%→35%→55%→75%→90% 递增，一题一个台阶，最快看出水平 */
+    const want=[.15,.35,.55,.75,.90][AQ.idx]||.6;
+    it=pickCat(AQ.subj,{th:want,cat:p.cat},AQ.used,{target:want});
+  }else{
+    it=pickCat(AQ.subj,ref,AQ.used,{weak:AQ.weak});
+  }
+  if(!it){toast("这个科目的题都刷完了，去自由练习吧");catFinish();return;}
+  it=materialize(it,AQ.subj);
+  AQ.cur=it;AQ.used[it.id]=1;AQ.answered=false;
+  const b=band(AQ.th);
+  $("#quizBox").style.display="block";
+  $("#quizBox").innerHTML=
+    '<div class="qmeter"><span>当前水平估计：<b>'+b[2]+' '+b[1]+'</b></span>'+
+      '<div class="bar"><i style="width:'+Math.round(AQ.th*100)+'%"></i></div></div>'+
+    '<div style="font-size:12.5px;color:var(--muted);margin-top:12px">第 '+(AQ.idx+1)+' / '+AQ.total+' 题 · '+
+      (AQ.review?"错题重练":SUBJ[AQ.subj])+(AQ.probe?" · 摸底卷":"")+
+      ' · 难度 <span class="qdiff '+dClass(it.d)+'">'+dText(it.d)+'</span></div>'+
+    '<div style="font-size:16px;font-weight:600;margin:8px 0 4px">'+it.q+'</div>'+
+    '<div class="bar"><i style="width:'+(AQ.idx/AQ.total*100)+'%"></i></div>'+
+    it.o.map((o,i)=>'<button class="opt" id="aopt'+i+'" onclick="catPick('+i+')">'+String.fromCharCode(65+i)+". "+o+'</button>').join("")+
+    '<div id="catExplain" style="display:none;margin-top:4px"></div>'+
+    '<div style="margin-top:12px"><button class="btn" id="catNext" style="display:none" onclick="catNext()">下一题 →</button>'+
+    '<button class="btn ghost" style="margin-left:8px" onclick="closeQuizBox()">结束本次</button></div>';
+}
+function catPick(i){
+  if(!AQ||AQ.answered)return;
+  AQ.answered=true;
+  const it=AQ.cur,p=prof(AQ.subj),ok=(i===it.a);
+  for(let k=0;k<it.o.length;k++){
+    const el=$("#aopt"+k);if(!el)continue;
+    el.disabled=true;
+    if(k===it.a)el.classList.add("right");
+  }
+  if(!ok&&$("#aopt"+i))$("#aopt"+i).classList.add("wrong");
+  if(ok)AQ.score++;
+  /* —— 能力更新 —— */
+  const pr=1/(1+Math.exp(-5*(AQ.th-it.d)));
+  AQ.th=Math.min(.96,Math.max(.04,AQ.th+0.22*((ok?1:0)-pr)));
+  const c=p.cat[it.cat]||(p.cat[it.cat]=[0,0]);c[1]++;if(ok)c[0]++;
+  const st=p.items[it.id]||(p.items[it.id]=[0,0]);st[1]++;if(ok)st[0]++;
+  p.n++;
+  if(!ok){
+    db.wrong[AQ.subj+":"+it.id]={s:AQ.subj,cat:it.cat,d:it.d,q:it.q,o:it.o,a:it.a,e:it.e,ts:Date.now()};
+    const ks=Object.keys(db.wrong);
+    if(ks.length>300)ks.slice(0,ks.length-300).forEach(k=>delete db.wrong[k]);
+  }else if(db.wrong[AQ.subj+":"+it.id])delete db.wrong[AQ.subj+":"+it.id];
+  AQ.ans.push({id:it.id,ok:ok,cat:it.cat,d:it.d});
+  save();
+  const ex=$("#catExplain");
+  if(ex){
+    ex.style.display="block";
+    ex.innerHTML='<div class="sep"></div><div style="font-size:13.5px;line-height:1.8">📖 '+(it.e||"")+'</div>'+
+      '<div style="font-size:12.5px;color:var(--muted);margin-top:6px">'+
+      (ok?"答对了":"已收进错题本，稍后会再考你")+' · 水平估计调整为「'+band(AQ.th)[2]+' '+band(AQ.th)[1]+'」</div>';
+  }
+  $("#catNext").style.display="inline-block";
+  $("#catNext").textContent=AQ.idx===AQ.total-1?"看看测评结果 →":"下一题 →";
+}
+function catNext(){if(!AQ)return;AQ.idx++;catShow();}
+
+/* ---------- 第三步：出报告 ---------- */
+function weakCats(s,p){
+  const arr=[];
+  for(const k in p.cat){
+    const c=p.cat[k];
+    if(c[1]>=2)arr.push([k,c[0]/c[1],c[1]]);
+  }
+  arr.sort((a,b)=>a[1]-b[1]);
+  return arr.filter(x=>x[1]<.8).slice(0,3);
+}
+function recFor(s,cat){
+  if(s==="c"){
+    const key=REC_KEY[cat]||cat;
+    const hits=CNOTES.filter(n=>n.t.indexOf(key)>=0).slice(0,2);
+    if(!hits.length){
+      return '<div style="font-size:12.5px;color:var(--muted);margin-top:3px">C 语言笔记里搜「'+key+'」，把这一类从头过一遍</div>'+
+        '<button class="btn ghost sm" style="margin-top:5px" onclick="jumpClang(\''+key+'\')">去笔记里搜</button>';
+    }
+    return '<div style="font-size:12.5px;line-height:1.75;color:var(--muted);margin-top:3px">去看：'+
+      hits.map(n=>'「'+n.t+'」').join("、")+'</div>'+
+      '<button class="btn ghost sm" style="margin-top:5px" onclick="jumpClang(\''+key+'\')">打开这几篇</button>';
+  }
+  if(s==="math"){
+    return '<div style="font-size:12.5px;color:var(--muted);margin-top:3px">去高数页把这一章的讲解和单元卷过一遍</div>'+
+      '<button class="btn ghost sm" style="margin-top:5px" onclick="jumpMath(\''+cat+'\')">跳到这一章</button>';
+  }
+  return '<div style="font-size:12.5px;color:var(--muted);margin-top:3px">先回单词卡把这一级的高频词过一遍，再来测</div>'+
+    '<button class="btn ghost sm" style="margin-top:5px" onclick="switchTab(\'words\')">去单词卡</button>';
+}
+const REC_KEY={"基础":"入门","类型":"数据类型","运算符":"运算符","输入输出":"输入输出",
+  "流程控制":"流程","数组":"数组","函数":"函数","字符串":"字符串","结构体":"结构体",
+  "指针":"指针","内存":"内存","文件":"文件","调试":"调试","预处理":"预处理","算法":"排序"};
+
+function catFinish(){
+  if(!AQ)return;
+  const s=AQ.subj,p=prof(s);
+  /* 长期能力：之前就练过 8 题以上才与旧值混合，避免单次波动；首次测评直接采信本轮 */
+  p.th=AQ.priorN>=8?Math.round((p.th*.55+AQ.th*.45)*100)/100:Math.round(AQ.th*100)/100;
+  AQ.th=p.th;                       // 报告与画像统一用这个数，别一个说入门一个说进阶
+  const b=band(AQ.th);
+  const pct=AQ.total?Math.round(AQ.score/AQ.total*100):0;
+  db.quizHistory.unshift({d:today(),t:"cat:"+s,s:AQ.score,total:AQ.total,lv:AQ.level});
+  db.quizHistory=db.quizHistory.slice(0,20);
+  save();renderDash();renderQProf();renderWrongBox();
+  if(window.PetBrain)PetBrain.study("quiz",{pct:pct});
+  const weak=weakCats(s,p);
+  const catRows=Object.keys(p.cat).map(k=>{
+    const c=p.cat[k];if(c[1]<1)return null;
+    const r=c[0]/c[1],cls=r>=.8?"":(r>=.5?"mid":"low");
+    return '<div class="qcat"><span class="nm" title="'+k+'">'+k+'</span>'+
+      '<div class="bar"><i class="'+cls+'" style="width:'+Math.round(r*100)+'%"></i></div>'+
+      '<span class="pc">'+Math.round(r*100)+'%</span></div>';
+  }).filter(Boolean).join("");
+  const adv=weak.length?weak.map(w=>'<div style="margin-top:10px"><b style="font-size:13.5px">'+w[0]+'</b>'+
+    '<span class="muted" style="font-size:12.5px"> 正确率 '+Math.round(w[1]*100)+'%（'+w[2]+' 题）</span>'+
+    recFor(s,w[0])+'</div>').join(""):
+    '<div class="nc-note" style="margin-top:12px">没有明显弱项，可以换更高难度或跨科目练了。</div>';
+  const nextLv=AQ.th<.38?"mid":(AQ.th<.65?"hard":"hard");
+  $("#quizBox").style.display="block";
+  $("#quizBox").innerHTML=
+    '<div style="text-align:center;padding:6px 0 2px">'+
+      '<div style="font-size:13px;color:var(--muted)">'+SUBJ[s]+' · 本次 '+AQ.total+' 题答对 '+AQ.score+' 题（'+pct+'%）</div>'+
+      '<div style="font-size:34px;font-weight:700;color:var(--accent);margin-top:6px">'+b[2]+' '+b[1]+'</div>'+
+      '<div class="muted" style="font-size:13px;margin-top:4px">系统估计你的水平在 '+Math.round(AQ.th*100)+' / 100'+
+        '（本轮最高难度做到了 '+dText(Math.max.apply(null,AQ.ans.map(a=>a.d)||[0]))+'）</div>'+
+    '</div>'+
+    '<div class="lvhead">这一步的正确率分布</div>'+catRows+
+    '<div class="lvhead">下一步练什么</div>'+adv+
+    '<div class="row" style="justify-content:center;margin-top:18px">'+
+      '<button class="btn" onclick="startCat(\''+s+'\',\''+nextLv+'\',{weak:true})">按弱项再来一轮</button>'+
+      '<button class="btn ghost" onclick="askLevel(\''+s+'\')">换个难度重测</button>'+
+      (Object.keys(db.wrong).length?'<button class="btn ghost" onclick="startReview()">复习错题</button>':'')+
+      '<button class="btn ghost" onclick="closeQuizBox()">回测评首页</button>'+
+    '</div>';
+  AQ=null;
+}
+function closeQuizBox(){
+  const b=$("#quizBox");if(b){b.style.display="none";b.innerHTML="";}
+  AQ=null;
+  $$("[data-subj]").forEach(x=>x.classList.add("ghost"));
+}
+/* 错题本：挑错得最多的科目，只考这些题，答对就移出 */
+function startReview(s){
+  if(!s){
+    const cnt={};
+    for(const k in db.wrong){const w=db.wrong[k];cnt[w.s]=(cnt[w.s]||0)+1;}
+    const ks=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]);
+    if(!ks.length){toast("错题本是空的");return;}
+    s=ks[0];
+  }
+  startCat(s,"mid",{review:true,total:Math.min(10,Object.keys(db.wrong).filter(k=>db.wrong[k].s===s).length)});
+}
+/* 自由练习也喂给画像：做过的题照样计入正确率与错题本 */
+function feedStat(type,q,ok){
+  const map={c:"c",vocab4:"vocab4",vocab6:"vocab6"};
+  let s=map[type];
+  if(!s&&/^math\d+$/.test(type))s="math";
+  if(!s)return;
+  let id=null;
+  if(s==="c")id="c"+h32(q.q);
+  else if(s==="math")id="m"+h32(q.q);
+  else{const m=/单词 <b>(.+?)<\/b>/.exec(q.q||"");if(m)id=s+h32(m[1]);}
+  if(!id)return;
+  const B=bank()[s],it=B.filter(x=>x.id===id)[0];
+  const p=prof(s),cat=it?it.cat:(s==="math"?"高数":"综合"),d=it?it.d:.5;
+  const c=p.cat[cat]||(p.cat[cat]=[0,0]);c[1]++;if(ok)c[0]++;
+  const st=p.items[id]||(p.items[id]=[0,0]);st[1]++;if(ok)st[0]++;
+  p.n++;
+  if(!ok)db.wrong[s+":"+id]={s:s,cat:cat,d:d,q:q.q,o:q.o,a:q.a,e:q.e,ts:Date.now()};
+  else if(db.wrong[s+":"+id])delete db.wrong[s+":"+id];
+  save();renderQProf();renderWrongBox();
+}
+/* 从测评直接跳到对应知识点 */
+function jumpClang(kw){
+  switchTab("clang");
+  setTimeout(()=>{const el=$("#clangSearch");if(el){el.value=kw;filterClang(kw);}},80);
+}
+function jumpMath(ch){
+  switchTab("math");
+  setTimeout(()=>{const el=$("#mathSearch");if(el){el.value=ch.slice(0,6);filterMath(ch.slice(0,6));}
+    else{const p=MATHQUIZ.findIndex(x=>x.ch===ch);if(p>=0)startMathQuiz(p);}},80);
+}
+/* ---------- 能力画像 ---------- */
+function renderQProf(){
+  const box=$("#qprofBox");if(!box)return;
+  const rows=[];
+  ["c","math","vocab4","vocab6"].forEach(s=>{
+    const p=prof(s);if(!p.n)return;
+    const b=band(p.th);
+    const w=weakCats(s,p).slice(0,2).map(x=>x[0]).join("、");
+    rows.push('<div class="prof"><div><b>'+SUBJ[s]+'</b> '+
+      '<span class="qdiff d2">'+b[2]+' '+b[1]+'</span>'+
+      '<div class="mini">练过 '+p.n+' 题 · 正确率 '+Math.round(accOf(p)*100)+'%'+(w?' · 弱项：'+w:'')+'</div></div>'+
+      '<div><button class="btn ghost sm" onclick="askLevel(\''+s+'\')">继续测</button></div></div>');
+  });
+  box.innerHTML=rows.length?'<div class="lvhead" style="margin-top:0">你的能力画像（每次作答都会更新）</div>'+rows.join(""):
+    '<div class="nc-note">还没有测评记录 —— 选个科目，先告诉我你的程度，10 道题就能定位。</div>';
+}
+function renderWrongBox(){
+  const box=$("#wrongBox");if(!box)return;
+  const by={};
+  for(const k in db.wrong){const w=db.wrong[k];by[w.s]=(by[w.s]||0)+1;}
+  const ks=Object.keys(by);
+  if(!ks.length){box.innerHTML="";return;}
+  box.innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;'+
+    'flex-wrap:wrap;padding:11px 14px;border-radius:12px;background:var(--bad-soft);border:1px solid rgba(229,72,77,.22)">'+
+    '<span style="font-size:13px">📕 <b>错题本</b> · '+ks.map(s=>SUBJ[s]+' '+by[s]+' 题').join(" · ")+
+    '<span class="muted" style="font-size:12px">（答对就移出）</span></span>'+
+    '<button class="btn ghost sm" onclick="startReview()">只考错题</button></div>';
+}
+
 
 function escHtml(t){
   return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -2949,6 +3355,8 @@ function boot(){
   renderTodos();
   renderPomoStats();
   renderPomoTime();
+  renderQProf();
+  renderWrongBox();
   renderDash();
   const q=new URLSearchParams(location.hash?location.hash.slice(1):location.search.slice(1));
   if(q.get("theme"))setTheme(q.get("theme"));
