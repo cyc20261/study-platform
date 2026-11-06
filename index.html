@@ -580,34 +580,8 @@ body[data-theme="fx-aurora"]{
   box-shadow:0 4px 12px rgba(31,35,51,.16);white-space:nowrap;
   pointer-events:auto;cursor:pointer;z-index:47;
 }
-/* ===== 桌宠装饰品 ===== */
-/* fixed 而非 absolute：舞台左边界在桌面端从侧栏右边开始，装饰要用视口坐标 */
-.pet-wear{position:fixed;inset:0;pointer-events:none;z-index:3}
-.pet-wear .pw{
-  position:absolute;left:0;top:0;transform:translate(-50%,-100%);
-  transform-origin:50% 100%;will-change:transform;
-  filter:drop-shadow(0 3px 7px rgba(20,26,45,.20));
-}
-.pet-wear .pw svg{display:block;width:100%;height:100%;overflow:visible}
-/* 各自的小动作：飘带摆、绒球晃、猫耳抖、流苏摇… */
-.pw-bob{animation:pwBob 3.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
-@keyframes pwBob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-1.6px) rotate(2deg)}}
-.pw-rib{animation:pwRib 2.8s ease-in-out infinite;transform-box:view-box}
-@keyframes pwRib{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(4deg)}}
-.pw-tassel{animation:pwRib 3.6s ease-in-out infinite;transform-box:view-box}
-.pw-ear-l{animation:pwEarL 5s ease-in-out infinite;transform-box:view-box}
-.pw-ear-r{animation:pwEarR 5s ease-in-out infinite;transform-box:view-box}
-@keyframes pwEarL{0%,86%,100%{transform:rotate(0)}90%{transform:rotate(-8deg)}94%{transform:rotate(3deg)}}
-@keyframes pwEarR{0%,86%,100%{transform:rotate(0)}90%{transform:rotate(8deg)}94%{transform:rotate(-3deg)}}
-.pw-twinkle{animation:pwTwinkle 2.4s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
-@keyframes pwTwinkle{0%,100%{opacity:.3;transform:scale(.62) rotate(0)}50%{opacity:1;transform:scale(1.05) rotate(22deg)}}
-.pw-flower{animation:pwFlower 5.5s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
-@keyframes pwFlower{0%,100%{transform:rotate(-1.4deg)}50%{transform:rotate(1.4deg)}}
-.pw-breathe{animation:pwBreathe 3.6s ease-in-out infinite}
-@keyframes pwBreathe{0%,100%{opacity:.3}50%{opacity:.95}}
-@media (prefers-reduced-motion:reduce){
-  .pet-wear .pw *{animation:none!important}
-}
+/* ===== 桌宠配饰：画在 #petG（logo 空间）里，跟着骨骼一起变形 ===== */
+.pet-acc{pointer-events:none;filter:drop-shadow(0 1px 1.4px rgba(20,26,45,.30))}
 
 /* ===== 装扮面板 ===== */
 .ward-mask{
@@ -1046,7 +1020,6 @@ body[data-theme="fx-aurora"]{
     <g id="petG"></g>
     <g id="petFx"></g>
   </svg>
-  <div id="petWear" class="pet-wear" aria-hidden="true"></div>
   <div id="petPin" class="pet-pin-badge hidden" title="点击解除固定">📌 已固定</div>
   <img id="fabFallback" class="fab-fallback hidden" src="assets/whale/whale/poster.webp" alt="小云" onerror="this.style.visibility='hidden'">
 </div>
@@ -1077,7 +1050,7 @@ body[data-theme="fx-aurora"]{
 <script src="assets/data/c-quiz.js"></script>
 <script src="assets/data/math-notes.js"></script>
 <script src="assets/data/math-quiz.js"></script>
-<script src="assets/data/pet-deco.js"></script>
+<script src="assets/data/pet-acc.js"></script>
 <script>
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
@@ -2367,38 +2340,56 @@ function petFollow(){
   petWearPlace();
 }
 
-/* ===== 装饰品：戴在头顶，跟着她走 ===== */
-const PET_DECO=window.PET_DECO||[];
-let petWearId="",petWearEl=null;
-function petDecoById(id){for(let i=0;i<PET_DECO.length;i++)if(PET_DECO[i].id===id)return PET_DECO[i];return null;}
-function petUid(){return "d"+Math.random().toString(36).slice(2,8);}
+/* ===== 配饰：作为 <image> 画进 #petG 的 logo 空间，靠骨骼变换一起动 ===== */
+const PET_ACC=window.PET_ACC||[];
+const PET_HEAD_X=138;          /* 小云头部中线在 logo 空间的 x */
+const SVGNS="http://www.w3.org/2000/svg";
+let petWearId="",petAccG=null,petAccImg=null;
+function petAccById(id){for(let i=0;i<PET_ACC.length;i++)if(PET_ACC[i].id===id)return PET_ACC[i];return null;}
+function petPreloadAcc(d){if(!d)return;const im=new Image();im.src=d.file;}
 function petWearApply(id,quiet){
-  const box=$("#petWear");
-  if(!box)return "";
-  const d=petDecoById(id);
+  const d=petAccById(id);
   petWearId=d?d.id:"";
   db.petWear=petWearId;
-  if(!d){box.innerHTML="";petWearEl=null;}
-  else{
-    box.innerHTML='<div class="pw">'+d.svg.replace(/__I__/g,petUid())+"</div>";
-    petWearEl=box.firstElementChild;
+  if(!petAccG){
+    petAccG=document.createElementNS(SVGNS,"g");
+    petAccG.setAttribute("class","pet-acc");
+    petAccG.setAttribute("aria-hidden","true");
   }
-  petWearPlace();
+  petAccG.textContent="";
+  if(!d){
+    petAccImg=null;
+    if(petAccG.parentNode)petAccG.parentNode.removeChild(petAccG);
+  }else{
+    const w=d.w,h=+(w*d.ar).toFixed(2);
+    const x=PET_HEAD_X+(d.ax||0)-w/2;
+    const y=(d.ay||0)-h;
+    const img=document.createElementNS(SVGNS,"image");
+    img.setAttribute("href",d.file);
+    img.setAttribute("x",x.toFixed(2));
+    img.setAttribute("y",y.toFixed(2));
+    img.setAttribute("width",w.toFixed(2));
+    img.setAttribute("height",h.toFixed(2));
+    img.setAttribute("preserveAspectRatio","none");
+    petAccG.appendChild(img);
+    petAccImg=img;
+    petPreloadAcc(d);
+    petWearPlace();
+  }
   if(!quiet){try{save();}catch(e){}}
   return petWearId;
 }
+/* 挂进 #petG；figure 重挂（切配色/服装）时会清空 petG，每帧检查一次补回去。
+   插在 #petFx 前面，让表情粒子和特效仍然盖在配饰上。 */
 function petWearPlace(){
-  if(!petWearEl||!petCtl)return;
-  const d=petDecoById(petWearId);
-  if(!d)return;
-  let b=null;
-  try{b=petBox();}catch(e){}
-  if(!b)return;
-  const S=petBounds().S;
-  petWearEl.style.width=(d.w*S)+"px";
-  petWearEl.style.height=(d.h*S)+"px";
-  petWearEl.style.left=(b.cx+(d.ox||0)*S)+"px";
-  petWearEl.style.top=(b.headY+(d.oy||0)*S)+"px";
+  if(!petAccG||!petAccImg)return;
+  const g=document.getElementById("petG");
+  if(!g)return;
+  if(petAccG.parentNode!==g){
+    const fx=document.getElementById("petFx");
+    if(fx&&fx.parentNode===g)g.insertBefore(petAccG,fx);
+    else g.appendChild(petAccG);
+  }
 }
 function closeWardrobe(){
   document.getElementById("wardMask")?.remove();
@@ -2407,17 +2398,18 @@ function closeWardrobe(){
 function wardEsc(e){if(e.key==="Escape")closeWardrobe();}
 function openWardrobe(){
   closeWardrobe();
+  PET_ACC.forEach(petPreloadAcc);
   const mask=document.createElement("div");
   mask.className="ward-mask";mask.id="wardMask";
-  const all=[{id:"",name:"不戴",empty:true}].concat(PET_DECO);
+  const all=[{id:"",name:"不戴",empty:true}].concat(PET_ACC);
   mask.innerHTML='<div class="ward" role="dialog" aria-modal="true" aria-label="给小云打扮">'+
     '<div class="ward-head"><h3>🎀 给小云打扮</h3><button class="ward-x" aria-label="关闭">✕</button></div>'+
-    '<div class="ward-sub">挑一件戴在她头上，再点一次就摘下来。选择会存进存档，刷新或换设备都还在。</div>'+
+    '<div class="ward-sub">挑一件戴在她头上，再点一次就摘下来。配饰是画在她身上的，走路、蹦跳、转身都跟着一起动。选择会存进存档。</div>'+
     '<div class="ward-grid">'+all.map(d=>{
       const on=(d.id||"")===petWearId;
       return '<button type="button" class="ward-item'+(on?" on":"")+(d.empty?" ward-empty":"")+'" data-deco="'+d.id+'" title="'+(d.desc||d.name)+'">'+
         (d.tag?'<span class="ward-tag">'+d.tag+"</span>":"")+
-        (d.empty?'<div class="ward-thumb"><img src="'+PET_THUMB+'" alt=""></div>':'<div class="ward-thumb">'+d.svg.replace(/__I__/g,petUid())+"</div>")+
+        (d.empty?'<div class="ward-thumb"><img src="'+PET_THUMB+'" alt=""></div>':'<div class="ward-thumb"><img src="'+d.file+'" alt="'+d.name+'"></div>')+
         '<div class="ward-name">'+d.name+"</div></button>";
     }).join("")+"</div></div>";
   document.body.appendChild(mask);
@@ -2980,7 +2972,7 @@ function boot(){
       togglePin:()=>petTogglePin(),
       openWardrobe:()=>{try{openWardrobe();}catch(e){console.error(e);}},
       dance:()=>{try{petDance();}catch(e){}},
-      wearTop:()=>{try{return petWearEl?petWearEl.getBoundingClientRect().top:null;}catch(e){return null;}}
+      wearTop:()=>{try{return petAccImg?petAccImg.getBoundingClientRect().top:null;}catch(e){return null;}}
     });
   }
 }
