@@ -764,6 +764,42 @@ body[data-theme="fx-aurora"]{
   padding:9px 12px;font-family:Consolas,Monaco,monospace;font-size:13px;outline:none;
 }
 #ttyInput:focus{border-color:var(--accent)}
+/* ===== 学习足迹卡（等级 + 热力图 + 周报） ===== */
+.fp-lv{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.fp-badge{flex:none;width:46px;height:46px;border-radius:14px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;color:#fff;font-weight:700;
+  background:linear-gradient(135deg,var(--accent),var(--accent-2));font-size:15px;line-height:1.1}
+.fp-badge small{font-size:9px;font-weight:400;opacity:.9}
+.fp-xp{flex:1;min-width:200px}
+.fp-xp .top{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
+.fp-metas{font-size:12px;color:var(--muted);margin-top:4px}
+.fp-metas a.tx{margin-left:0}
+.hm{display:flex;gap:3px;overflow-x:auto;padding:2px 0 6px}
+.hm-col{display:flex;flex-direction:column;gap:3px;flex:none}
+.hm-c{width:10px;height:10px;border-radius:2.5px;background:rgba(120,130,150,.14)}
+.hm-c[data-l="1"]{background:var(--accent);opacity:.28}
+.hm-c[data-l="2"]{background:var(--accent);opacity:.5}
+.hm-c[data-l="3"]{background:var(--accent);opacity:.75}
+.hm-c[data-l="4"]{background:var(--accent);opacity:1}
+.hm-lab{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px}
+.wk{margin-top:8px}
+.wk-row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted);margin-top:3px}
+.wk-row>b{flex:none;width:58px;font-weight:600;color:var(--fg)}
+.wk-bars{display:flex;align-items:flex-end;gap:4px;flex:1;height:22px}
+.wk-bars i{flex:1;max-width:26px;background:var(--accent-2);opacity:.75;border-radius:3px 3px 0 0;min-height:1px}
+.wk-sum{flex:none;width:34px;text-align:right;color:var(--fg)}
+/* 生词/错题「今日到期」提示条 */
+.duebar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;margin-bottom:10px;
+  border-radius:12px;background:var(--acc-soft,rgba(108,99,255,.10));border:1px solid rgba(108,99,255,.22);
+  font-size:13px}
+/* 模考倒计时条 */
+.mockbar{display:flex;align-items:center;gap:10px;padding:8px 14px;margin-bottom:8px;border-radius:12px;
+  background:var(--bad-soft,rgba(229,72,77,.10));border:1px solid rgba(229,72,77,.22);font-size:13px}
+.mockbar b{font-variant-numeric:tabular-nums;font-size:16px}
+.mockbar.warn{background:rgba(229,146,72,.14);border-color:rgba(229,146,72,.3)}
+/* 番茄钟白噪音 */
+.noise-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.noise-row .lab{font-size:12.5px;color:var(--muted)}
 </style>
 </head>
 <body data-theme="">
@@ -861,6 +897,10 @@ body[data-theme="fx-aurora"]{
       <div id="lvProgress"></div>
     </div>
     <div class="card">
+      <h2>🐾 学习足迹 <small>等级 · 打卡热力 · 近 7 天 · 成就</small></h2>
+      <div id="footprint"></div>
+    </div>
+    <div class="card">
       <h2>📝 最近测验 <small>在「测验」页面开始新的测验</small></h2>
       <div id="recentQuiz"><p class="empty">还没有测验记录，快来试试吧</p></div>
     </div>
@@ -947,6 +987,19 @@ body[data-theme="fx-aurora"]{
         <button class="btn ghost" data-qtype="linux" onclick="startQuiz('linux')">🐧 Linux 命令（10题）</button>
         <button class="btn ghost" onclick="switchTab('math')">📐 高数（11 份章节卷，去高数页选）</button>
       </div>
+    </div>
+    <div class="card">
+      <h2>⏱ 限时模考 <small>整卷倒计时 · 交卷统一判分 · 错题自动进错题本</small></h2>
+      <p class="muted" style="font-size:12.5px;margin-bottom:8px">
+        模考不即时判分：选完自动下一题，时间到或答完才出报告（估分 + 分题型正确率 + 错题解析）。
+        答错的题自动进错题本，明天起按节奏重做。
+      </p>
+      <div class="row">
+        <button class="btn" onclick="startMock('exam4')">📝 四级整卷（45 题 · 45 分钟）</button>
+        <button class="btn ghost" onclick="startMock('exam6')">📝 六级整卷（45 题 · 45 分钟）</button>
+        <button class="btn ghost" onclick="startMock('c20')">💻 C 语言 20 题（25 分钟）</button>
+      </div>
+      <div class="row" id="mockMathRow" style="margin-top:10px"></div>
     </div>
   </section>
 
@@ -1046,8 +1099,18 @@ body[data-theme="fx-aurora"]{
         <button class="btn" id="pStart" onclick="togglePomo()">▶ 开始</button>
         <button class="btn ghost" onclick="resetPomo()">↺ 重置</button>
       </div>
+      <div class="noise-row">
+        <span class="lab">🎧 专注白噪音</span>
+        <div class="segmented">
+          <button id="nsOff" class="on" onclick="setNoise('off')">关</button>
+          <button id="nsRain" onclick="setNoise('rain')">🌧 雨声</button>
+          <button id="nsWave" onclick="setNoise('wave')">🌊 海浪</button>
+          <button id="nsWhite" onclick="setNoise('white')">❄ 白噪</button>
+        </div>
+      </div>
       <p class="muted" style="margin-top:18px;font-size:13px">
         今日完成 <b id="pToday">0</b> 个 · 累计 <b id="pTotal">0</b> 个
+        <span id="pWeek" style="margin-left:8px"></span>
       </p>
     </div>
   </section>
@@ -1125,9 +1188,18 @@ const MATHQUIZ=window.MATH_QUIZ||[];
 
 /* 文件名 map：测验历史显示用 */
 const QUIZ_NAMES={vocab4:"四级词汇",vocab6:"六级词汇",vocabmix:"四六级混合",vocab:"四六级词汇",
-  c:"C 语言",linux:"Linux 命令",exam4:"四级考试题",exam6:"六级考试题"};
+  c:"C 语言",linux:"Linux 命令",exam4:"四级考试题",exam6:"六级考试题",
+  srs:"生词到期复习",wrongredo:"错题重做","mock:exam4":"四级整卷模考","mock:exam6":"六级整卷模考",
+  "mock:c20":"C 语言限时模考"};
 /* 高数每章的卷子单独记名，历史里能分清新旧 */
-MATHQUIZ.forEach((p,i)=>{QUIZ_NAMES["math"+i]="高数·"+p.ch.replace(/^[^第]*/,"");});
+MATHQUIZ.forEach((p,i)=>{QUIZ_NAMES["math"+i]="高数·"+p.ch.replace(/^[^第]*/,"");
+  QUIZ_NAMES["mock:math"+i]="高数模考·"+p.ch.replace(/^[^第]*/,"");});
+/* 模考卡的高数卷按钮（章节卷 10 题 · 15 分钟） */
+function renderMockMath(){
+  const row=$("#mockMathRow");if(!row)return;
+  row.innerHTML=MATHQUIZ.map((p,i)=>
+    '<button class="btn ghost" onclick="startMock(\'math'+i+'\')">📐 '+p.ch.replace(/^[^第]*/,"").slice(0,9)+'卷</button>').join("");
+}
 
 const LINUX_NOTES=[
 {t:"1. 命令的基本结构",d:"Linux 命令通用格式：命令 [-选项] [参数]。选项改变命令行为（-a 显示隐藏，-l 详细列表），参数是操作对象。一切操作从终端（Terminal）敲命令开始。",
@@ -1222,6 +1294,15 @@ function normalize(d){
   d.daily=d.daily||{date:"",words:0,clap:false};
   d.pet=d.pet||null;
   d.savedAt=d.savedAt||0;
+  /* ===== 学习足迹地基：XP / 按天活动账本 / 生词间隔重复 ===== */
+  d.xp=d.xp||{v:0};
+  d.act=d.act||{};
+  d.srs=d.srs||{cet4:{},cet6:{}};
+  {const ks=Object.keys(d.act).sort();                     // 账本只留 400 天，热力图够用
+   if(ks.length>400)ks.slice(0,ks.length-400).forEach(k=>delete d.act[k]);}
+  for(const k in d.wrong){const w=d.wrong[k];              // 旧错题补重做档期字段
+    if(!w.due)w.due=shiftDay(today(),1);
+    if(typeof w.ok!=="number")w.ok=0;}
   return d;
 }
 function loadDB(){
@@ -1427,6 +1508,7 @@ function renderDash(){
     }).join("");
   }
   renderLvProgress();
+  renderFootprint();
 }
 
 /* 仪表盘：四级 / 六级 分开的两行进度 */
@@ -1476,7 +1558,7 @@ function renderSearch(){
 function markHard(lv,w){
   if(db.words[lv][w]===1){toast("「"+w+"」已标记掌握，先去重置进度才能改");return;}
   if(db.words[lv][w]===2){toast("「"+w+"」已经在"+LV[lv]+"生词本里了");return;}
-  db.words[lv][w]=2;save();
+  db.words[lv][w]=2;ensureSrs(lv,w);save();
   renderSearch();renderLvProgress();renderReview();renderDash();
   toast("已存入"+LV[lv]+"生词本："+w);
 }
@@ -1493,6 +1575,86 @@ function streakCount(){
   return c;
 }
 function streakDoneToday(){return streakDays().includes(today());}
+
+/* ===== 学习足迹：按天活动账本 + XP 等级 + 热力图 + 周报 =====
+   一本账喂三张图：热力图看坚持、周报看趋势、等级看总量。
+   所有学习行为都从 addAct 过一笔：w=背词 q=做题 m=专注分钟 ck=打卡 xp=经验。 */
+function actToday(){const t=today();if(!db.act[t])db.act[t]={w:0,q:0,m:0,xp:0};return db.act[t];}
+function addAct(kind,n,xp){
+  const a=actToday();a[kind]=(a[kind]||0)+n;xp=xp||0;
+  if(xp){a.xp+=xp;db.xp.v+=xp;}
+}
+/* 等级阶梯：每一级要的累计 XP。标题按段取，两级换一个称号 */
+const XP_LADDER=[0,100,250,450,700,1000,1350,1750,2200,2700,3250,3850,4500,5200,6000,7000,8000,9000,10500,12000,14000,16500,19500,23000,27000];
+const XP_TITLES=["鱼卵","小云的伙伴","幼鲸","亚成鲸","浅海游者","深海游者","远航者","浪尖舞者","海洋学者","传说鲸灵"];
+function xpLevel(){let l=0;for(let i=0;i<XP_LADDER.length;i++)if(db.xp.v>=XP_LADDER[i])l=i+1;return l;}
+function xpTitle(l){return XP_TITLES[Math.min(XP_TITLES.length-1,Math.floor(Math.max(0,l-1)/2))];}
+function xpNext(){const l=xpLevel();return l>=XP_LADDER.length?null:XP_LADDER[l];}
+function xpAch(){
+  try{
+    const s=window.PetBrain&&window.PetBrain.stats&&window.PetBrain.stats();
+    const tot=window.PetBrain&&window.PetBrain.achievements?window.PetBrain.achievements().length:0;
+    return {n:(s&&s.achievements||[]).length,t:tot};
+  }catch(e){return {n:0,t:0};}
+}
+function renderFootprint(){
+  const box=$("#footprint");if(!box)return;
+  const l=xpLevel(),nxt=xpNext(),v=db.xp.v||0;
+  let pct=100,need="已达满级 🐋";
+  if(nxt!=null){const prev=XP_LADDER[l-1]||0;
+    pct=Math.min(100,Math.max(2,Math.round((v-prev)/(nxt-prev)*100)));
+    need="距 Lv"+(l+1)+" 还差 "+(nxt-v)+" XP";}
+  const ach=xpAch();
+  const hm=footprintHeatmap();
+  const wk=footprintWeek();
+  box.innerHTML=
+    '<div class="fp-lv"><div class="fp-badge" title="学习等级">Lv'+l+'<small>'+xpTitle(l)+'</small></div>'+
+    '<div class="fp-xp"><div class="top"><span><b>'+v+'</b> XP</span><span class="muted">'+need+'</span></div>'+
+    '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
+    '<div class="fp-metas">🎖️ 成就 <b>'+ach.n+'</b>'+(ach.t?' / '+ach.t:'')+
+    '　<a class="tx" onclick="openAchWall()">查看成就墙</a>'+
+    '　·　🔄 今日到期复习 <b>'+dueWords().length+'</b> 词　📕 到期重做 <b>'+dueWrongKeys().length+'</b> 题</div></div></div>'+
+    hm+'<div class="wk">'+wk+'</div>';
+}
+/* 热力图：最近 182 天按周排列，深浅按当天 XP 分四档 */
+function footprintHeatmap(){
+  const cells=[],cols=[];
+  const today=new Date();
+  for(let i=181;i>=0;i--){
+    const d=new Date(today.getFullYear(),today.getMonth(),today.getDate()-i);
+    const key=fmtD(d),a=db.act[key],xp=a?(a.xp||0):0;
+    const lvl=xp>=100?4:(xp>=50?3:(xp>=20?2:(xp>0?1:0)));
+    const tip=key+" · "+xp+" XP"+(a&&a.w?" · 背词"+a.w:"")+(a&&a.q?" · 做题"+a.q:"")+(a&&a.m?" · 专注"+a.m+"分":"");
+    if(d.getDay()===1&&cells.length)cols.push(cells.splice(0,7));   // 周一开新列
+    cells.push('<div class="hm-c" data-l="'+lvl+'" title="'+tip+'"></div>');
+  }
+  cols.push(cells.splice(0,7));
+  return '<div class="hm">'+cols.map(c=>'<div class="hm-col">'+c.join("")+'</div>').join("")+'</div>'+
+    '<div class="hm-lab"><span>'+fmtD(new Date(today.getFullYear(),today.getMonth(),today.getDate()-181))+'</span><span>今天 · 越亮越努力</span></div>';
+}
+/* 周报：近 7 天背词 / 做题 / 专注分钟三行小柱图 */
+function footprintWeek(){
+  const today=new Date(),rows=[];
+  const defs=[["w","背词"],["q","做题"],["m","专注分"]];
+  const data=defs.map(()=>[]);
+  for(let i=6;i>=0;i--){
+    const d=new Date(today.getFullYear(),today.getMonth(),today.getDate()-i);
+    const a=db.act[fmtD(d)]||{};
+    defs.forEach((_,k)=>data[k].push(a[defs[k][0]]||0));
+  }
+  defs.forEach((df,k)=>{
+    const arr=data[k],sum=arr.reduce((x,y)=>x+y,0),max=Math.max(1,Math.max.apply(null,arr));
+    rows.push('<div class="wk-row"><b>'+df[1]+'</b><div class="wk-bars">'+
+      arr.map(n=>'<i style="height:'+Math.max(6,Math.round(n/max*100))+'%" title="'+n+'"></i>').join("")+
+      '</div><span class="wk-sum">'+sum+'</span></div>');
+  });
+  return rows.join("");
+}
+function openAchWall(){
+  if(window.PetBrain&&window.PetBrain.panel)window.PetBrain.panel();
+  else toast("小云还没醒来，等她出现后就能看成就墙啦");
+}
+
 function checkIn(){
   const t=today();
   if(streakDoneToday()){toast("今天已经打过卡啦，明天继续 💪");return;}
@@ -1502,6 +1664,7 @@ function checkIn(){
   if(db.streak.days.length>120)db.streak.days=db.streak.days.slice(-120);
   db.streak.last=t;
   db.streak.count=streakCount();
+  addAct("ck",1,10);                       // 打卡 → 账本 +10 XP
   save();renderDash();
   toast("打卡成功！已连续 "+db.streak.count+" 天 🔥");
   fabReact("happy");
@@ -1574,7 +1737,8 @@ function markWord(st){
   const prev=db.words[level][cur.w];
   const picked=cur.w;
   db.words[level][cur.w]=st;
-  if(st===1&&prev!==1)bumpDaily();
+  if(st===2)ensureSrs(level,cur.w);        // 进生词本即进入间隔重复计划
+  if(st===1&&prev!==1){bumpDaily();addAct("w",1,2);if(db.srs[level])delete db.srs[level][picked];}
   save();
   if(st===1){toast("棒！"+cur.w+" 已掌握");}
   nextWord();
@@ -1590,26 +1754,177 @@ function nextWord(){
 
 function renderReview(){
   const box=$("#reviewList");
-  let html="",total=0,n4=0,n6=0;
+  /* A1 间隔重复：到期词自动排队，答对间隔拉长、答错明天再来 */
+  const due=dueWords();
+  let html="";
+  if(due.length){
+    html+='<div class="duebar">🔄 今天有 <b>'+due.length+'</b> 个生词到复习期了'+
+      '<span class="muted" style="font-size:12px">答对间隔拉长，答错明天重来</span>'+
+      '<button class="btn small" style="margin-left:auto" onclick="startSrsQuiz()">开始复习（'+Math.min(10,due.length)+' 题）</button></div>';
+  }
+  let total=0,n4=0,n6=0;
   for(const lv of ["cet4","cet6"]){
     const list=WORDS[lv].filter(x=>db.words[lv][x.w]===2);
     total+=list.length;
     if(lv==="cet4")n4=list.length;else n6=list.length;
     if(!list.length)continue;
     html+='<div class="lvhead">'+lvTag(lv)+' 生词 '+list.length+' 个，单独复习</div>';
-    html+=list.map(x=>
-      '<div class="list-item"><span><b>'+x.w+'</b> <span class="muted">'+x.p+'</span><br><span style="font-size:13px">'+x.m+'</span></span>'+
-      '<span><button class="btn small ok" onclick="masterWord(\''+lv+'\',\''+x.w+'\')">已掌握</button></span></div>'
-    ).join("");
+    html+=list.map(x=>{
+      const s=(db.srs[lv]||{})[x.w];
+      const dueTxt=s?(s.due<=today()?'<span style="color:var(--accent);font-size:11px">今天到期</span>'
+        :'<span class="muted" style="font-size:11px">'+s.due+' 复习</span>'):"";
+      return '<div class="list-item"><span><b>'+x.w+'</b> <span class="muted">'+x.p+'</span> '+dueTxt+
+        '<br><span style="font-size:13px">'+x.m+'</span></span>'+
+        '<span><button class="btn small ok" onclick="masterWord(\''+lv+'\',\''+x.w+'\')">已掌握</button></span></div>';
+    }).join("");
   }
   box.innerHTML=html||'<p class="empty">生词本是空的，太棒了！</p>';
   const h=$("#reviewCount");
   if(h)h.textContent=total?("共 "+total+" 个 · 四级 "+n4+" · 六级 "+n6):"四级、六级分开记录，各自复习";
 }
+/* ---- A1 间隔重复（简化 SM 阶梯）---- */
+const SRS_LADDER=[1,2,3,5,8,12,21,35,60];
+function ensureSrs(lv,w){
+  if(!db.srs)db.srs={cet4:{},cet6:{}};if(!db.srs[lv])db.srs[lv]={};
+  if(!db.srs[lv][w])db.srs[lv][w]={iv:1,due:today()};
+}
+function dueWords(){
+  const out=[];
+  for(const lv of ["cet4","cet6"]){
+    const srs=db.srs[lv]||{};
+    for(const w in srs){
+      if(db.words[lv][w]===2&&srs[w].due<=today())out.push({lv,w});
+    }
+  }
+  return shuffle(out.slice());
+}
+function srsStep(lv,w,ok){
+  ensureSrs(lv,w);
+  const e=db.srs[lv][w];
+  if(ok){
+    const i=SRS_LADDER.indexOf(e.iv);
+    e.iv=SRS_LADDER[Math.min(SRS_LADDER.length-1,(i<0?0:i)+1)];
+    e.due=shiftDay(today(),e.iv);
+    toast("✓ "+w+" 下次 "+e.due+" 复习（隔 "+e.iv+" 天）");
+  }else{
+    e.iv=1;e.due=shiftDay(today(),1);
+  }
+}
+/* 到期复习测验：只用到期词出 10 道词义题，作答走 feedStat 的 srs 分支更新计划 */
+function startSrsQuiz(){
+  const due=dueWords();
+  if(!due.length){toast("今天没有到期的生词，学新词去吧！");return;}
+  const picks=due.slice(0,10);
+  quiz={list:[],idx:0,score:0,answered:false,type:"srs"};
+  quiz.list=picks.map(p=>{
+    const item=WORDS[p.lv].filter(x=>x.w===p.w)[0];
+    if(!item)return null;
+    const pool=WORDS[p.lv];
+    const distract=shuffle(pool.filter(x=>x.m!==item.m)).slice(0,3).map(x=>x.m);
+    const opts=shuffle([item.m,...distract]);
+    return {q:lvTag(p.lv)+' 复习 <b>'+item.w+'</b> <span class="muted">'+item.p+'</span> 的意思是：',
+      o:opts,a:opts.indexOf(item.m),e:null,_id:null};
+  }).filter(Boolean);
+  if(!quiz.list.length){toast("今天没有到期的生词");return;}
+  $("#quizBox").style.display="block";
+  switchTab("quiz");
+  showQuizQ();
+}
+
+/* ===== 限时模考（B2/B3）=====
+   模考不即时判分：选完自动下一题，全程倒计时，交卷或超时统一判分出报告；
+   答错的题走 feedStat 自动进错题本，按重做节奏排期。 */
+let mockTimer=null;
+function mockFmt(s){return String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");}
+function stopMockTick(){if(mockTimer){clearInterval(mockTimer);mockTimer=null;}}
+function startMock(kind){
+  stopMockTick();
+  let list=[],secs=0,name="";
+  if(kind==="exam4"||kind==="exam6"){
+    const lv=kind==="exam4"?"cet4":"cet6";
+    list=(CETEXAM[lv]||[]).slice().map(it=>{
+      const od=shuffle(it.o.map((_,k)=>k));
+      return {q:(it.p?'<div class="qpass">'+it.p+'</div>':'')+it.q,o:od.map(k=>it.o[k]),
+        a:od.indexOf(it.a),e:it.e,_id:it.id,_cat:it.t};
+    });
+    secs=45*60;name=SUBJ[kind]+" 整卷模考";
+  }else if(kind==="c20"){
+    list=shuffle(CQUIZ.slice()).slice(0,20).map(q=>Object.assign({},q,{_id:"c"+h32(q.q),_cat:q.cat||"基础"}));
+    secs=25*60;name="C 语言 20 题限时挑战";
+  }else if(/^math\d+$/.test(kind)){
+    const p=MATHQUIZ[parseInt(kind.slice(4),10)];
+    if(!p){toast("卷子不存在");return;}
+    list=p.qs.map(q=>Object.assign({},q,{_id:"m"+h32(q.q),_cat:p.ch}));
+    secs=15*60;name="高数限时模考 · "+p.ch;
+  }
+  if(!list.length){toast("题库为空");return;}
+  quiz={list,idx:0,score:0,answered:false,type:"mock:"+kind,mock:true,kind:kind,
+    sel:new Array(list.length).fill(-1),t0:Date.now(),left:secs,secs:secs,name:name};
+  $("#quizBox").style.display="block";
+  switchTab("quiz");
+  mockTimer=setInterval(mockTick,1000);
+  showQuizQ();
+}
+function mockTick(){
+  if(!quiz||!quiz.mock)return;
+  quiz.left--;
+  if(quiz.left<=0){stopMockTick();toast("⏰ 时间到，自动交卷");finishQuiz();return;}
+  const el=$("#mockLeft");
+  if(el){el.textContent=mockFmt(quiz.left);
+    const bar=document.querySelector("#quizBox .mockbar");
+    if(bar)bar.classList.toggle("warn",quiz.left<=60);}
+}
+function finishMock(){
+  stopMockTick();
+  const spent=Math.round((Date.now()-quiz.t0)/1000);
+  let score=0;
+  const cats={};
+  quiz.list.forEach((q,i)=>{
+    const ok=q.a===quiz.sel[i];
+    if(ok)score++;
+    const c=cats[q._cat]||(cats[q._cat]=[0,0]);c[1]++;if(ok)c[0]++;
+    const subj=quiz.kind==="exam4"?"exam4":(quiz.kind==="exam6"?"exam6":
+      (quiz.kind==="c20"?"c":(/^math\d+$/.test(quiz.kind)?quiz.kind:null)));
+    if(subj)try{feedStat(subj,q,ok);}catch(e){}
+  });
+  addAct("mk",1,30);                       // 完整模考一次 +30 XP
+  db.quizHistory.unshift({d:today(),t:quiz.type,s:score,total:quiz.list.length});
+  db.quizHistory=db.quizHistory.slice(0,20);
+  save();renderDash();
+  const pct=Math.round(score/quiz.list.length*100);
+  const catRows=Object.keys(cats).map(k=>{
+    const c=cats[k],r=Math.round(c[0]/c[1]*100);
+    const cls=r>=.8?"":(r>=.5?"mid":"low");
+    return '<div class="qcat"><span class="nm" title="'+k+'">'+k+'</span>'+
+      '<div class="bar"><i class="'+cls+'" style="width:'+r+'%"></i></div>'+
+      '<span class="pc">'+r+'%</span></div>';
+  }).join("");
+  const wrongRows=quiz.list.map((q,i)=>({q,i,ok:q.a===quiz.sel[i]}))
+    .filter(x=>!x.ok).map(x=>
+      '<details class="note" style="margin-top:6px"><summary>第 '+(x.i+1)+' 题 · 正确答案 '+
+      String.fromCharCode(65+x.q.a)+'（你选了 '+(quiz.sel[x.i]>=0?String.fromCharCode(65+quiz.sel[x.i]):"未作答")+'）</summary>'+
+      '<div class="desc">'+x.q.q+'</div>'+
+      (x.q.e?'<p class="nc-p">📖 '+x.q.e+'</p>':'')+'</details>')
+    .join("")||'<p class="empty" style="font-size:13px">全对，没有错题 🎉</p>';
+  const word=pct===100?"满分！考场上就是这个感觉 🏆":(pct>=80?"很稳，模考保持手感":(pct>=60?"过线水平，错题重做要跟上":"基础还有洞，先看错题解析"));
+  $("#quizBox").innerHTML=
+    '<div style="text-align:center;padding:6px 0 2px">'+
+    '<div style="font-size:13px;color:var(--muted)">'+quiz.name+' · 用时 '+mockFmt(spent)+'（均 '+Math.round(spent/quiz.list.length)+' 秒/题）</div>'+
+    '<div style="font-size:38px;font-weight:700;color:var(--accent);margin-top:6px">'+pct+' 分</div>'+
+    '<div class="muted" style="font-size:13px;margin-top:4px">共 '+quiz.list.length+' 题 · 答对 '+score+' 题 · '+word+'</div></div>'+
+    '<div class="lvhead">分题型正确率</div>'+catRows+
+    '<div class="lvhead">错题回看（已自动进错题本，明天可重做）</div>'+wrongRows+
+    '<div class="row" style="justify-content:center;margin-top:18px">'+
+    '<button class="btn" onclick="startMock(\''+quiz.kind+'\')">再考一次</button>'+
+    '<button class="btn ghost" onclick="switchTab(\'dashboard\')">回仪表盘</button></div>';
+  quiz=null;
+}
 function masterWord(lv,w){
   const prev=db.words[lv][w];
   db.words[lv][w]=1;
   if(prev!==1)bumpDaily();
+  if(db.srs[lv])delete db.srs[lv][w];      // 已掌握的词移出复习计划
+  addAct("w",prev!==1?1:0,prev!==1?2:0);
   save();renderReview();renderDash();renderLvProgress();
   if($("#wordSearch")&&$("#wordSearch").value)renderSearch();
   toast("✓ "+LV[lv]+" "+w+" 已标记掌握");
@@ -1659,8 +1974,13 @@ function showQuizQ(){
   quiz.answered=false;
   const box=$("#quizBox");
   box.innerHTML=
-    (quiz.paperName?'<div class="muted" style="font-size:12.5px;margin-bottom:4px">📐 '+quiz.paperName+'</div>':'')+
-    '<div class="muted" style="font-size:13px;margin-bottom:8px">第 '+(quiz.idx+1)+' / '+quiz.list.length+' 题 · 当前答对 '+quiz.score+' 题</div>'+
+    (quiz.mock?
+      '<div class="mockbar'+(quiz.left<=60?" warn":"")+'"><span>⏱ 限时模考 · '+quiz.name+'</span>'+
+      '剩余 <b id="mockLeft">'+mockFmt(quiz.left)+'</b>'+
+      '<span class="muted" style="font-size:12px">选完自动下一题，交卷统一判分</span></div>'
+      :(quiz.paperName?'<div class="muted" style="font-size:12.5px;margin-bottom:4px">📐 '+quiz.paperName+'</div>':''))+
+    '<div class="muted" style="font-size:13px;margin-bottom:8px">第 '+(quiz.idx+1)+' / '+quiz.list.length+' 题'+
+    (quiz.mock?"":" · 当前答对 "+quiz.score+" 题")+'</div>'+
     '<div style="font-size:16px;font-weight:600;margin-bottom:6px">'+q.q+'</div>'+
     '<div class="bar"><i style="width:'+(quiz.idx/quiz.list.length*100)+'%"></i></div>'+
     q.o.map((o,i)=>'<button class="opt" id="opt'+i+'" onclick="pickOpt('+i+')">'+String.fromCharCode(65+i)+". "+o+'</button>').join("")+
@@ -1669,6 +1989,7 @@ function showQuizQ(){
 }
 function pickOpt(i){
   if(quiz.answered)return;
+  if(quiz.mock){quiz.sel[quiz.idx]=i;quizNext();return;}   // 模考：不判分不解析，选完就走
   quiz.answered=true;
   const q=quiz.list[quiz.idx];
   const right=q.a;
@@ -1687,6 +2008,7 @@ function pickOpt(i){
 }
 function quizNext(){quiz.idx++;showQuizQ();}
 function finishQuiz(){
+  if(quiz&&quiz.mock){finishMock();return;}
   const pct=Math.round(quiz.score/quiz.list.length*100);
   const name=QUIZ_NAMES[quiz.type]||quiz.type;
   db.quizHistory.unshift({d:today(),t:quiz.type,s:quiz.score,total:quiz.list.length});
@@ -2035,11 +2357,20 @@ function startReview(s){
   }
   startCat(s,"mid",{review:true,total:Math.min(10,Object.keys(db.wrong).filter(k=>db.wrong[k].s===s).length)});
 }
-/* 自由练习也喂给画像：做过的题照样计入正确率与错题本 */
+/* 自由练习也喂给画像：做过的题照样计入正确率与错题本。
+   同时是学习账本的做题入口：每题 +1 次记录，答对 +1 XP。
+   type="srs"：到期复习题 → 更新间隔重复计划；
+   type="wrongredo"：错题重做 → 按粉笔节奏排下次重做日期。 */
 function feedStat(type,q,ok){
   const map={c:"c",vocab4:"vocab4",vocab6:"vocab6",exam4:"exam4",exam6:"exam6"};
   let s=map[type];
   if(!s&&/^math\d+$/.test(type))s="math";
+  if(type==="wrongredo"&&q._s)s=q._s;
+  if(!s&&type==="srs"){
+    const m=/复习 <b>(.+?)<\/b>/.exec(q.q||"");
+    if(m){const lv=CET4SET.has(m[1])?"cet4":"cet6";
+      srsStep(lv,m[1],ok);addAct("q",1,ok?1:0);save();renderReview();renderFootprint();return;}
+  }
   if(!s)return;
   let id=q._id||null;
   if(!id){
@@ -2053,9 +2384,37 @@ function feedStat(type,q,ok){
   const c=p.cat[cat]||(p.cat[cat]=[0,0]);c[1]++;if(ok)c[0]++;
   const st=p.items[id]||(p.items[id]=[0,0]);st[1]++;if(ok)st[0]++;
   p.n++;
-  if(!ok)db.wrong[s+":"+id]={s:s,cat:cat,d:d,q:q.q,o:q.o,a:q.a,e:q.e,ts:Date.now()};
-  else if(db.wrong[s+":"+id])delete db.wrong[s+":"+id];
+  /* 错题重做节奏（粉笔模式）：首错明天重做；重做对了隔一周再来、连续两次对就移出；
+     重做又错 → 明天再来。不是「看懂解析」，必须独立做对才算掌握。 */
+  const key=s+":"+id,we=db.wrong[key];
+  if(!ok){
+    if(we){we.ok=0;we.due=shiftDay(today(),1);}
+    else db.wrong[key]={s:s,cat:cat,d:d,q:q.q,o:q.o,a:q.a,e:q.e,ts:Date.now(),ok:0,due:shiftDay(today(),1)};
+  }else if(we){
+    we.ok=(we.ok||0)+1;
+    if(we.ok>=2)delete db.wrong[key];       // 连续两轮独立做对 → 掌握，移出错题本
+    else we.due=shiftDay(today(),7);        // 做对一轮 → 一周后验证
+  }
+  addAct("q",1,ok?1:0);
   save();renderQProf();renderWrongBox();
+}
+/* 错题本重做：只挑今天到期（due<=今天）的题，跨科目混合出卷 */
+function dueWrongKeys(){
+  const t=today(),out=[];
+  for(const k in db.wrong)if((db.wrong[k].due||"")<=t)out.push(k);
+  return out;
+}
+function startWrongDue(){
+  const keys=shuffle(dueWrongKeys()).slice(0,10);
+  if(!keys.length){toast("今天没有到期错题，坚持住！");return;}
+  quiz={list:[],idx:0,score:0,answered:false,type:"wrongredo"};
+  quiz.list=keys.map(k=>{
+    const w=db.wrong[k],id=k.slice(w.s.length+1);
+    return {q:w.q,o:w.o,a:w.a,e:w.e,_id:id,_s:w.s};
+  });
+  $("#quizBox").style.display="block";
+  switchTab("quiz");
+  showQuizQ();
 }
 /* 从测评直接跳到对应知识点 */
 function jumpClang(kw){
@@ -2089,11 +2448,15 @@ function renderWrongBox(){
   for(const k in db.wrong){const w=db.wrong[k];by[w.s]=(by[w.s]||0)+1;}
   const ks=Object.keys(by);
   if(!ks.length){box.innerHTML="";return;}
+  const dueN=dueWrongKeys().length;
   box.innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;'+
     'flex-wrap:wrap;padding:11px 14px;border-radius:12px;background:var(--bad-soft);border:1px solid rgba(229,72,77,.22)">'+
     '<span style="font-size:13px">📕 <b>错题本</b> · '+ks.map(s=>SUBJ[s]+' '+by[s]+' 题').join(" · ")+
-    '<span class="muted" style="font-size:12px">（答对就移出）</span></span>'+
-    '<button class="btn ghost sm" onclick="startReview()">只考错题</button></div>';
+    (dueN?' · <b>今日到期 '+dueN+' 题</b>':'')+
+    '<span class="muted" style="font-size:12px">（连对 2 次移出）</span></span>'+
+    '<span>'+
+    (dueN?'<button class="btn sm" onclick="startWrongDue()">🔄 重做到期错题</button> ':'')+
+    '<button class="btn ghost sm" onclick="startReview()">只考错题</button></span></div>';
 }
 
 
@@ -2382,12 +2745,14 @@ function togglePomo(){
     pomo.running=true;
     $("#pStart").textContent="⏸ 暂停";
     pomo.timer=setInterval(pomoTick,1000);
+    if(pomo.mode==="work")playNoise(NOISE_CUR());       // 专注开始自动开播白噪音
   }
 }
 function stopPomoTick(){
   pomo.running=false;
   clearInterval(pomo.timer);
   $("#pStart").textContent="▶ 开始";
+  stopNoise();                                          // 暂停/重置即静音
 }
 function pomoTick(){
   pomo.left--;
@@ -2397,7 +2762,9 @@ function pomoTick(){
     pomo.left=0;renderPomoTime();
     if(pomo.mode==="work"){
       ensurePomoDay();
+      addAct("m",Math.round(POMO_LEN.work/60),10);      // 番茄完成 → 账本记专注分钟 +10 XP
       db.pomo.count++;db.pomo.total++;save();renderDash();renderPomoStats();
+      stopNoise();                                      // 休息时段静音
       toast("🍅 番茄钟完成！休息 5 分钟吧");
       if(window.PetBrain)PetBrain.study("pomo");
       else{fabReact("happy");fabBubble("第 "+db.pomo.count+" 个番茄完成！休息一下吧～");}
@@ -2419,6 +2786,81 @@ function renderPomoStats(){
   ensurePomoDay();
   $("#pToday").textContent=db.pomo.count;
   $("#pTotal").textContent=db.pomo.total;
+  /* 本周专注：近 7 天账本里的专注分钟合计 */
+  let sum=0;const today=new Date();
+  for(let i=0;i<7;i++){
+    const d=new Date(today.getFullYear(),today.getMonth(),today.getDate()-i);
+    const a=db.act[fmtD(d)];if(a)sum+=a.m||0;
+  }
+  const w=$("#pWeek");if(w)w.innerHTML="· 本周专注 <b>"+sum+"</b> 分钟";
+}
+
+/* ===== 专注白噪音（WebAudio 合成，零素材零下载）=====
+   白噪=原始噪声缓冲；雨声=白噪+低通(雨幕感)+随机雨滴；海浪=棕噪+慢速增益起伏。 */
+let noiseCtx=null,noiseNodes=null;
+const NOISE_CUR=()=>db.noise||"off";
+function setNoise(kind){
+  db.noise=kind;save();
+  playNoise(kind);
+}
+function playNoise(kind){
+  ["Off","Rain","Wave","White"].forEach(k=>{
+    const el=$("#ns"+k);if(el)el.classList.toggle("on",k.toLowerCase()===kind);
+  });
+  stopNoise();
+  if(kind==="off")return;
+  try{
+    const Ctx=window.AudioContext||window.webkitAudioContext;
+    if(!Ctx)return;
+    if(!noiseCtx)noiseCtx=new Ctx();
+    if(noiseCtx.state==="suspended")noiseCtx.resume();
+    const c=noiseCtx;
+    /* 2 秒白噪循环缓冲 */
+    const buf=c.createBuffer(1,c.sampleRate*2,c.sampleRate);
+    const d=buf.getChannelData(0);
+    let last=0;
+    for(let i=0;i<d.length;i++){
+      const w=Math.random()*2-1;
+      last=(last+0.02*w)/1.02;                 // 顺带积分出棕噪成分
+      d[i]=w;
+    }
+    const src=c.createBufferSource();src.buffer=buf;src.loop=true;
+    const g=c.createGain(),f=c.createBiquadFilter();
+    f.type="lowpass";
+    if(kind==="white"){f.frequency.value=9000;g.gain.value=.09;}
+    else if(kind==="rain"){f.frequency.value=1600;g.gain.value=.14;}
+    else{f.frequency.value=480;g.gain.value=.16;}          // 海浪：棕噪底
+    src.connect(f);f.connect(g);g.connect(c.destination);
+    if(kind==="wave"){
+      const lfo=c.createOscillator(),lg=c.createGain();
+      lfo.frequency.value=.09;lg.gain.value=.09;
+      lfo.connect(lg);lg.connect(g.gain);lfo.start();
+      noiseNodes={src,lfo,g};
+    }else if(kind==="rain"){
+      /* 雨滴：每 120~400ms 一次短促高通 tick，叠在雨幕上 */
+      const iv=setInterval(()=>{
+        if(!noiseNodes||NOISE_CUR()!=="rain")return;
+        const o=c.createOscillator(),og=c.createGain(),hf=c.createBiquadFilter();
+        hf.type="highpass";hf.frequency.value=2500;
+        o.frequency.value=1400+Math.random()*2600;
+        og.gain.setValueAtTime(.05+Math.random()*.05,c.currentTime);
+        og.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.06);
+        o.connect(hf);hf.connect(og);og.connect(c.destination);
+        o.start();o.stop(c.currentTime+.07);
+      },170);
+      noiseNodes={src,g,iv};
+    }else noiseNodes={src,g};
+    src.start();
+  }catch(e){}
+}
+function stopNoise(){
+  if(!noiseNodes)return;
+  try{
+    noiseNodes.src.stop();
+    if(noiseNodes.lfo)noiseNodes.lfo.stop();
+    if(noiseNodes.iv)clearInterval(noiseNodes.iv);
+  }catch(e){}
+  noiseNodes=null;
 }
 function beep(){
   try{
@@ -3464,8 +3906,10 @@ function boot(){
   renderTodos();
   renderPomoStats();
   renderPomoTime();
+  playNoise(NOISE_CUR());   // 同步白噪音按钮状态（off 不出声）
   renderQProf();
   renderWrongBox();
+  renderMockMath();
   renderDash();
   const q=new URLSearchParams(location.hash?location.hash.slice(1):location.search.slice(1));
   if(q.get("theme"))setTheme(q.get("theme"));
