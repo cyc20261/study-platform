@@ -32,6 +32,7 @@
     isPinned: function () { return false; },
     togglePin: function () {},
     openWardrobe: function () {},
+    dance: function () {},
     wearTop: function () { return null; },
     baseDate: null
   };
@@ -602,6 +603,7 @@
       { ico: '💬', label: '和她说说话', sub: '双击也可以', fn: function () { closeMenu(); H.openChat(); } },
       { sep: true },
       { ico: '🎀', label: '给她打扮', sub: '舞狮头套 / 猫耳…', fn: function () { closeMenu(); try { H.openWardrobe(); } catch (e) {} } },
+      { ico: '💃', label: '跳个舞', sub: '来一段两步舞', fn: function () { closeMenu(); try { H.dance(); } catch (e) {} } },
       pinItem(),
       { ico: '👋', label: '打个招呼', sub: '', fn: function () { closeMenu(); greet(); } }
     ];

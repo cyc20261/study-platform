@@ -2298,11 +2298,16 @@ let petPinned=false,petPosT=0;
 
 /* ---- 小云的场地就是整屏：她沿着屏幕底部自己走来走去 ---- */
 function petScale(){return window.innerWidth<760?0.42:0.54;}
-function petBounds(){return {W:window.innerWidth,H:window.innerHeight,floorY:window.innerHeight-4,S:petScale()};}
 /* 舞台铺满可视区（桌面端从侧栏右边开始），坐标 = 舞台坐标 + 舞台偏移 */
 function petStageRect(){
   const st=$("#petStage");
   return st?st.getBoundingClientRect():{left:0,top:0,width:window.innerWidth,height:window.innerHeight};
+}
+/* 边界必须用「舞台宽度」而不是视口宽度：桌面端舞台左边让出了侧栏，
+   用 innerWidth 会把右边界算到屏幕外，她就走出去了 */
+function petBounds(){
+  const r=petStageRect();
+  return {W:r.width||window.innerWidth,H:window.innerHeight,floorY:window.innerHeight-4,S:petScale()};
 }
 function petBox(){
   if(!petCtl)return null;
@@ -2535,6 +2540,17 @@ document.addEventListener("visibilitychange",()=>{
 });
 function petExpr(id,dur){try{petCtl&&petCtl.setExpr(id,dur||2);}catch(e){}}
 function petWord(id){try{petCtl&&petCtl.holdRoam(4),petCtl.doWord(id);}catch(e){}}
+/* 跳个舞：内核自带的两步舞，连跳三段约 10 秒，自带音符和脚步声 */
+let petDanceIv=null;
+function petDance(){
+  if(!petCtl)return;
+  clearInterval(petDanceIv);
+  let n=0;
+  const go=()=>{try{petWord("dance");petExpr("happy",3.6);}catch(e){}};
+  go();
+  petDanceIv=setInterval(()=>{n++;if(n>=3){clearInterval(petDanceIv);petDanceIv=null;return;}go();},3400);
+}
+window.petDance=petDance;
 function petFabClick(e){ if(fabDragged){fabDragged=false;return;} if(window.PetBrain)PetBrain.tap(e); else toggleAi(); }
 function fabTalking(on){
   const fab=$("#aiFab");if(fab)fab.classList.toggle("talking",on);
@@ -2960,6 +2976,7 @@ function boot(){
       isPinned:()=>petPinned,
       togglePin:()=>petTogglePin(),
       openWardrobe:()=>{try{openWardrobe();}catch(e){console.error(e);}},
+      dance:()=>{try{petDance();}catch(e){}},
       wearTop:()=>{try{return petWearEl?petWearEl.getBoundingClientRect().top:null;}catch(e){return null;}}
     });
   }
