@@ -12,6 +12,10 @@
  * 图集缺失或解码失败时自动回退到逐张加载原图 —— 慢但不至于没图。
  */
 
+/* 图集版本号：atlas.json / atlas.webp 重建过（比如修眼睛那次）必须升它，
+   否则浏览器会一直用缓存里的旧图集——旧 json + 旧 webp 尺寸一致，尺寸校验兜不住 */
+const ATLAS_V = '?v=20261106c';
+
 function decodeToImage(url) {
   return new Promise(function (ok, bad) {
     const im = new Image();
@@ -32,11 +36,11 @@ export async function makeAtlasLoader(dir) {
   let atlas = null;
   try {
     const [m, im] = await Promise.all([
-      fetch(dir + 'atlas.json', { cache: 'force-cache' }).then(function (r) {
+      fetch(dir + 'atlas.json' + ATLAS_V, { cache: 'default' }).then(function (r) {
         if (!r.ok) throw new Error('atlas.json ' + r.status);
         return r.json();
       }),
-      decodeToImage(dir + 'atlas.webp'),
+      decodeToImage(dir + 'atlas.webp' + ATLAS_V),
     ]);
     if (m && m.frames && im && im.width && im.height === m.h && im.width === m.w) {
       meta = m;

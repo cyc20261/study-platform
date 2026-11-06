@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>我的学习平台 · 四六级 + C语言</title>
 <link rel="icon" type="image/jpeg" href="assets/xiaoyun/03.jpg">
-<link rel="stylesheet" href="assets/whale/pet-brain.css?v=20261106b">
+<link rel="stylesheet" href="assets/whale/pet-brain.css?v=20261106c">
 <!-- 3D 桌宠的模块链是串行 import（figure.js 又要 rig.js），公网上这一串能占好几秒。
      提前并行预取，进入页面时就和首屏资源同时下载。 -->
-<link rel="modulepreload" href="assets/whale/kit/body.js?v=20261106b">
+<link rel="modulepreload" href="assets/whale/kit/body.js?v=20261106c">
 <link rel="modulepreload" href="assets/whale/kit/rig.js">
-<link rel="modulepreload" href="assets/whale/whale/figure.js?v=20261106b">
+<link rel="modulepreload" href="assets/whale/whale/figure.js?v=20261106c">
 <link rel="modulepreload" href="assets/whale/atlas-loader.js">
 <link rel="preload" as="image" href="assets/whale/whale/atlas.webp">
 <link rel="preload" as="image" href="assets/whale/whale/poster.webp">
@@ -846,7 +846,7 @@ body[data-theme="fx-aurora"]{
           <div id="todayLine" class="muted" style="margin-bottom:6px"></div>
           <div class="big">🔥 连续打卡 <span id="stStreak">0</span> 天</div>
         </div>
-        <button class="btn" onclick="checkIn()" style="margin-left:auto">📌 今日打卡</button>
+        <button class="btn" id="btnCheckin" onclick="checkIn()" style="margin-left:auto">📌 今日打卡</button>
       </div>
     </div>
     <div class="grid" style="margin-bottom:16px">
@@ -1073,7 +1073,7 @@ body[data-theme="fx-aurora"]{
     <g id="petFx"></g>
   </svg>
   <div id="petPin" class="pet-pin-badge hidden" title="点击解除固定">📌 已固定</div>
-  <img id="fabFallback" class="fab-fallback hidden" src="assets/whale/whale/poster.webp" alt="小云" onerror="this.style.visibility='hidden'">
+  <img id="fabFallback" class="fab-fallback hidden" src="assets/whale/whale/poster.webp?v=20261106c" alt="小云" onerror="this.style.visibility='hidden'">
 </div>
 
 <div id="aiPanel" class="ai-panel hidden">
@@ -1096,14 +1096,14 @@ body[data-theme="fx-aurora"]{
 <div id="toast"></div>
 
 <script src="assets/whale-moe-core.js"></script>
-<script src="assets/whale/pet-brain.js?v=20261106b"></script>
+<script src="assets/whale/pet-brain.js?v=20261106c"></script>
 <script src="assets/data/words.js"></script>
 <script src="assets/data/c-notes.js"></script>
 <script src="assets/data/c-quiz.js"></script>
 <script src="assets/data/math-notes.js"></script>
 <script src="assets/data/math-quiz.js"></script>
 <script src="assets/data/cet-exam.js"></script>
-<script src="assets/data/pet-acc.js?v=20261106b"></script>
+<script src="assets/data/pet-acc.js?v=20261106c"></script>
 <script>
 const $=s=>document.querySelector(s);
 const $$=s=>document.querySelectorAll(s);
@@ -1209,7 +1209,15 @@ function normalize(d){
   d.qprof=d.qprof||{};
   d.wrong=d.wrong||{};
   d.pomo=d.pomo||{date:"",count:0,total:0};
-  d.streak=d.streak||{last:"",count:0};
+  d.streak=d.streak||{last:"",count:0,days:[]};
+  if(!Array.isArray(d.streak.days))d.streak.days=[];
+  /* 旧档兼容：只有 last+count（日期可能无补零、无按天列表）时，
+     以 last 为终点按旧 count 回填连续日期，保住老用户的连续天数 */
+  {const lm=String(d.streak.last||"").match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+   if(lm){const lastD=lm[1]+"-"+lm[2].padStart(2,"0")+"-"+lm[3].padStart(2,"0");
+     const n=Math.max(1,Math.min(120,+d.streak.count||1));
+     for(let i=0;i<n;i++){const nd=shiftDay(lastD,-i);
+       if(!d.streak.days.includes(nd))d.streak.days.push(nd);}}}
   d.theme=typeof d.theme==="string"?d.theme:"";
   d.daily=d.daily||{date:"",words:0,clap:false};
   d.pet=d.pet||null;
@@ -1324,8 +1332,15 @@ function flushCloud(){
 }
 window.addEventListener("beforeunload",flushCloud);
 document.addEventListener("visibilitychange",()=>{if(document.hidden)flushCloud();});
-function today(){const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
-function yesterday(){const d=new Date(Date.now()-86400000);return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate();}
+function fmtD(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function today(){return fmtD(new Date());}
+/* 日期串 ±n 天：解析后用日历回退，不靠固定 24h 毫秒数（跨月/极端时间都稳） */
+function shiftDay(s,n){
+  const m=String(s||"").match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  const d=m?new Date(+m[1],+m[2]-1,+m[3]):new Date();
+  d.setDate(d.getDate()+n);return fmtD(d);
+}
+function yesterday(){return shiftDay(today(),-1);}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 let toastTimer=null;
 function toast(msg){
@@ -1385,8 +1400,13 @@ function knownCount(){
 function renderDash(){
   $("#todayLine").textContent=dateCN();
   $("#topDate").textContent=shortDate();
-  $("#topStreakN").textContent=db.streak.count||0;
-  $("#stStreak").textContent=db.streak.count||0;
+  $("#topStreakN").textContent=streakCount();
+  $("#stStreak").textContent=streakCount();
+  /* 打卡按钮按天反映状态：今天打过就置灰，换天自动恢复可点 */
+  {const bc=$("#btnCheckin");
+   if(bc){const done=streakDoneToday();
+     bc.textContent=done?"✅ 今日已打卡":"📌 今日打卡";
+     bc.disabled=done;}}
   const c=knownCount();
   $("#stWordsKnown").textContent=c.k;
   $("#stWordsHard").textContent=c.h;
@@ -1460,11 +1480,28 @@ function markHard(lv,w){
   renderSearch();renderLvProgress();renderReview();renderDash();
   toast("已存入"+LV[lv]+"生词本："+w);
 }
+/* 连续天数从「按天打卡列表」推导，而不是信存的单值：count/last 一旦和现实不同步
+   （存档回滚、跨设备、旧格式日期），显示也能自愈。今天没打则从昨天起算。 */
+function streakDays(){return Array.isArray(db.streak&&db.streak.days)?db.streak.days:[];}
+function streakCount(){
+  const set=new Set(streakDays());
+  if(!set.size)return (db.streak&&db.streak.count)||0;
+  let d=set.has(today())?today():(set.has(yesterday())?yesterday():"");
+  if(!d)return 0;
+  let c=0;
+  while(set.has(d)){c++;d=shiftDay(d,-1);}
+  return c;
+}
+function streakDoneToday(){return streakDays().includes(today());}
 function checkIn(){
   const t=today();
-  if(db.streak.last===t){toast("今天已经打过卡啦，明天继续 💪");return;}
-  db.streak.count=(db.streak.last===yesterday())?(db.streak.count||0)+1:1;
+  if(streakDoneToday()){toast("今天已经打过卡啦，明天继续 💪");return;}
+  if(!Array.isArray(db.streak.days))db.streak.days=[];
+  db.streak.days.push(t);
+  db.streak.days.sort();
+  if(db.streak.days.length>120)db.streak.days=db.streak.days.slice(-120);
   db.streak.last=t;
+  db.streak.count=streakCount();
   save();renderDash();
   toast("打卡成功！已连续 "+db.streak.count+" 天 🔥");
   fabReact("happy");
@@ -2898,13 +2935,13 @@ function petPt(e){
 }
 async function initPet(){
   const fb=$("#fabFallback");
-  /* 3D 还没好时先显示同一形象的静态立绘，几秒后再淡出换成会动的 */
-  if(fb){fb.classList.remove("hidden");fb.style.opacity="1";}
+  /* 正常路径不再显示静态立绘（避免闪出缓存的旧模型），3D 就绪即淡入；
+     fb 只在下方 catch（3D 起不来）时兜底显示 */
   try{
     if(!window.WebGL2RenderingContext&&!window.WebGLRenderingContext)throw new Error("no webgl");
     const [{createPet},{createWhaleFigure},{makeAtlasLoader}]=await Promise.all([
-      import("./assets/whale/kit/body.js?v=20261106b"),
-      import("./assets/whale/whale/figure.js?v=20261106b"),
+      import("./assets/whale/kit/body.js?v=20261106c"),
+      import("./assets/whale/whale/figure.js?v=20261106c"),
       import("./assets/whale/atlas-loader.js"),
     ]);
     /* 贴图合并成一张图集：原来 53 个独立 PNG 在公网要排队 30 秒以上 */
@@ -3072,7 +3109,7 @@ function timeGreet(){
   return h<5?"夜深了还不睡呀，早点休息哦":h<11?"早上好，一天之计在于晨":h<14?"中午好，午休前来点学习":h<18?"下午好，来杯水继续加油":"晚上好，睡前黄金记忆时间";
 }
 function streakLine(){
-  const s=db.streak.count||0;
+  const s=streakCount();
   if(s===0)return "今天来打个卡，开启第一天吧！";
   if(s<3)return "已经连续 "+s+" 天啦，继续保持！";
   if(s<7)return "连续 "+s+" 天了，越来越稳了！";
@@ -3406,9 +3443,8 @@ function boot(){
   if(db.themeInit!==1){db.themeInit=1;db.theme="fx-ocean";}
   setTheme(db.theme||"fx-ocean");
   applyAvatars();
-  /* 先把同一形象的静态立绘挂出来，首屏立刻有东西看 */
-  {const fb0=$("#fabFallback");if(fb0){fb0.classList.remove("hidden");fb0.style.opacity="1";}}
-  /* 贴图已合并成单张图集（0.15MB），不用再等空闲，稍让出一帧就开始拉 */
+  /* 首屏不再挂静态立绘：缓存的旧立绘/旧图集会闪出「眼睛没修好」的旧模型，
+     现在直接等 3D 就绪淡入，加载期间该位置空着；3D 起不来才兜底显示立绘 */
   setTimeout(initPet,80);
   $("#todayLine").textContent=dateCN();
   $("#topDate").textContent=shortDate();
