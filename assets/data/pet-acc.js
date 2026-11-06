@@ -1,63 +1,55 @@
-/* 桌宠配饰库
+/* 桌宠配饰库（按实测接触点校准）
  *
- * 坐标空间 = 桌宠的 logo 空间（和 model.json 的 parts/box 同一个空间：
- * x=128 是身体中线，y=256 是脚底）。图片以 <image> 塞进 #petG，
- * 所以位置 / 旋转 / 挤压 / 左右翻转全都由骨骼变换带着走，不需要每帧对位。
- *
- * w  : 图片在 logo 空间里的宽
- * ar : 高 / 宽（按原图像素算，保证不拉伸）
- * ay : 图片**下沿**的 y——决定她"戴"在头上的高度
- * ax : 相对头部中线（x=138）的横向偏移，一般 0
- *
- * 小云的头在 logo 空间里大约：发顶 y≈46，下巴 y≈152，左右 x≈80..195，头中线 x≈138。
+ * 坐标 = 桌宠 logo 空间（model.json 的 parts 同一空间）：x=128 身体中线、y=256 脚底。
+ * 小云实测头部几何（量自渲染剪影）：
+ *   头发/头饰的视觉中心 x≈126（不是 138，138 是脸的中线，3/4 视角头发偏左）
+ *   发顶 y≈52，额头发际 y≈105，眼睛 y≈108..133，下巴 y≈155，脚底 256
+ *   耳朵=头两侧的鲸鱼鳍，鳍心 (60,124) 和 (193,125)
+ * 每件配饰都按自己的"接触点"反推：
+ *   w        图片在 logo 空间的宽
+ *   ar       高/宽（耳机的 ar 是压扁过的，让拱顶贴住头顶）
+ *   ay       图片下沿的 y
+ *   ax       相对 x=138 的偏移（=接触中心 - 138）
+ *   baseFrac 图片内部"接触线"的位置（0=顶 1=底），用于注释
  */
 window.PET_ACC = [
-  {
-    id: 'lion', name: '醒狮头套', tag: '热门',
-    desc: '红绒金纹的南狮头，白毛边加流苏，罩在头上就是一只小狮子',
-    file: 'assets/whale/acc/lion.png',
-    w: 110, ar: 509 / 512, ay: 124, ax: 0
-  },
-  {
-    id: 'cat', name: '黑猫发箍',
-    desc: '一对黑猫耳，内侧粉色，耳尖的绒毛会跟着走动轻轻摇',
-    file: 'assets/whale/acc/cat.png',
-    w: 100, ar: 445 / 512, ay: 78, ax: 0
-  },
-  {
-    id: 'bunny', name: '白兔长耳',
-    desc: '竖起来的白兔耳，内侧淡粉，最显高的一顶',
-    file: 'assets/whale/acc/bunny.png',
-    w: 92, ar: 512 / 412, ay: 74, ax: 0
-  },
-  {
-    id: 'sakura', name: '樱花花环',
-    desc: '粉樱配嫩叶编的环，戴上去整个人都软下来了',
-    file: 'assets/whale/acc/sakura.png',
-    w: 100, ar: 488 / 512, ay: 120, ax: 0
-  },
-  {
-    id: 'crown', name: '蓝宝小皇冠',
-    desc: '金冠镶蓝宝石和珍珠，小云自称"海之公主"时戴的就是它',
-    file: 'assets/whale/acc/crown.png',
-    w: 56, ar: 334 / 512, ay: 62, ax: 0
-  },
-  {
-    id: 'grad', name: '学士帽',
-    desc: '深蓝方帽配金流苏，四六级上岸那天可以戴着照相',
-    file: 'assets/whale/acc/grad.png',
-    w: 90, ar: 381 / 512, ay: 82, ax: 0
-  },
-  {
-    id: 'halo', name: '天使光环',
-    desc: '一圈金色细光，浮在头顶上方——她说这叫"云的天使形态"',
-    file: 'assets/whale/acc/halo.png',
-    w: 76, ar: 503 / 512, ay: 62, ax: 0
-  },
-  {
-    id: 'headset', name: '头戴耳机',
-    desc: '淡蓝发光耳机带麦克风，背书时她会假装在给自己放白噪音',
-    file: 'assets/whale/acc/headset.png',
-    w: 104, ar: 512 / 468, ay: 180, ax: 0
-  }
+  { id:'lion', name:'醒狮头套', tag:'热门',
+    desc:'红绒金纹的南狮头，罩在头上，下巴的绒毛正好卡在眉弓上',
+    file:'assets/whale/acc/lion.png',
+    w:132, ar:382/384, ay:106, ax:-12 },          /* 罩住全头：宽132盖过两侧，下巴绒毛(97%)落在 y=104，压住发际 */
+
+  { id:'cat', name:'黑猫耳朵', tag:'推荐',
+    desc:'一对黑猫耳，内侧粉色，发箍剪掉之后直接插在头发里，底边是羽化的',
+    file:'assets/whale/acc/cat.png',
+    w:130, ar:155/384, ay:64, ax:-12 },           /* 耳朵底边(已羽化)埋进发顶 y=64 */
+
+  { id:'bunny', name:'白兔长耳',
+    desc:'竖起来的白兔耳，发箍弧贴着发顶走，两端收进头发里',
+    file:'assets/whale/acc/bunny.png',
+    w:118, ar:1.017, ay:78, ax:-12 },             /* 发箍弧顶(80%)贴在发顶 y=54 */
+
+  { id:'sakura', name:'樱花花环',
+    desc:'粉樱编的环，压扁成贴着头冠的椭圆，头发从环中间透出来',
+    file:'assets/whale/acc/sakura.png',
+    w:150, ar:0.36, ay:88, ax:-12 },              /* 环心(48%)落在头冠中心 y=60 */
+
+  { id:'crown', name:'蓝宝小皇冠',
+    desc:'金冠镶蓝宝石和珍珠，底边埋进头发，只露出齿冠',
+    file:'assets/whale/acc/crown.png',
+    w:60, ar:250/384, ay:77, ax:-12 },            /* 冠底(91%)埋进头发 y=73，压住女仆头饰 */
+
+  { id:'grad', name:'学士帽',
+    desc:'深蓝方帽配金流苏，帽檐正好卡在额发上，流苏垂在脸侧',
+    file:'assets/whale/acc/grad.png',
+    w:90, ar:285/384, ay:102, ax:-12 },           /* 帽檐(80%)落在 y=88，额发上 */
+
+  { id:'halo', name:'天使光环',
+    desc:'一圈金色细光，悬在头顶正上方，呆毛从环里穿过去',
+    file:'assets/whale/acc/halo.png',
+    w:80, ar:377/384, ay:64, ax:-12 },            /* 环心(50%)悬在 y=25 */
+
+  { id:'headset', name:'头戴耳机', tag:'贴耳',
+    desc:'淡蓝发光耳机，耳罩对准两侧鲸鱼鳍（她的耳朵），拱顶贴住头顶',
+    file:'assets/whale/acc/headset.png',
+    w:229, ar:0.527, ay:167, ax:-12 }             /* 耳罩(21%/79%,65%)对准鳍心，拱顶 y=46 */
 ];
