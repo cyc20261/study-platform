@@ -59,7 +59,9 @@
     asleep: false,
     dreamTimer: 0,
     lastDreamAt: 0,
-    voice: false,          /* 语音朗读开关，默认关 */
+    voice: true,           /* 出声总开关 */
+    voiceMode: 'pack',     /* pack=曼波原声语音包 · tts=系统朗读 · off=静音 */
+    voiceVol: 0.85,
     voiceLang: 'zh-CN'
   };
 
@@ -151,11 +153,57 @@
     S.sayTimer = setTimeout(function () {
       if (sayEl) sayEl.classList.remove('on');
     }, opts.ms || 3200);
-    if (S.voice && !opts.noVoice) speakOut(line);
+    if (!opts.noVoice) {
+      if (S.voiceMode === 'pack') vpPlay(opts.vo || 'talk');
+      else if (S.voiceMode === 'tts') speakOut(line);
+    }
     return line;
   }
 
-  /* ---------------- 语音朗读（Web Speech，纯浏览器、零依赖） ---------------- */
+  /* ---------------- 语音：曼波语音包（待兼诗歌剧原声 mp3）+ 系统朗读兜底 ----------------
+     为什么不走 TTS：系统语音念中文一听就是机器。这里直接用《赛马娘》待兼诗歌剧
+     （「曼波」本尊）的原声短句，按「意图」挑一条播——答对就播欢呼、答错就播不甘心，
+     气泡里照旧显示中文台词，声音只负责情绪。素材全部本地 mp3，断网也有声。 */
+  var VP = window.VOICE_PACK || null;
+  var vpLastAt = 0, vpGesture = false, vpSpoke = false;
+  function vpBase() { return (VP && VP.base) || 'assets/voice/manbo/'; }
+  function vpName() { return (VP && VP.name) || '曼波'; }
+  function vpIntentKeys() { return (VP && VP.intents) ? Object.keys(VP.intents) : []; }
+
+  /* 浏览器要求先有用户手势才让出声：没手势时静默跳过，免得控制台刷一堆 NotAllowedError */
+  function vpMarkGesture() {
+    if (vpGesture) return;
+    vpGesture = true;
+    if (S.voiceMode !== 'pack' || vpSpoke) return;
+    vpSpoke = true;
+    /* 迟 700ms 再打招呼：这一次点击本身可能已经触发台词，别把反馈音抢掉 */
+    var t0 = vpLastAt;
+    setTimeout(function () { if (vpLastAt === t0) vpPlay('hello'); }, 700);
+  }
+  try {
+    document.addEventListener('pointerdown', vpMarkGesture, true);
+    document.addEventListener('keydown', vpMarkGesture, true);
+    document.addEventListener('touchstart', vpMarkGesture, true);
+  } catch (e) {}
+
+  function vpPlay(intent) {
+    if (S.voiceMode !== 'pack' || !S.voice || !VP || !vpGesture) return false;
+    var list = (VP.intents && (VP.intents[intent] || VP.intents.talk)) || null;
+    if (!list || !list.length) return false;
+    var now = nowMs();
+    if (now - vpLastAt < 320) return false;      /* 连点别叠成一团 */
+    vpLastAt = now;
+    var name = list[(Math.random() * list.length) | 0];
+    try {
+      var a = new Audio(vpBase() + name + '.mp3');
+      a.volume = clamp(S.voiceVol, 0, 1);
+      var p = a.play();
+      if (p && p.catch) p.catch(function () {});
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* 系统朗读（TTS 模式才用，默认不走） */
   function speakOut(text) {
     try {
       if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
@@ -179,13 +227,18 @@
       window.speechSynthesis.speak(u);
     } catch (e) {}
   }
-  function voiceSet(on) {
-    S.voice = !!on;
-    try {
-      if (!S.voice && window.speechSynthesis) window.speechSynthesis.cancel();
-    } catch (e) {}
-    return S.voice;
+
+  /* 语音模式：pack / tts / off，写进存档 */
+  function voiceSetMode(m) {
+    if (m !== 'pack' && m !== 'tts' && m !== 'off') m = 'pack';
+    S.voiceMode = m;
+    S.voice = (m !== 'off');
+    try { if (m !== 'tts' && window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) {}
+    try { P().voiceMode = m; } catch (e) {}
+    commit();
+    return m;
   }
+  function voiceSet(on) { return voiceSetMode(on ? 'pack' : 'off') !== 'off'; }
 
   /* ---------------- 台词挑取：避免短时间内重复 ---------------- */
   function pick(bank, event) {
@@ -201,7 +254,7 @@
     var line = pick(bank, event);
     if (exprName) H.expr(exprName, 2.4);
     if (emoji) H.spark(emoji);
-    return say(line, { ms: 3400 });
+    return say(line, { ms: 3400, vo: 'happy' });
   }
 
   /* ---------------- 成长 ---------------- */
@@ -344,7 +397,7 @@
       setTimeout(function () {
         H.expr('excited', 2.6);
         H.spark('🎆');
-        say(pick('daily', 'levelup'), { ms: 3800 });
+        say(pick('daily', 'levelup'), { ms: 3800, vo: 'levelup' });
       }, more.length ? 900 : 260);
     }
     return more;
@@ -415,7 +468,7 @@
       H.spark('💗');
       H.spark('🎉');
       settle(rTriple);
-      say(pick('interact', 'triple'), { ms: 4000 });
+      say(pick('interact', 'triple'), { ms: 4000, vo: 'surprise' });
       return 'triple';
     }
     // 冷却期里继续连点就当普通摸头，别攒着等下一下突然爆炸
@@ -427,7 +480,7 @@
     H.expr(ZONE_EXPR[zone] || 'happy', 2.0);
     if (zone === 'head') H.spark('✨');
     settle(res);
-    say(pick('interact', ZONE_TEXT[zone] || 'pat'), { ms: 3000 });
+    say(pick('interact', ZONE_TEXT[zone] || 'pat'), { ms: 3000, vo: 'pat' });
     return zone;
   }
 
@@ -442,7 +495,7 @@
     H.spark('🍰');
     H.spark('✨');
     settle(rFeed);
-    say(pick('interact', 'feed'), { ms: 3400 });
+    say(pick('interact', 'feed'), { ms: 3400, vo: 'feed' });
     closeMenu();
     return true;
   }
@@ -527,7 +580,7 @@
     }
 
     settle(res);
-    if (line) say(line, { ms: hold });
+    if (line) say(line, { ms: hold, vo: (kind === 'wrong' ? 'fail' : kind === 'pomo' ? 'pomo' : kind === 'quiz' ? 'cheer' : 'happy') });
   }
 
   /* ---------------- 聊天关键词 ---------------- */
@@ -548,7 +601,7 @@
     H.spark('💬');
     var line = pick('keyword', kw);
     settle(res);
-    return say(line, { ms: 3600 });
+    return say(line, { ms: 3600, vo: 'talk' });
   }
 
   /* ---------------- 分时问候 / 回归 / 签到 ---------------- */
@@ -589,7 +642,7 @@
     settle(res);
     H.expr('happy', 2.2);
     H.spark('👋');
-    say(line, { ms: 4200 });
+    say(line, { ms: 4200, vo: 'greet' });
     return line;
   }
 
@@ -614,12 +667,12 @@
     var speak = false;
     if (idleMin >= 25 && t - S.idleNudgedAt > 12 * 60000) {
       S.idleNudgedAt = t;
-      say(pick('daily', 'nudge'), { ms: 3800 });
+      say(pick('daily', 'nudge'), { ms: 3800, vo: 'nudge' });
       H.expr('smug', 2.2);
       speak = true;
     } else if (p.growth.satiety < 22 && t - S.idleNudgedAt > 20 * 60000) {
       S.idleNudgedAt = t;
-      say('肚子有点空了……投喂一块小点心吧🍰', { ms: 3800 });
+      say('肚子有点空了……投喂一块小点心吧🍰', { ms: 3800, vo: 'hungry' });
       H.expr('pout', 2.2);
       speak = true;
     }
@@ -662,7 +715,7 @@
     closeMenu();
     closePanel();
     if (on) {
-      say(rand(SLEEP_LINES), { ms: 3000, noVoice: true });
+      say(rand(SLEEP_LINES), { ms: 3000, vo: 'sleep' });
       S.asleep = true;
       S.lastDreamAt = nowMs();
       try { H.act('sleep'); } catch (e) {}
@@ -672,7 +725,7 @@
       stopDream();
       S.lastInteract = nowMs();
       try { H.wake(); } catch (e) { try { H.act('stretch'); } catch (e2) {} }
-      say(rand(WAKE_LINES), { ms: 3000 });
+      say(rand(WAKE_LINES), { ms: 3000, vo: 'wake' });
     }
     commit();
     /* 通知宿主持久化睡/醒状态（刷新后还睡着，和 dsh-pet 的首拉补状态一致） */
@@ -685,7 +738,7 @@
       if (!S.asleep) return;
       // 不是每一轮都说，太规律反而吵
       if (Math.random() < 0.45) {
-        say(rand(DREAMS), { ms: 4200, dream: true, noVoice: true });
+        say(rand(DREAMS), { ms: 4200, dream: true, vo: 'dream' });
       }
     }, 60000);
   }
@@ -742,9 +795,9 @@
         try {
           if (a.dance) H.dance(); else H.act(a.id);
         } catch (e) {}
-        if (a.id === 'sit') say('坐一会儿，你看书我就安静待着～', { ms: 2600 });
-        else if (a.id === 'swim') say('水里凉快，你要不要也歇会儿？', { ms: 2600 });
-        else if (a.id === 'fly') say('飞起来啦——看得好远！', { ms: 2400 });
+        if (a.id === 'sit') say('坐一会儿，你看书我就安静待着～', { ms: 2600, vo: 'talk' });
+        else if (a.id === 'swim') say('水里凉快，你要不要也歇会儿？', { ms: 2600, vo: 'cheer' });
+        else if (a.id === 'fly') say('飞起来啦——看得好远！', { ms: 2400, vo: 'surprise' });
       });
       grid.appendChild(b);
     });
@@ -767,12 +820,14 @@
       : { ico: '😴', label: '让她睡下', sub: 'S 键 · 睡着就不打扰了',
           fn: function () { sleep(true); } };
   }
+  /* 菜单里只留「原声 ↔ 静音」两态；系统朗读（tts）留给 API：PetBrain.voiceMode('tts') */
   function voiceItem() {
-    return S.voice
-      ? { ico: '🔇', label: '关掉朗读', sub: '让她安静说话',
-          fn: function () { closeMenu(); voiceSet(false); commit(); say('好，我安静一点。', { ms: 2200, noVoice: true }); } }
-      : { ico: '🔊', label: '让她念出来', sub: '用系统语音读气泡',
-          fn: function () { closeMenu(); voiceSet(true); commit(); say('那我说的话就念给你听啦～', { ms: 2600 }); } };
+    if (S.voiceMode === 'off') {
+      return { ico: '🔇', label: '语音：静音', sub: '点一下用' + vpName() + '原声',
+        fn: function () { closeMenu(); voiceSetMode('pack'); say('我回来啦～', { ms: 2200, vo: 'hello' }); } };
+    }
+    return { ico: '🎀', label: '语音：' + vpName() + '原声', sub: '点一下静音',
+      fn: function () { closeMenu(); voiceSetMode('off'); say('好，我闭嘴看你了。', { ms: 2200, noVoice: true }); } };
   }
   /* 会自己走动的桌宠得能「拴住」，不然看资料时她一直在动 */
   function pinItem() {    var pinned = false;
@@ -1115,6 +1170,15 @@
     Object.assign(H, cfg || {});
     S.ready = true;
 
+    /* 语音模式跟着存档走（默认曼波原声） */
+    try {
+      var pv = H.getDB && H.getDB().pet;
+      if (pv && (pv.voiceMode === 'pack' || pv.voiceMode === 'tts' || pv.voiceMode === 'off')) {
+        S.voiceMode = pv.voiceMode;
+        S.voice = pv.voiceMode !== 'off';
+      }
+    } catch (e) {}
+
     var fab = document.getElementById('aiFab');
     if (fab) {
       fab.addEventListener('contextmenu', function (e) {
@@ -1183,7 +1247,18 @@
     asleep: function () { return !!S.asleep; },
     /* 语音朗读开关 */
     voice: voiceSet,
-    voiceOn: function () { return !!S.voice; },
+    voiceOn: function () { return !!S.voice && S.voiceMode !== 'off'; },
+    /* 曼波语音包：voiceMode('pack'|'tts'|'off') / playVoice(意图) / 清单 */
+    voiceMode: function (m) { return m === undefined ? S.voiceMode : voiceSetMode(m); },
+    playVoice: vpPlay,
+    voicePack: function () { return { name: vpName(), intents: vpIntentKeys(), clips: (VP && VP.clips) || {} }; },
+    volume: function (v) {
+      if (v === undefined) return S.voiceVol;
+      S.voiceVol = clamp(v, 0, 1);
+      try { P().voiceVol = S.voiceVol; } catch (e) {}
+      commit();
+      return S.voiceVol;
+    },
     /* 说一句「工作状态」：睡着时不打扰，返回是否真的说了 */
     status: function (text, opts) {
       if (S.asleep) return '';
