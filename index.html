@@ -944,7 +944,7 @@ body[data-theme="fx-aurora"]{
       <div class="checkin">
         <div>
           <div id="todayLine" class="muted" style="margin-bottom:6px"></div>
-          <div class="big">🔥 连续打卡 <span id="stStreak">0</span> 天</div>
+          <div class="big">🔥 连续打卡 <span id="stStreak">…</span> 天</div>
         </div>
         <button class="btn" id="btnCheckin" onclick="checkIn()" style="margin-left:auto">📌 今日打卡</button>
       </div>
@@ -1338,6 +1338,10 @@ code:'htop\nlsof -iTCP -sTCP:LISTEN -P -n\nmtr baidu.com\ndmesg | tail -30\nlsof
 code:'sort a.txt b.txt | uniq          # 并集\nsort a.txt b.txt | uniq -d       # 交集\nsort a.txt b.txt b.txt | uniq -u # 差集 a-b\nawk \'{s+=$3} END {print s}\' score.txt    # 第三列求和\nwc -l notes.txt                  # 数行数'}
 ];
 
+/* `let db=loadDB()` 在这里就会真的跑一遍 loadDB，所以 loadDB 内部要用的东西
+   必须先就绪：用 var（会提升、且此时已可赋值）而不是 let/const，
+   否则 TDZ 异常会被 loadDB 里那句 catch(e){} 吞掉，备份档被整份丢弃。 */
+var dbRestored="";            /* 启动时若从备份捞回来，界面上要告诉用户 */
 let db=loadDB();
 function normalize(d){
   d=d||{};
@@ -1382,15 +1386,43 @@ function normalize(d){
     if(typeof w.ok!=="number")w.ok=0;}
   return d;
 }
+/* 注意：这里只能用字面量，不要改成 const LS_KEY/LS_BAK。
+   `let db=loadDB()` 在本行之前就调用 loadDB，那会儿 const 还在 TDZ 里，
+   整个 script 块会直接抛 "Cannot access before initialization" 挂掉
+   —— 页面"打不开"、存档读不出来的真凶就是它。 */
+function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
 function loadDB(){
-  try{
-    const raw=localStorage.getItem("learnPlatform_v1");
-    if(raw)return normalize(JSON.parse(raw));
-  }catch(e){}
+  /* 主档 → 备份档 → 空档。
+     主档写坏（半个 JSON）时不能当成"没有数据"：那样随后第一次 save()
+     就把空档固化下去，等于真删档，打卡天数就是这么丢的。 */
+  const keys=["learnPlatform_v1","learnPlatform_bak"];
+  for(const k of keys){
+    const raw=lsGet(k);
+    if(!raw)continue;
+    try{
+      const d=normalize(JSON.parse(raw));
+      if(k==="learnPlatform_bak"){dbRestored="bak";}
+      if(d.savedAt>0)return d;
+      if(k==="learnPlatform_v1")return d;   // 主档是真空档（新用户），不用再看备份
+    }catch(e){/* 坏了就试下一份 */}
+  }
   return normalize(null);
 }
+let bakAt=0;
 function save(){
-  db.savedAt=Date.now();
+  const now=Date.now();
+  db.savedAt=now;
+  try{
+    /* 每 5 分钟留一份上一版：坏档还能退回一步，不至于全没。
+       但只有「主档是一份能解析、有 savedAt 的完档」才轮换——
+       否则坏主档会被原样复制进备份档，把唯一的好档也毁掉（重复踩过的坑）。 */
+    if(now-bakAt>5*60*1000){
+      const prev=lsGet("learnPlatform_v1");
+      let good=false;
+      if(prev){try{const o=JSON.parse(prev);good=!!(o&&o.savedAt);}catch(e){}}
+      if(good){localStorage.setItem("learnPlatform_bak",prev);bakAt=now;}
+    }
+  }catch(e){}
   try{localStorage.setItem("learnPlatform_v1",JSON.stringify(db));}catch(e){}
   idbSave();
   cloudSave();
@@ -1667,6 +1699,50 @@ function streakCount(){
   return c;
 }
 function streakDoneToday(){return streakDays().includes(today());}
+/* 打卡天数自愈：活动账本 db.act 里记着每一天的打卡流水（ck），
+   只要账本里某天打过卡，按天列表里就该有那天。存档字段被写坏、跨设备合并、
+   旧版迁移时丢了 days，都能从账本把连续天数补回来，不用用户重头再来。 */
+function streakRepair(){
+  const st=db.streak;
+  if(!st||!Array.isArray(st.days))return 0;
+  const set=new Set(st.days);
+  let add=0;
+  const act=db.act||{};
+  for(const k in act){
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(k))continue;
+    if(act[k]&&act[k].ck&&!set.has(k)){set.add(k);add++;}
+  }
+  if(add){
+    st.days=Array.from(set).sort().slice(-120);
+    st.last=st.days[st.days.length-1]||st.last;
+    st.count=streakCount();
+    save();
+  }
+  return add;
+}
+/* 打卡天数只增不减：主档 / 备份档 / 云端 / IndexedDB 里出现过的打卡日全部取并集。
+   只按 savedAt 二选一时，较新但 days 被写空的那份会把连续记录顶掉——这是
+   「打卡又被重置」的第二条路径。打卡是既成事实，多源合并永远不该丢。 */
+function streakMerge(list){
+  const st=db.streak||(db.streak={last:"",count:0,days:[]});
+  const isDay=s=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s);
+  const set=new Set(Array.isArray(st.days)?st.days.filter(isDay):[]);
+  let extra=0;
+  const eat=snap=>{
+    if(!snap||typeof snap!=="object")return;
+    const s=snap.streak;
+    if(s&&Array.isArray(s.days))
+      for(const d of s.days)if(isDay(d)&&!set.has(d)){set.add(d);extra++;}
+    const a=snap.act||{};
+    for(const k in a)if(isDay(k)&&a[k]&&a[k].ck&&!set.has(k)){set.add(k);extra++;}
+  };
+  for(const s of list)eat(s);
+  const days=Array.from(set).sort().slice(-120);
+  st.days=days;
+  st.last=days[days.length-1]||st.last||"";
+  st.count=streakCount();
+  return extra;
+}
 
 /* ===== 学习足迹：按天活动账本 + XP 等级 + 热力图 + 周报 =====
    一本账喂三张图：热力图看坚持、周报看趋势、等级看总量。
@@ -4224,6 +4300,8 @@ document.addEventListener("visibilitychange",()=>{
 window.addEventListener("resize",()=>{if(fxTheme){fxResize();fxInit();}});
 
 function boot(){
+  /* 打卡天数自愈：账本里打过卡的日子补回按天列表（存档被写坏 / 旧档迁移时救命） */
+  try{streakRepair();}catch(e){}
   /* 浅海生态设为常态壁纸：老存档里如果还停在别的主题，这次升级后一次性切回来；
      之后用户在设置里换主题仍然作数，不会被反复改回去 */
   if(db.oceanDefault!==1){db.oceanDefault=1;db.theme="fx-ocean";db.themeInit=1;}
@@ -4234,6 +4312,7 @@ function boot(){
      现在直接等 3D 就绪淡入，加载期间该位置空着；3D 起不来才兜底显示立绘 */
   setTimeout(initPet,80);
   $("#todayLine").textContent=dateCN();
+  if(dbRestored==="bak")setTimeout(()=>toast("主存档损坏，已从备份恢复到上一版"),900);
   $("#topDate").textContent=shortDate();
   $("#nCet4").textContent=WORDS.cet4.length;
   $("#nCet6").textContent=WORDS.cet6.length;
@@ -4291,31 +4370,40 @@ function boot(){
 /* 启动：先取服务端记忆，与本地缓存比 savedAt，谁新用谁 */
 (async function init(){
   let remote=null;
-  /* 托管在纯静态环境时 /api/state 本来就不存在，别去探测，省一次往返也省一条 404。
-     workbuddy 托管目前是 python -m http.server（静态），同样没有这个接口。 */
-  const isStaticHost=location.protocol==="file:"||
-    /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)||
-    /(^|\.)(github\.io|gitlab\.io|netlify\.app|vercel\.app|pages\.dev|workbuddy\.host)$/.test(location.hostname);
-  if(!isStaticHost){
+  /* 只有 file:// 一定没有后端。其余（含 workbuddy 托管跑 server.py）都探一下：
+     有 /api/state 就把云端存档用起来，换浏览器 / 清缓存也能把打卡记录捞回来。 */
+  const noApi=location.protocol==="file:";
+  if(!noApi){
     try{
       const r=await fetch("/api/state",{cache:"no-store"});
-      cloudOK=r.ok;
-      if(r.ok){const j=await r.json();if(j&&j.words)remote=normalize(j);}
+      if(r.ok){
+        let j=null,okJson=false;
+        /* 纯静态托管会把 /api/state 兜底成首页 HTML，JSON 解析失败就别当成云端可用 */
+        try{ j=await r.json(); okJson=true; }catch(e){}
+        if(okJson){
+          cloudOK=true;
+          if(j&&j.words)remote=normalize(j);
+        }
+      }
     }catch(e){ cloudOK=false; }
   }
   let local=loadDB();
   /* localStorage 空了（清缓存 / 隐私模式 / 手机自动清理）就从 IndexedDB 捞回来 */
+  let cachedDB=null;
   if(!(local.savedAt>0)){
     try{
       const cached=await idbLoad();
       if(cached&&cached.savedAt>0){
-        local=normalize(cached);
+        cachedDB=normalize(cached);
+        local=cachedDB;
         try{localStorage.setItem("learnPlatform_v1",JSON.stringify(local));}catch(e){}
         setTimeout(()=>toast("已从本地备份恢复存档"),900);
       }
     }catch(e){}
   }
   db=remote&&(remote.savedAt||0)>=(local.savedAt||0)?remote:local;
+  /* 选完主档后，把其它来源里出现过的打卡日并进来，避免「较新但缺 days」的那份清零 */
+  try{streakMerge([remote,local,cachedDB]);}catch(e){}
   boot();
 })();
 </script>
