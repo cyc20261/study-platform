@@ -864,6 +864,44 @@ body[data-theme="fx-aurora"]{
 /* 番茄钟白噪音 */
 .noise-row{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
 .noise-row .lab{font-size:12.5px;color:var(--muted)}
+
+/* ===== 今日任务聚合 / 复习欠账分摊 ===== */
+.tk{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.tk:last-child{border-bottom:none}
+.tk .tk-i{flex:none;width:26px;height:26px;border-radius:9px;display:grid;place-items:center;
+  font-size:13px;background:var(--seg-bg);border:1px solid var(--line)}
+.tk.done .tk-i{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.tk .tk-b{flex:1;min-width:0}
+.tk .tk-t{font-size:13.5px;font-weight:600}
+.tk.done .tk-t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--muted)}
+.tk .tk-s{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.5}
+.tk .tk-go{flex:none}
+.tk .btn.small{padding:6px 11px;font-size:12px}
+.tk-all{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:12px;
+  background:var(--ok-soft);border:1px solid rgba(34,192,122,.28);font-size:13px;color:var(--ink)}
+.tk-cap{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
+.tk-cap input,.set-row input{width:64px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+  background:var(--card);color:var(--ink);font-size:12.5px;text-align:center}
+.tk-cap a.tx{font-size:12px}
+/* ===== 看代码猜输出 ===== */
+.qstem{font-size:16px;font-weight:600;margin-bottom:6px}
+.qstem.trace{font-size:14px;font-weight:400;line-height:1.65}
+.qstem .trace-h{font-size:15px;font-weight:600;margin-bottom:7px}
+.opt.topt{white-space:pre-wrap;font-family:ui-monospace,Consolas,"Courier New",monospace;
+  font-size:12.5px;line-height:1.5;word-break:break-word}
+/* ===== 错因标签 ===== */
+.whybar{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:9px;padding:9px 11px;
+  border-radius:10px;background:var(--seg-bg);font-size:12.5px}
+.why-tag{border:1px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:99px;padding:4px 12px;font-size:12px;cursor:pointer;transition:.15s}
+.why-tag:hover{border-color:var(--accent);color:var(--accent)}
+.why-tag.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.why-tip{font-size:11.5px}
+.why-stat{margin-top:7px;font-size:12px;color:var(--muted);line-height:1.7}
+/* ===== 设置 / 存档 ===== */
+.set-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:13px;margin-top:9px}
+.set-row .lb{min-width:96px;color:var(--muted);font-size:12.5px}
+.save-meta{font-size:12px;color:var(--muted);line-height:1.8}
 </style>
 </head>
 <body data-theme="">
@@ -936,7 +974,7 @@ body[data-theme="fx-aurora"]{
     <button class="tab" data-tab="math">📐 高数</button>
     <button class="tab" data-tab="linux">🐧 Linux 命令</button>
     <button class="tab" data-tab="timer">⏱️ 番茄钟</button>
-    <button class="tab" data-tab="todo">✅ 待办</button>
+    <button class="tab" data-tab="todo">⚙️ 待办 · 设置</button>
   </nav>
 
   <section class="tab show" id="tab-dashboard">
@@ -950,9 +988,14 @@ body[data-theme="fx-aurora"]{
         <button class="btn" id="btnCheckin" onclick="checkIn()" style="margin-left:auto">📌 今日打卡</button>
       </div>
     </div>
+    <div class="card" id="todayCard">
+      <h2>☀️ 今天该做什么 <small id="todayProgress"></small></h2>
+      <div id="todayTasks"></div>
+      <div id="todayBacklog" class="muted" style="font-size:12px;margin-top:10px"></div>
+    </div>
     <div class="grid" style="margin-bottom:16px">
       <div class="stat"><div class="num" id="stWordsKnown">0</div><div class="name">已掌握单词</div></div>
-      <div class="stat"><div class="num" id="stDaily">0</div><div class="name">今日单词 · 目标 20</div></div>
+      <div class="stat"><div class="num" id="stDaily">0</div><div class="name">今日单词 · 目标 <span id="stDailyGoal">20</span></div></div>
       <div class="stat"><div class="num" id="stWordsHard">0</div><div class="name">生词本词汇</div></div>
       <div class="stat"><div class="num" id="stPomo">0</div><div class="name">今日番茄钟</div></div>
       <div class="stat"><div class="num" id="stTodo">0</div><div class="name">待办未完成</div></div>
@@ -1031,8 +1074,13 @@ body[data-theme="fx-aurora"]{
       <div class="sep" style="margin:12px 0"></div>
       <div class="row" id="quizTypeRow2">
         <button class="btn ghost" data-qtype="c" onclick="startQuiz('c')">💻 C 语言（题库 · 抽 10 题）</button>
+        <button class="btn ghost" data-qtype="trace" onclick="startTraceQuiz()">🔍 看代码猜输出（5 题）</button>
         <button class="btn ghost" data-qtype="linux" onclick="startQuiz('linux')">🐧 Linux 命令（10题）</button>
         <button class="btn ghost" onclick="switchTab('math')">📐 高数（11 份章节卷，去高数页选）</button>
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:8px;line-height:1.7">
+        「看代码猜输出」从 66 篇 C 笔记的真实例题里出题：给你一段代码，让你算它到底打印什么。
+        干扰项是正确输出的<b>近似变体</b>（改个数字、换一行），不是随便凑的四个选项 —— 光靠眼熟蒙不对，得真的顺着程序跑一遍。
       </div>
     </div>
     <div class="card">
@@ -1190,6 +1238,30 @@ body[data-theme="fx-aurora"]{
       </div>
       <div id="todoList" style="margin-top:8px"></div>
     </div>
+    <div class="card">
+      <h2>🎚 每日节奏 <small>目标与欠账上限，随时可调</small></h2>
+      <div class="set-row"><span class="lb">每日新词目标</span>
+        <input type="number" id="setGoalWords" min="5" max="100" step="5" onchange="setGoalWords(this.value)"> 个
+        <span class="muted" style="font-size:12px">仪表盘「今天该做什么」按这个数算完成度</span></div>
+      <div class="set-row"><span class="lb">复习欠账上限</span>
+        <input type="number" id="setBacklogCap" min="3" max="20" step="1" onchange="setBacklogCap(this.value)"> 个 / 天
+        <span class="muted" style="font-size:12px">到期没复习的会按最旧的先排，超出部分顺延，不会一次砸脸上</span></div>
+      <div class="set-row"><span class="lb">猜输出目标</span>
+        <input type="number" id="setTraceGoal" min="1" max="10" step="1" onchange="setTraceGoal(this.value)"> 题 / 天</div>
+      <div id="traceStatLine" class="muted" style="font-size:12px;margin-top:9px"></div>
+    </div>
+    <div class="card">
+      <h2>💾 存档管理 <small>本地 + IndexedDB + 云端三层，仍建议定期导出一份带走</small></h2>
+      <div id="saveInfo" class="save-meta"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" onclick="exportSave()">⬇ 导出存档（.json）</button>
+        <button class="btn ghost" onclick="pickImportSave()">⬆ 导入存档</button>
+      </div>
+      <p class="muted" style="font-size:12px;line-height:1.8;margin-top:10px">
+        导入前会把<b>当前存档自动存进本地备份档</b>，并弹出新旧数据对比让你确认；
+        确认后才会覆盖。上课换电脑、清了浏览器缓存、或线上地址变了，靠这个文件就能把打卡和学习记录捞回来。
+      </p>
+    </div>
   </section>
 
 </main>
@@ -1262,7 +1334,8 @@ const MATHQUIZ=window.MATH_QUIZ||[];
 /* 文件名 map：测验历史显示用 */
 const QUIZ_NAMES={vocab4:"四级词汇",vocab6:"六级词汇",vocabmix:"四六级混合",vocab:"四六级词汇",
   c:"C 语言",linux:"Linux 命令",exam4:"四级考试题",exam6:"六级考试题",
-  srs:"生词到期复习",wrongredo:"错题重做","mock:exam4":"四级整卷模考","mock:exam6":"六级整卷模考",
+  trace:"看代码猜输出",srs:"生词到期复习",wrongredo:"错题重做",
+  "mock:exam4":"四级整卷模考","mock:exam6":"六级整卷模考",
   "mock:c20":"C 语言限时模考"};
 /* 高数每章的卷子单独记名，历史里能分清新旧 */
 MATHQUIZ.forEach((p,i)=>{QUIZ_NAMES["math"+i]="高数·"+p.ch.replace(/^[^第]*/,"");
@@ -1393,7 +1466,18 @@ function normalize(d){
    if(ks.length>400)ks.slice(0,ks.length-400).forEach(k=>delete d.act[k]);}
   for(const k in d.wrong){const w=d.wrong[k];              // 旧错题补重做档期字段
     if(!w.due)w.due=shiftDay(today(),1);
-    if(typeof w.ok!=="number")w.ok=0;}
+    if(typeof w.ok!=="number")w.ok=0;
+    if(!w.why)w.why="";}                                  // 错因标签：不会 / 记混 / 手滑
+  /* 今日任务：每日最低目标 + 复习欠账每日上限（欠账不一次砸脸上） */
+  d.goal=d.goal||{};
+  if(!(d.goal.words>0))d.goal.words=20;                    // 与仪表盘「目标 20」对齐
+  if(!(d.goal.minutes>0))d.goal.minutes=15;
+  if(!(d.goal.trace>0))d.goal.trace=3;                    // 每天几道「看代码猜输出」
+  d.backlogCap=d.backlogCap>0?d.backlogCap:10;
+  d.traceDone=d.traceDone||{};                             // 按天记做过几道「猜输出」
+  {const ks=Object.keys(d.traceDone).sort();
+   if(ks.length>90)ks.slice(0,ks.length-90).forEach(k=>delete d.traceDone[k]);}
+  d.traceStat=d.traceStat||{n:0,ok:0};
   return d;
 }
 /* 注意：这里只能用字面量，不要改成 const LS_KEY/LS_BAK。
@@ -1490,7 +1574,19 @@ function exportSave(){
 function importSave(text){
   let obj;
   try{obj=JSON.parse(text);}catch(e){toast("这个文件不是小云的存档");return false;}
-  if(!obj||typeof obj!=="object"||!obj.savedAt){toast("这个文件不是小云的存档");return false;}
+  if(!obj||typeof obj!=="object"||!obj.savedAt||!obj.words||!obj.streak){
+    toast("这个文件不是小云的存档");return false;}
+  /* 覆盖之前强制留两份：bak 会被以后的常规保存轮掉，_preimport 不会被碰，
+     是这次导入前的永久恢复点。 */
+  try{
+    localStorage.setItem("learnPlatform_bak",JSON.stringify(db));
+    localStorage.setItem("learnPlatform_preimport",JSON.stringify(db));
+  }catch(e){}
+  const msg="导入将覆盖当前存档，先把两边的记录对一下：\n\n"+
+    "当前　："+saveBrief(db)+"\n"+
+    "导入　："+saveBrief(obj)+"\n\n"+
+    "当前存档已自动存进本地备份（导入前版本）。要绝对保险，可以先取消、先导出一份再导。\n确定继续吗？";
+  if(typeof confirm==="function"&&!confirm(msg))return false;
   db=normalize(obj);
   save();
   toast("存档已恢复，正在刷新…");
@@ -1580,6 +1676,7 @@ function switchTab(name){
   if(name==="words")renderWord();
   if(name==="math"&&typeof MATHQUIZ!=="undefined")renderMathPapers();
   if(name==="quiz"){try{renderQProf();renderWrongBox();}catch(e){}}
+  if(name==="todo"){try{renderSettings();}catch(e){}}
 }
 $$("nav.tabs button").forEach(b=>b.addEventListener("click",()=>switchTab(b.dataset.tab)));
 /* 侧栏竖排时把开头的 emoji 单独包一层，让文字左缘对齐 */
@@ -1654,6 +1751,7 @@ function renderDash(){
   }
   renderLvProgress();
   renderFootprint();
+  renderTodayTasks();
 }
 
 /* 仪表盘：四级 / 六级 分开的两行进度 */
@@ -1702,7 +1800,17 @@ function renderSearch(){
       if(x.w.toLowerCase().includes(q)||x.m.includes(q))hits.push({x,lv});
     }
   }
-  if(!hits.length){box.innerHTML='<p class="empty" style="font-size:13px">没有找到「'+q+'」，换个关键词试试</p>';return;}
+  if(!hits.length){
+    /* 拼错一个字母不该等于「查无此词」：编辑距离 1~2 给几个最像的，点一下直接改词 */
+    const sug=suggestWord(q);
+    box.innerHTML='<p class="empty" style="font-size:13px">没有找到「'+escHtml(q)+'」'+
+      (sug.length?"，你是不是想找：":"，换个关键词试试")+'</p>'+
+      (sug.length?'<div class="row" style="justify-content:center;gap:8px;margin-top:2px">'+
+        sug.map(s=>'<button class="btn ghost small" onclick="useSuggest(\''+escHtml(s.w)+'\')">'+
+          lvTag(s.lv)+" "+escHtml(s.w)+'</button>').join("")+'</div>'+
+        '<p class="muted" style="text-align:center;font-size:11.5px;margin-top:8px">支持漏字母 / 多字母 / 打错一个字母，长词允许错两个</p>':"");
+    return;
+  }
   box.innerHTML='<div class="muted" style="font-size:12px;margin:6px 0">匹配 '+hits.length+' 条'+(hits.length>=60?"（仅显示前 60 条）":"")+'</div>'+
     hits.map(h=>{
       const st=db.words[h.lv][h.x.w];
@@ -2105,12 +2213,13 @@ function nextWord(){
 function renderReview(){
   const box=$("#reviewList");
   /* A1 间隔重复：到期词自动排队，答对间隔拉长、答错明天再来 */
-  const due=dueWords();
+  const r=todayReview(),due=r.words;
   let html="";
   if(due.length){
-    html+='<div class="duebar">🔄 今天有 <b>'+due.length+'</b> 个生词到复习期了'+
+    html+='<div class="duebar">🔄 到期生词共 <b>'+r.wAll+'</b> 个'+
+      (r.wLeft?'，今天先排最旧的 <b>'+due.length+'</b> 个，其余 '+r.wLeft+' 个顺延':'，今天这批刚好排得下')+
       '<span class="muted" style="font-size:12px">答对间隔拉长，答错明天重来</span>'+
-      '<button class="btn small" style="margin-left:auto" onclick="startSrsQuiz()">开始复习（'+Math.min(10,due.length)+' 题）</button></div>';
+      '<button class="btn small" style="margin-left:auto" onclick="startSrsQuiz()">开始复习（'+due.length+' 题）</button></div>';
   }
   let total=0,n4=0,n6=0;
   for(const lv of ["cet4","cet6"]){
@@ -2149,6 +2258,7 @@ function dueWords(){
   return shuffle(out.slice());
 }
 function srsStep(lv,w,ok){
+  const a=actToday();a.rvw=(a.rvw||0)+1;   // 今日任务「复习生词」的完成计数
   ensureSrs(lv,w);
   const e=db.srs[lv][w];
   if(ok){
@@ -2162,9 +2272,10 @@ function srsStep(lv,w,ok){
 }
 /* 到期复习测验：只用到期词出 10 道词义题，作答走 feedStat 的 srs 分支更新计划 */
 function startSrsQuiz(){
-  const due=dueWords();
+  /* 走欠账分摊：只取「最久没复习」的一批，一次最多 cap 个，其余自动顺延到后面几天 */
+  const due=todayReview().words;
   if(!due.length){toast("今天没有到期的生词，学新词去吧！");return;}
-  const picks=due.slice(0,10);
+  const picks=due;                      /* 整份今日份额一次出完，进度条才对得上 */
   quiz={list:[],idx:0,score:0,answered:false,type:"srs"};
   quiz.list=picks.map(p=>{
     const item=WORDS[p.lv].filter(x=>x.w===p.w)[0];
@@ -2335,9 +2446,10 @@ function showQuizQ(){
       :(quiz.paperName?'<div class="muted" style="font-size:12.5px;margin-bottom:4px">📐 '+quiz.paperName+'</div>':''))+
     '<div class="muted" style="font-size:13px;margin-bottom:8px">第 '+(quiz.idx+1)+' / '+quiz.list.length+' 题'+
     (quiz.mock?"":" · 当前答对 "+quiz.score+" 题")+'</div>'+
-    '<div style="font-size:16px;font-weight:600;margin-bottom:6px">'+q.q+'</div>'+
+    '<div class="qstem'+(quiz.type==="trace"?" trace":"")+'">'+q.q+'</div>'+
     '<div class="bar"><i style="width:'+(quiz.idx/quiz.list.length*100)+'%"></i></div>'+
-    q.o.map((o,i)=>'<button class="opt" id="opt'+i+'" onclick="pickOpt('+i+')">'+String.fromCharCode(65+i)+". "+o+'</button>').join("")+
+    q.o.map((o,i)=>'<button class="opt'+(quiz.type==="trace"?" topt":"")+'" id="opt'+i+'" onclick="pickOpt('+i+')">'+
+      String.fromCharCode(65+i)+". "+(quiz.type==="trace"?escHtml(o):o)+'</button>').join("")+
     '<div id="quizExplain" style="display:none;margin-top:4px"></div>'+
     '<div style="margin-top:12px"><button class="btn" id="qNext" style="display:none" onclick="quizNext()">下一题 →</button></div>';
 }
@@ -2354,9 +2466,14 @@ function pickOpt(i){
   }
   if(i===right){quiz.score++;toast("回答正确！");}
   else{$("#opt"+i).classList.add("wrong");toast("答错了，正确答案已标绿");}
-  try{feedStat(quiz.type,q,i===right);}catch(e){}
+  let wkey=null;
+  try{wkey=feedStat(quiz.type,q,i===right);}catch(e){}
   const ex=$("#quizExplain");
-  if(q.e){ex.style.display="block";ex.innerHTML='<div class="sep"></div><div style="font-size:13.5px;line-height:1.8">📖 解析：'+q.e+'</div>';}
+  if(ex){
+    let html=q.e?'<div class="sep"></div><div style="font-size:13.5px;line-height:1.8">📖 解析：'+q.e+'</div>':"";
+    if(i!==right&&wkey)html+=whyBar(wkey);       /* ⑥ 答错才问错因，答对不打扰 */
+    if(html){ex.style.display="block";ex.innerHTML=html;}
+  }
   $("#qNext").style.display="inline-block";
   $("#qNext").textContent=quiz.idx===quiz.list.length-1?"查看成绩 →":"下一题 →";
 }
@@ -2583,11 +2700,14 @@ function catPick(i){
   const c=p.cat[it.cat]||(p.cat[it.cat]=[0,0]);c[1]++;if(ok)c[0]++;
   const st=p.items[it.id]||(p.items[it.id]=[0,0]);st[1]++;if(ok)st[0]++;
   p.n++;
+  const wkey=AQ.subj+":"+it.id;
   if(!ok){
-    db.wrong[AQ.subj+":"+it.id]={s:AQ.subj,cat:it.cat,d:it.d,q:it.q,o:it.o,a:it.a,e:it.e,ts:Date.now()};
+    /* 补齐 due / ok / why：以前 CAT 新建的错题没有 due，会被当成「今天立刻到期」 */
+    db.wrong[wkey]={s:AQ.subj,cat:it.cat,d:it.d,q:it.q,o:it.o,a:it.a,e:it.e,ts:Date.now(),
+      ok:0,due:shiftDay(today(),1),why:""};
     const ks=Object.keys(db.wrong);
     if(ks.length>300)ks.slice(0,ks.length-300).forEach(k=>delete db.wrong[k]);
-  }else if(db.wrong[AQ.subj+":"+it.id])delete db.wrong[AQ.subj+":"+it.id];
+  }else if(db.wrong[wkey])delete db.wrong[wkey];
   AQ.ans.push({id:it.id,ok:ok,cat:it.cat,d:it.d});
   save();
   const ex=$("#catExplain");
@@ -2595,7 +2715,8 @@ function catPick(i){
     ex.style.display="block";
     ex.innerHTML='<div class="sep"></div><div style="font-size:13.5px;line-height:1.8">📖 '+(it.e||"")+'</div>'+
       '<div style="font-size:12.5px;color:var(--muted);margin-top:6px">'+
-      (ok?"答对了":"已收进错题本，稍后会再考你")+' · 水平估计调整为「'+band(AQ.th)[2]+' '+band(AQ.th)[1]+'」</div>';
+      (ok?"答对了":"已收进错题本，稍后会再考你")+' · 水平估计调整为「'+band(AQ.th)[2]+' '+band(AQ.th)[1]+'」</div>'+
+      (ok?"":whyBar(wkey));
   }
   $("#catNext").style.display="inline-block";
   $("#catNext").textContent=AQ.idx===AQ.total-1?"看看测评结果 →":"下一题 →";
@@ -2716,6 +2837,23 @@ function startReview(s){
    type="srs"：到期复习题 → 更新间隔重复计划；
    type="wrongredo"：错题重做 → 按粉笔节奏排下次重做日期。 */
 function feedStat(type,q,ok){
+  /* 「看代码猜输出」是独立的题型：题目不在 CAT 题库里，硬塞进画像会把 θ 带偏。
+     这里只记学习账本 / 今日任务 / 错题本，单独累计正确率。 */
+  if(type==="trace"){
+    const a=actToday();a.tr=(a.tr||0)+1;
+    db.traceDone[today()]=(db.traceDone[today()]||0)+1;
+    db.traceStat.n++;if(ok)db.traceStat.ok++;
+    const tk="c:"+(q._id||("tr"+h32(q.q)));
+    if(!ok){
+      if(db.wrong[tk]){db.wrong[tk].ok=0;db.wrong[tk].due=shiftDay(today(),1);}
+      else db.wrong[tk]={s:"c",cat:"看代码猜输出",d:.55,q:q.q,o:q.o,a:q.a,e:q.e,
+        ts:Date.now(),ok:0,due:shiftDay(today(),1),why:""};
+    }else if(db.wrong[tk])delete db.wrong[tk];
+    addAct("q",1,ok?1:0);
+    save();renderDash();renderWrongBox();renderFootprint();renderSettings();
+    return ok?null:tk;
+  }
+  if(type==="wrongredo"){const a=actToday();a.rvq=(a.rvq||0)+1;}
   const map={c:"c",vocab4:"vocab4",vocab6:"vocab6",exam4:"exam4",exam6:"exam6"};
   let s=map[type];
   if(!s&&/^math\d+$/.test(type))s="math";
@@ -2723,7 +2861,8 @@ function feedStat(type,q,ok){
   if(!s&&type==="srs"){
     const m=/复习 <b>(.+?)<\/b>/.exec(q.q||"");
     if(m){const lv=CET4SET.has(m[1])?"cet4":"cet6";
-      srsStep(lv,m[1],ok);addAct("q",1,ok?1:0);save();renderReview();renderFootprint();return;}
+      srsStep(lv,m[1],ok);addAct("q",1,ok?1:0);
+      save();renderReview();renderFootprint();renderDash();return null;}
   }
   if(!s)return;
   let id=q._id||null;
@@ -2743,14 +2882,18 @@ function feedStat(type,q,ok){
   const key=s+":"+id,we=db.wrong[key];
   if(!ok){
     if(we){we.ok=0;we.due=shiftDay(today(),1);}
-    else db.wrong[key]={s:s,cat:cat,d:d,q:q.q,o:q.o,a:q.a,e:q.e,ts:Date.now(),ok:0,due:shiftDay(today(),1)};
+    else db.wrong[key]={s:s,cat:cat,d:d,q:q.q,o:q.o,a:q.a,e:q.e,ts:Date.now(),
+      ok:0,due:shiftDay(today(),1),why:""};
   }else if(we){
     we.ok=(we.ok||0)+1;
-    if(we.ok>=2)delete db.wrong[key];       // 连续两轮独立做对 → 掌握，移出错题本
-    else we.due=shiftDay(today(),7);        // 做对一轮 → 一周后验证
+    /* 手滑不是不会：做对 1 次就放走，别让它白占后面的复习额度 */
+    const need=we.why==="手滑"?1:2;
+    if(we.ok>=need)delete db.wrong[key];   // 连续两轮独立做对 → 掌握，移出错题本
+    else we.due=shiftDay(today(),we.why==="不会"?3:7);
   }
   addAct("q",1,ok?1:0);
-  save();renderQProf();renderWrongBox();renderFootprint();
+  save();renderQProf();renderWrongBox();renderFootprint();renderDash();
+  return ok?null:key;                       // 答错时把错题 key 交给答题页，用来挂错因标签
 }
 /* 错题本重做：只挑今天到期（due<=今天）的题，跨科目混合出卷 */
 function dueWrongKeys(){
@@ -2758,9 +2901,12 @@ function dueWrongKeys(){
   for(const k in db.wrong)if((db.wrong[k].due||"")<=t)out.push(k);
   return out;
 }
-function startWrongDue(){
-  const keys=shuffle(dueWrongKeys()).slice(0,10);
-  if(!keys.length){toast("今天没有到期错题，坚持住！");return;}
+function startWrongDue(why){
+  /* 没传错因 → 走欠账分摊（最旧的一批）；传了 → 按错因专项重做 */
+  const keys=why
+    ? Object.keys(db.wrong).filter(k=>db.wrong[k].why===why).slice(0,20)  /* 专项重做不受排期挡 */
+    : todayReview().wrong.map(x=>x.k);
+  if(!keys.length){toast(why?("没有标「"+why+"」的到期错题"):"今天没有到期错题，坚持住！");return;}
   quiz={list:[],idx:0,score:0,answered:false,type:"wrongredo"};
   quiz.list=keys.map(k=>{
     const w=db.wrong[k],id=k.slice(w.s.length+1);
@@ -2859,21 +3005,320 @@ function renderQProf(){
 }
 function renderWrongBox(){
   const box=$("#wrongBox");if(!box)return;
-  const by={};
-  for(const k in db.wrong){const w=db.wrong[k];by[w.s]=(by[w.s]||0)+1;}
+  const by={},why={};
+  for(const k in db.wrong){
+    const w=db.wrong[k];
+    by[w.s]=(by[w.s]||0)+1;
+    const t=w.why||"未标";why[t]=(why[t]||0)+1;
+  }
   const ks=Object.keys(by);
   if(!ks.length){box.innerHTML="";return;}
-  const dueN=dueWrongKeys().length;
+  const r=todayReview(),dueN=r.kAll;
+  const whyLine=WHY_TAGS.map(t=>t+" "+(why[t]||0)).concat(["未标 "+(why["未标"]||0)]).join(" · ");
+  const whyBtns=WHY_TAGS.filter(t=>why[t]>0).map(t=>
+    '<button class="btn ghost sm" onclick="startWrongDue(\''+t+'\')">只重做「'+t+'」'+why[t]+' 题</button>').join(" ");
+  const advice=(why["不会"]||0)>=3
+    ? '<div class="why-stat">💡 「不会」攒了 '+why["不会"]+' 道 —— 这不是刷题能补的，先回笔记把对应知识点过一遍再回来做。'+
+      '<a class="tx" style="margin-left:6px" onclick="switchTab(\'clang\')">去 C 语言笔记</a></div>'
+    : '<div class="why-stat">💡 答错时在解析下面标一个错因：不会 → 明天重做，记混 → 隔 7 天，手滑 → 做对 1 次就放走。</div>';
   box.innerHTML='<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;'+
     'flex-wrap:wrap;padding:11px 14px;border-radius:12px;background:var(--bad-soft);border:1px solid rgba(229,72,77,.22)">'+
-    '<span style="font-size:13px">📕 <b>错题本</b> · '+ks.map(s=>SUBJ[s]+' '+by[s]+' 题').join(" · ")+
-    (dueN?' · <b>今日到期 '+dueN+' 题</b>':'')+
+    '<span style="font-size:13px">📕 <b>错题本</b> · '+ks.map(s=>(SUBJ[s]||s)+' '+by[s]+' 题').join(" · ")+
+    (dueN?' · <b>到期 '+dueN+' 题，今天排 '+r.wrong.length+' 题</b>':'')+
     '<span class="muted" style="font-size:12px">（连对 2 次移出）</span></span>'+
     '<span>'+
-    (dueN?'<button class="btn sm" onclick="startWrongDue()">🔄 重做到期错题</button> ':'')+
-    '<button class="btn ghost sm" onclick="startReview()">只考错题</button></span></div>';
+    (r.wrong.length?'<button class="btn sm" onclick="startWrongDue()">🔄 重做到期错题（今天 '+r.wrong.length+' 题）</button> ':'')+
+    '<button class="btn ghost sm" onclick="startReview()">只考错题</button></span></div>'+
+    '<div class="why-stat">🏷 错因分布：'+whyLine+'</div>'+
+    (whyBtns?'<div class="row" style="margin-top:7px;gap:7px">'+whyBtns+'</div>':'')+advice;
 }
 
+
+/* ==================================================================
+   ① 今日任务聚合 · ③ 复习欠账分摊 · ② 看代码猜输出
+   ④ 搜索拼写容错 · ⑤ 存档管理 · ⑥ 错因标签
+   —— 六件事共用同一份「今天该做什么」的视图，别再让用户自己翻五个页签找活干。
+   ================================================================== */
+
+/* ---- ③ 欠账分摊：到期的复习可能堆了几百项，一次全摊开只会让人直接关页面。
+   做法是「按最旧的先排、每天只给 cap 个」：做完的题 due 会被推到未来，
+   明天最旧的一批自然换人，不需要额外的延期状态，也不会漏掉任何一个。 */
+let _wset=null;
+function dueWordsAll(){
+  const out=[],t=today();
+  /* 存档里可能留着词库改版前的老词 / 手工造的脏数据：它们不该占复习额度，
+     否则「今天 10 个」点进去只出 3 题，进度永远凑不满。 */
+  if(!_wset)_wset={cet4:new Set((WORDS.cet4||[]).map(x=>x.w)),
+                   cet6:new Set((WORDS.cet6||[]).map(x=>x.w))};
+  for(const lv of ["cet4","cet6"]){
+    const srs=(db.srs&&db.srs[lv])||{},set=_wset[lv]||new Set();
+    for(const w in srs){
+      if(!set.has(w))continue;
+      if(db.words[lv]&&db.words[lv][w]===2&&(srs[w].due||"")<=t)
+        out.push({lv:lv,w:w,due:srs[w].due||""});
+    }
+  }
+  out.sort((a,b)=>a.due<b.due?-1:(a.due>b.due?1:(a.w<b.w?-1:1)));
+  return out;
+}
+function dueWrongAll(){ 
+  const t=today(),out=[];
+  for(const k in db.wrong){
+    const w=db.wrong[k];
+    if((w.due||"")<=t)out.push({k:k,due:w.due||"",why:w.why||""});
+  }
+  out.sort((a,b)=>a.due<b.due?-1:(a.due>b.due?1:(a.k<b.k?-1:1)));
+  return out;
+}
+function todayReview(){
+  const cap=Math.max(1,+(db.backlogCap||10));
+  const wAll=dueWordsAll(),kAll=dueWrongAll();
+  return {cap:cap,words:wAll.slice(0,cap),wrong:kAll.slice(0,cap),
+    wAll:wAll.length,kAll:kAll.length,
+    wLeft:Math.max(0,wAll.length-cap),kLeft:Math.max(0,kAll.length-cap)};
+}
+/* 当天第一次打开时把「今日份额」快照下来：之后做完题剩余量会变小，
+   如果拿实时剩余量当分母，进度条会永远显示 0/0。 */
+function todayPlan(){
+  const t=today();
+  db.todayPlan=db.todayPlan||{};
+  if(!db.todayPlan[t]){
+    const r=todayReview();
+    db.todayPlan[t]={w:r.words.length,q:r.wrong.length,trace:db.goal.trace};
+    const ks=Object.keys(db.todayPlan).sort();
+    if(ks.length>30)ks.slice(0,ks.length-30).forEach(k=>delete db.todayPlan[k]);
+    try{save();}catch(e){}
+  }
+  return db.todayPlan[t];
+}
+function todayAct(k){const a=actToday();return +(a[k]||0);}
+
+/* ---- ① 今日任务聚合 ---- */
+function renderTodayTasks(){
+  const box=$("#todayTasks");if(!box)return;
+  ensureDaily();ensurePomoDay();
+  const p=todayPlan(),r=todayReview(),g=db.goal;
+  const V={words:db.daily.words,rvw:todayAct("rvw"),rvq:todayAct("rvq"),
+    tr:todayAct("tr"),pomo:db.pomo.count};
+  const G={words:g.words,rvw:p.w,rvq:p.q,tr:g.trace,pomo:2};
+  const show=(a,b)=>Math.min(a,b)+" / "+b;
+  const rows=[
+    {k:"words",icon:"🔤",t:"背新词",done:V.words>=G.words,
+     sub:show(V.words,G.words)+" 个 · 标记「认识」或「不认识」都算",go:"switchTab('words')",btn:"去背词"},
+    {k:"rvw",icon:"🔁",t:"复习到期生词",done:G.rvw===0||V.rvw>=G.rvw,
+     sub:G.rvw===0?"今天没有到期的生词，轻松":(show(V.rvw,G.rvw)+" 个 · 只排最久没复习的一批"),
+     go:"startSrsQuiz()",btn:"开始复习"},
+    {k:"rvq",icon:"📕",t:"重做到期错题",done:G.rvq===0||V.rvq>=G.rvq,
+     sub:G.rvq===0?"错题本今天没有欠账":(show(V.rvq,G.rvq)+" 道 · 连对 2 次才放出错题本"),
+     go:"startWrongDue()",btn:"去重做"},
+    {k:"tr",icon:"🔍",t:"看代码猜输出",done:V.tr>=G.tr,
+     sub:show(V.tr,G.tr)+" 题 · 累计做了 "+db.traceStat.n+" 题，答对 "+db.traceStat.ok+" 题",
+     go:"startTraceQuiz()",btn:"去猜"},
+    {k:"pomo",icon:"⏱",t:"专注番茄钟",done:V.pomo>=G.pomo,
+     sub:show(V.pomo,G.pomo)+" 个 · 25 分钟一个",go:"switchTab('timer')",btn:"去专注"}
+  ];
+  const done=rows.filter(x=>x.done).length;
+  const prog=$("#todayProgress");
+  if(prog)prog.textContent=done+" / "+rows.length+" 已完成";
+  box.innerHTML=
+    '<div class="bar" style="margin:2px 0 8px"><i style="width:'+Math.round(done/rows.length*100)+'%"></i></div>'+
+    rows.map(x=>'<div class="tk'+(x.done?" done":"")+'">'+
+      '<span class="tk-i">'+(x.done?"✓":x.icon)+'</span>'+
+      '<span class="tk-b"><span class="tk-t">'+x.t+'</span><span class="tk-s">'+x.sub+'</span></span>'+
+      '<span class="tk-go"><button class="btn small '+(x.done?"ghost":"")+'" onclick="'+x.go+'">'+(x.done?"再来点":x.btn)+'</button></span>'+
+      '</div>').join("")+
+    (done===rows.length?'<div class="tk-all" style="margin-top:10px">🎉 今天的任务全清了，小云给你鼓掌 —— 想加练就去测验页转转</div>':'');
+  /* 欠账说明 + 每日上限快捷调节 */
+  const bl=$("#todayBacklog");
+  if(bl){
+    const total=r.wAll+r.kAll;
+    let msg=total
+      ? '📦 到期复习共 <b>'+total+'</b> 项（生词 '+r.wAll+' · 错题 '+r.kAll+'）；'+
+        (r.wLeft+r.kLeft>0
+          ? '今天先做 '+r.cap+' 个，其余 <b>'+(r.wLeft+r.kLeft)+'</b> 项顺延，按这个速度约 <b>'+
+            Math.max(1,Math.ceil(total/r.cap))+'</b> 天清完。'
+          : '今天的份额刚好都排得下，没有欠账。')
+      : '✨ 复习池是空的，今天只管学新东西。';
+    bl.innerHTML='<div>'+msg+'</div>'+
+      '<div class="tk-cap">每天上限 <input type="number" id="capQuick" min="3" max="20" step="1" value="'+
+      r.cap+'" onchange="setBacklogCap(this.value)"> 项'+
+      '<span>· 调大能更快清欠账，调小更适合忙的时候</span>'+
+      '<a class="tx" onclick="petTodayBrief()">让小云念一遍 🐳</a></div>';
+  }
+  const st=$("#stDailyGoal");if(st)st.textContent=g.words;
+}
+function setGoalWords(v){
+  const n=Math.min(100,Math.max(5,parseInt(v,10)||20));
+  db.goal.words=n;db.todayPlan&&delete db.todayPlan[today()];
+  save();renderTodayTasks();renderSettings();toast("每日新词目标改成 "+n+" 个");
+}
+function setBacklogCap(v){
+  const n=Math.min(20,Math.max(3,parseInt(v,10)||10));
+  db.backlogCap=n;db.todayPlan&&delete db.todayPlan[today()];
+  save();renderTodayTasks();renderSettings();toast("复习欠账上限改成每天 "+n+" 项");
+}
+function setTraceGoal(v){
+  const n=Math.min(10,Math.max(1,parseInt(v,10)||3));
+  db.goal.trace=n;save();renderTodayTasks();renderSettings();toast("每天猜输出目标改成 "+n+" 题");
+}
+function petTodayBrief(){
+  const p=todayPlan();
+  const txt="今天要背 "+db.goal.words+" 个新词，复习 "+p.w+" 个生词和 "+p.q+" 道错题，再来 "+db.goal.trace+" 道猜输出就齐啦～";
+  if(window.PetBrain&&PetBrain.say)PetBrain.say(txt,{ms:5000});
+  else if(typeof fabBubble==="function")fabBubble(txt);
+  else toast(txt);
+}
+
+/* ---- ⑤ 存档管理：底层 exportSave / importSave 在文件前段，这里补可见入口与展示 ---- */
+function saveBrief(d){
+  let days=0,k=0;
+  try{days=((d.streak&&d.streak.days)||[]).length;}catch(e){}
+  try{for(const lv of ["cet4","cet6"]){const m=(d.words||{})[lv]||{};
+    for(const w in m)if(m[w]===1)k++;}}catch(e){}
+  return "打卡 "+days+" 天 · 掌握 "+k+" 词 · 测验 "+((d.quizHistory||[]).length)+" 次"+
+    (d.savedAt?" · 存于 "+new Date(d.savedAt).toLocaleString("zh-CN"):"");
+}
+function renderSettings(){
+  const gi=$("#setGoalWords"),ci=$("#setBacklogCap"),ti=$("#setTraceGoal");
+  if(gi)gi.value=db.goal.words;
+  if(ci)ci.value=db.backlogCap;
+  if(ti)ti.value=db.goal.trace;
+  const info=$("#saveInfo");
+  if(info)info.innerHTML="当前存档："+saveBrief(db)+" · 约 "+Math.round(JSON.stringify(db).length/1024)+" KB<br>"+
+    (cloudOK?"☁️ 云端同步已开启，换设备也能自动找回":"💾 当前是纯本地存档（云端未连接），更建议导出一份留着");
+  const ts=$("#traceStatLine");
+  if(ts){const s=db.traceStat;
+    ts.textContent="看代码猜输出：累计 "+s.n+" 题 · 答对 "+s.ok+" 题"+
+      (s.n?"（正确率 "+Math.round(s.ok/s.n*100)+"%）":"")+" · 可用例题 "+tracePool().length+" 道";}
+}
+
+/* ---- ④ 搜索拼写容错：编辑距离（带状 DP + 提前剪枝），5794 词全扫一遍也就几毫秒 ---- */
+function editDist(a,b,max){
+  if(a===b)return 0;
+  if(Math.abs(a.length-b.length)>max)return max+1;
+  let prev=new Array(b.length+1),cur=new Array(b.length+1);
+  for(let j=0;j<=b.length;j++)prev[j]=j;
+  for(let i=1;i<=a.length;i++){
+    cur[0]=i;let rowMin=i;
+    const lo=Math.max(1,i-max),hi=Math.min(b.length,i+max);
+    for(let j=1;j<=b.length;j++){
+      if(j<lo||j>hi){cur[j]=max+1;continue;}
+      cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a.charCodeAt(i-1)===b.charCodeAt(j-1)?0:1));
+      if(cur[j]<rowMin)rowMin=cur[j];
+    }
+    if(rowMin>max)return max+1;
+    const tmp=prev;prev=cur;cur=tmp;
+  }
+  return prev[b.length];
+}
+function suggestWord(q){
+  if(!/^[a-z]{3,}$/.test(q))return [];
+  const max=q.length>=5?2:1,out=[],seen={};
+  for(const lv of ["cet4","cet6"]){
+    for(const x of WORDS[lv]){
+      const w=x.w.toLowerCase();
+      if(w===q||seen[w])continue;
+      if(Math.abs(w.length-q.length)>max)continue;
+      const d=editDist(q,w,max);
+      if(d<=max){seen[w]=1;out.push({w:x.w,lv:lv,d:d,s:d*10+Math.abs(w.length-q.length)});}
+    }
+  }
+  out.sort((a,b)=>a.s-b.s||a.w.localeCompare(b.w));
+  return out.slice(0,4);
+}
+function useSuggest(w){const el=$("#wordSearch");if(el){el.value=w;renderSearch();}}
+
+/* ---- ② 看代码猜输出：66 篇 C 笔记里每篇都有 gcc 实跑过的 code + out ---- */
+function tracePool(){
+  return CNOTES.filter(n=>{
+    const o=String(n.out||"").trim(),c=String(n.code||"").trim();
+    return o&&c&&c.length<=760&&o.length<=120&&o.split("\n").length<=7;
+  });
+}
+/* 干扰项不能是「随便拿别程序的输出」——那样看一眼长度就能蒙对。
+   主要造「近似变体」：改个数字、0↔1、换两行顺序、漏一行，逼着人真去算。 */
+function tracePerturb(out){
+  const lines=out.split("\n"),modes=shuffle([0,1,2,3,4]);
+  for(const m of modes){
+    let v="";
+    try{
+      if(m===0&&lines.length>1){
+        const i=Math.floor(Math.random()*(lines.length-1)),a=lines.slice();
+        [a[i],a[i+1]]=[a[i+1],a[i]];v=a.join("\n");
+      }else if(m===1){
+        v=out.replace(/\d+/,x=>String(Math.max(0,+x+(Math.random()<.5?-1:1)*(1+Math.floor(Math.random()*3)))));
+      }else if(m===2){
+        v=out.replace(/[01]/,c=>c==="0"?"1":"0");
+      }else if(m===3&&lines.length>2){
+        const i=Math.floor(Math.random()*lines.length),a=lines.slice();
+        a.splice(i,1);v=a.join("\n");
+      }else if(lines.length>1){
+        const i=Math.floor(Math.random()*lines.length),a=lines.slice();
+        a[i]=a[(i+1)%a.length];v=a.join("\n");
+      }
+    }catch(e){}
+    if(v&&v!==out&&v.trim())return v;
+  }
+  return "";
+}
+function makeTraceQ(note,pool){
+  const right=String(note.out).trim(),cand=[];
+  for(let i=0;i<30&&cand.length<2;i++){
+    const v=tracePerturb(right);
+    if(v&&v!==right&&cand.indexOf(v)<0)cand.push(v);
+  }
+  const others=shuffle(pool.filter(n=>n!==note)
+    .map(n=>String(n.out).trim())
+    .filter(o=>o!==right&&Math.abs(o.length-right.length)<Math.max(26,right.length*.5)));
+  for(const o of others){if(cand.length>=3)break;if(cand.indexOf(o)<0)cand.push(o);}
+  for(const o of shuffle(pool.map(n=>String(n.out).trim()))){
+    if(cand.length>=3)break;
+    if(o!==right&&cand.indexOf(o)<0)cand.push(o);
+  }
+  while(cand.length<3)cand.push("（这段程序没有输出）");
+  const opts=shuffle([right].concat(cand.slice(0,3)));
+  return {q:'<div class="trace-h">🔍 下面这段程序跑起来，屏幕上的输出是？</div>'+
+      '<pre class="code nc-snippet">'+escHtml(String(note.code).trim())+'</pre>'+
+      '<div class="muted" style="font-size:12px">顺着 printf / 循环一行行数，注意空格与换行</div>',
+    o:opts,a:opts.indexOf(right),
+    e:'正确输出是：<pre class="code nc-snippet">'+escHtml(right)+'</pre>'+
+      '出自 <b>'+escHtml(note.t)+'</b>　'+escHtml(String(note.d||"").slice(0,110)),
+    _id:"tr"+h32(note.t),_note:note.t};
+}
+function startTraceQuiz(){
+  const pool=tracePool();
+  if(pool.length<4){toast("例题数据没加载好，刷新一下再试");return;}
+  quiz={list:[],idx:0,score:0,answered:false,type:"trace"};
+  quiz.list=shuffle(pool.slice()).slice(0,5).map(n=>makeTraceQ(n,pool));
+  $$("[data-qtype]").forEach(b=>b.classList.toggle("ghost",b.dataset.qtype!=="trace"));
+  $("#quizBox").style.display="block";
+  switchTab("quiz");
+  showQuizQ();
+}
+
+/* ---- ⑥ 错因标签：标一下会真的改变重做节奏，不只是贴个装饰标签 ---- */
+const WHY_TAGS=["不会","记混","手滑"];
+const WHY_TIP={"不会":"概念没吃透 → 明天就重做，先回笔记把这段看一遍",
+  "记混":"和相近知识点搞混了 → 隔 7 天再验一次，比死记管用",
+  "手滑":"会做但点错了 → 隔 3 天、做对 1 次就放走，不占复习额度"};
+function whyBar(key){
+  const w=db.wrong[key];if(!w)return "";
+  const cur=w.why||"";
+  return '<div class="whybar"><span class="muted" style="font-size:12px">这道题为什么错？</span>'+
+    WHY_TAGS.map(t=>'<button class="why-tag'+(cur===t?" on":"")+'" onclick="markWhy(&quot;'+
+      key+'&quot;,&quot;'+t+'&quot;)">'+t+'</button>').join("")+
+    '<span class="why-tip">'+(cur?WHY_TIP[cur]:"标一下，重做节奏会跟着变（再点一次可取消）")+'</span></div>';
+}
+function markWhy(key,t){
+  const w=db.wrong[key];if(!w){toast("这道题已经移出错题本了");return;}
+  w.why=(w.why===t?"":t);
+  w.due=shiftDay(today(),w.why==="不会"?1:(w.why==="手滑"?3:(w.why==="记混"?7:1)));
+  save();
+  const bar=document.querySelector(".whybar");
+  if(bar)bar.outerHTML=whyBar(key);
+  toast(w.why?("已标「"+w.why+"」· "+WHY_TIP[w.why].split(" → ")[0]):"已取消错因标记");
+  renderWrongBox();renderSettings();
+}
 
 function escHtml(t){
   return String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -4438,6 +4883,7 @@ function boot(){
   renderQProf();
   renderWrongBox();
   renderMockMath();
+  renderSettings();
   renderDash();
   const q=new URLSearchParams(location.hash?location.hash.slice(1):location.search.slice(1));
   if(q.get("theme"))setTheme(q.get("theme"));
