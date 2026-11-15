@@ -944,7 +944,8 @@ body[data-theme="fx-aurora"]{
       <div class="checkin">
         <div>
           <div id="todayLine" class="muted" style="margin-bottom:6px"></div>
-          <div class="big">🔥 连续打卡 <span id="stStreak">…</span> 天</div>
+          <div class="big"><span id="stStreakLbl">🔥 连续打卡</span> <span id="stStreak">…</span> 天</div>
+          <div id="stStreakSub" class="muted" style="font-size:12px;margin-top:2px"></div>
         </div>
         <button class="btn" id="btnCheckin" onclick="checkIn()" style="margin-left:auto">📌 今日打卡</button>
       </div>
@@ -1029,7 +1030,7 @@ body[data-theme="fx-aurora"]{
       </div>
       <div class="sep" style="margin:12px 0"></div>
       <div class="row" id="quizTypeRow2">
-        <button class="btn ghost" data-qtype="c" onclick="startQuiz('c')">💻 C 语言（题库 138 · 抽 10 题）</button>
+        <button class="btn ghost" data-qtype="c" onclick="startQuiz('c')">💻 C 语言（题库 · 抽 10 题）</button>
         <button class="btn ghost" data-qtype="linux" onclick="startQuiz('linux')">🐧 Linux 命令（10题）</button>
         <button class="btn ghost" onclick="switchTab('math')">📐 高数（11 份章节卷，去高数页选）</button>
       </div>
@@ -1229,7 +1230,7 @@ body[data-theme="fx-aurora"]{
 <script src="assets/data/words.js?v=20261107a"></script>
 <script src="assets/data/word-sent.js?v=20261107a"></script>
 <script src="assets/data/c-notes.js"></script>
-<script src="assets/data/c-quiz.js"></script>
+<script src="assets/data/c-quiz.js?v=20261115a"></script>
 <script src="assets/data/math-notes.js"></script>
 <script src="assets/data/math-quiz.js"></script>
 <script src="assets/data/cet-exam.js"></script>
@@ -1241,12 +1242,17 @@ const $$=s=>document.querySelectorAll(s);
 /* ===== 数据都在 assets/data/ 下，改内容不用碰这个文件 =====
    words.js     ：四级 4594 词（大纲全量）+ 六级新增 1200 词，合计 5794 词
    c-notes.js   ：C 语言 66 篇详解（原理 + 语法 + 代码 + 运行结果 + 易错点）
-   c-quiz.js    ：C 语言 138 道题库（含逐题解析）
+   c-quiz.js    ：C 语言题库（含逐题解析，题量见按钮文案，由数据自动填）
    math-notes.js：高等数学 11 章 73 篇（公式 + 例题 + 易错点）
    math-quiz.js ：高等数学 11 份单元测验卷，每卷 10 题 */
 const WORDS=window.CET_WORDS||{cet4:[],cet6:[]};
 const CNOTES=window.C_NOTES||[];
 const CQUIZ=window.C_QUIZ||[];
+/* 题量写死在按钮上迟早对不上，这里按数据自动填 */
+(function(){
+  const b=document.querySelector('[data-qtype="c"]');
+  if(b)b.textContent="💻 C 语言（题库 "+CQUIZ.length+" · 抽 10 题）";
+})();
 /* 四六级「考试题」：语法结构 / 词汇辨析 / 选词填空 / 阅读理解 / 汉译英，
    和单词测验完全分开 —— 单词测验只考词义，这里考的是题型能力 */
 const CETEXAM=window.CET_EXAM||{cet4:[],cet6:[]};
@@ -1354,6 +1360,10 @@ function normalize(d){
   d.pomo=d.pomo||{date:"",count:0,total:0};
   d.streak=d.streak||{last:"",count:0,days:[]};
   if(!Array.isArray(d.streak.days))d.streak.days=[];
+  /* 累计天数与历史最长：只增不减，和「当前连续段」分开存。
+     连续段会因断签归零，但累计记录不该跟着消失——这正是用户以为"被重置"的地方 */
+  d.streak.best=Math.max(0,+d.streak.best||0);
+  d.streak.total=Math.max(0,+d.streak.total||0);
   /* 旧档兼容：只有 last+count（日期可能无补零、无按天列表）时，
      以 last 为终点按旧 count 回填连续日期，保住老用户的连续天数 */
   {const lm=String(d.streak.last||"").match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
@@ -1512,12 +1522,27 @@ let cloudTimer=null;
    init 探测失败就把这里关掉，避免每次保存都刷一串 404 */
 let cloudOK=false;
 function cloudSave(){clearTimeout(cloudTimer);cloudTimer=setTimeout(flushCloud,700);}
+/* 云存档地址：线上网关要求 URL 带 sharecode，少了就 403。
+   之前前端写死 fetch("/api/state")，在线上永远 403 → cloudOK 一直是 false，
+   云端存档等于从来没工作过（换设备 / 清缓存就真丢了）。这里把参数带上。 */
+function cloudUrl(){
+  let u;
+  try{u=new URL("api/state",location.href);}catch(e){return "/api/state";}
+  let sc="";
+  try{
+    sc=new URLSearchParams(location.search||"").get("sharecode")||"";
+    if(!sc&&location.hash&&location.hash.indexOf("=")>0)
+      sc=new URLSearchParams(location.hash.slice(1)).get("sharecode")||"";
+  }catch(e){}
+  if(sc)u.searchParams.set("sharecode",sc);
+  return u.pathname+u.search;
+}
 function flushCloud(){
   if(!cloudOK)return;
   if(typeof fetch!=="function")return;
   db.savedAt=db.savedAt||Date.now();
   try{
-    fetch("/api/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(db),keepalive:true}).catch(()=>{});
+    fetch(cloudUrl(),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(db),keepalive:true}).catch(()=>{});
   }catch(e){}
 }
 window.addEventListener("beforeunload",flushCloud);
@@ -1591,7 +1616,18 @@ function renderDash(){
   $("#todayLine").textContent=dateCN();
   $("#topDate").textContent=shortDate();
   $("#topStreakN").textContent=streakCount();
-  $("#stStreak").textContent=streakCount();
+  /* 连续段会断，累计和有史最长不会。断签时主数字直接换成「累计打卡 N 天」，
+     不再给用户看一个孤零零的 0——那正是「又被重置」的错觉来源。 */
+  {const st=db.streak||{},sub=$("#stStreakSub"),lbl=$("#stStreakLbl");
+   const done=streakDoneToday(),c=streakCount(),total=st.total||0,best=st.best||0;
+   const broken=!done&&c===0&&total>0;
+   $("#stStreak").textContent=broken?total:c;
+   if(lbl)lbl.textContent=broken?"🔥 累计打卡":"🔥 连续打卡";
+   if(sub)sub.textContent=broken
+     ?("历史最长 "+best+" 天 · 连续已中断，今天学一点就接上")
+     :("累计 "+total+" 天 · 历史最长 "+best+" 天"+(done?"":" · "+(c>0?"今天还没打卡":"连续已中断，今天学一点就接上")));
+   const chip=$("#topStreakN")&&$("#topStreakN").parentNode;
+   if(chip&&chip.setAttribute)chip.setAttribute("title","连续 "+c+" 天 · 累计 "+total+" 天 · 最长 "+best+" 天");}
   /* 打卡按钮按天反映状态：今天打过就置灰，换天自动恢复可点 */
   {const bc=$("#btnCheckin");
    if(bc){const done=streakDoneToday();
@@ -1699,6 +1735,42 @@ function streakCount(){
   return c;
 }
 function streakDoneToday(){return streakDays().includes(today());}
+/* 最长连续段：直接从按天列表数，不依赖 count（count 只代表「当前这一段」） */
+function streakBestOf(days){
+  const arr=(days||[]).filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)).slice().sort();
+  let best=0,run=0,prev="";
+  for(const d of arr){
+    run=(prev&&shiftDay(prev,1)===d)?run+1:1;
+    if(run>best)best=run;
+    prev=d;
+  }
+  return best;
+}
+/* 三个口径一次对齐，days 一变就调：
+   count=当前连续段（会因断签归零）· best=历史最长（只增）· total=累计打卡天数（只增）。
+   用户看到「又重置」，一半是断签本身，一半是只显示连续导致累计记录看不见。 */
+function streakSync(){
+  const st=db.streak||(db.streak={last:"",count:0,days:[]});
+  const days=Array.from(new Set(streakDays().filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d)))).sort();
+  st.days=days.slice(-400);
+  st.last=days[days.length-1]||"";
+  st.count=streakCount();
+  st.best=Math.max(+st.best||0,streakBestOf(st.days),st.count);
+  st.total=Math.max(+st.total||0,st.days.length);
+  return st;
+}
+/* 学习即打卡：今天真学了（背词 / 做题 / 专注 / 模考）就把今天算进打卡日。
+   打卡本该反映「今天有没有学」，而不是「有没有记得点那个按钮」——
+   漏点一天连续就清零，这才是「天数又重置」反复出现的根。 */
+const LEARN_KIND={w:1,q:1,m:1,mk:1};
+function autoCheckIn(){
+  const st=db.streak;
+  if(!st||streakDoneToday())return false;
+  st.days=Array.from(new Set([...streakDays(),today()])).sort();
+  actToday().ck=1;
+  streakSync();
+  return true;
+}
 /* 打卡天数自愈：活动账本 db.act 里记着每一天的打卡流水（ck），
    只要账本里某天打过卡，按天列表里就该有那天。存档字段被写坏、跨设备合并、
    旧版迁移时丢了 days，都能从账本把连续天数补回来，不用用户重头再来。 */
@@ -1710,12 +1782,15 @@ function streakRepair(){
   const act=db.act||{};
   for(const k in act){
     if(!/^\d{4}-\d{2}-\d{2}$/.test(k))continue;
-    if(act[k]&&act[k].ck&&!set.has(k)){set.add(k);add++;}
+    /* ck 是显式打卡；w/q/m/xp 说明那天确实学过，同样算数——
+       老数据里「学了但忘点按钮」的日子靠这条补回来 */
+    const a=act[k]||{};
+    const did=a.ck||a.w>0||a.q>0||a.m>0||a.xp>0;
+    if(did&&!set.has(k)){set.add(k);add++;}
   }
   if(add){
-    st.days=Array.from(set).sort().slice(-120);
-    st.last=st.days[st.days.length-1]||st.last;
-    st.count=streakCount();
+    st.days=Array.from(set).sort().slice(-400);
+    streakSync();
     save();
   }
   return add;
@@ -1734,13 +1809,20 @@ function streakMerge(list){
     if(s&&Array.isArray(s.days))
       for(const d of s.days)if(isDay(d)&&!set.has(d)){set.add(d);extra++;}
     const a=snap.act||{};
-    for(const k in a)if(isDay(k)&&a[k]&&a[k].ck&&!set.has(k)){set.add(k);extra++;}
+    for(const k in a){
+      if(!isDay(k)||set.has(k))continue;
+      const x=a[k]||{};
+      if(x.ck||x.w>0||x.q>0||x.m>0||x.xp>0){set.add(k);extra++;}
+    }
+    /* 累计 / 最长也要跨来源取大值，不能因为主档换了就缩水 */
+    if(s&&typeof s==="object"){
+      st.best=Math.max(+st.best||0,+s.best||0);
+      st.total=Math.max(+st.total||0,+s.total||0);
+    }
   };
   for(const s of list)eat(s);
-  const days=Array.from(set).sort().slice(-120);
-  st.days=days;
-  st.last=days[days.length-1]||st.last||"";
-  st.count=streakCount();
+  st.days=Array.from(set).sort().slice(-400);
+  streakSync();
   return extra;
 }
 
@@ -1764,6 +1846,14 @@ function addAct(kind,n,xp){
   if(coin){
     a.coin=(a.coin||0)+coin;
     db.coin.v=(db.coin.v||0)+coin;
+  }
+  /* 学了就算今天打过卡：不额外发 XP / 鱼干，只把当天记进打卡日（每天只触发一次） */
+  if(LEARN_KIND[kind]&&n>0&&autoCheckIn()){
+    try{
+      setTimeout(()=>{
+        try{toast("今天的学习已自动打卡 ✅");renderDash();}catch(e){}
+      },400);
+    }catch(e){}
   }
 }
 /* 等级阶梯：每一级要的累计 XP。标题按段取，两级换一个称号 */
@@ -1914,15 +2004,16 @@ function petLoveFx(){
 function checkIn(){
   const t=today();
   if(streakDoneToday()){toast("今天已经打过卡啦，明天继续 💪");return;}
-  if(!Array.isArray(db.streak.days))db.streak.days=[];
-  db.streak.days.push(t);
-  db.streak.days.sort();
-  if(db.streak.days.length>120)db.streak.days=db.streak.days.slice(-120);
-  db.streak.last=t;
-  db.streak.count=streakCount();
-  addAct("ck",1,10);                       // 打卡 → 账本 +10 XP
+  const before=streakCount();
+  db.streak.days=Array.from(new Set([...streakDays(),t])).sort();
+  addAct("ck",1,10);                       // 打卡 → 账本 ck+1 / +10 XP（这一句负责写 ck，别再手动置 1）
+  streakSync();
   save();renderDash();
-  toast("打卡成功！已连续 "+db.streak.count+" 天 🔥");
+  const st=db.streak;
+  if(st.count===1&&before===0&&(st.best||0)>1)
+    toast("连续从今天重新开始（累计 "+st.total+" 天 · 历史最长 "+st.best+" 天）");
+  else
+    toast("打卡成功！已连续 "+st.count+" 天 🔥");
   fabReact("happy");
   fabBubble(streakLine());
 }
@@ -3972,11 +4063,14 @@ function timeGreet(){
   return h<5?"夜深了还不睡呀，早点休息哦":h<11?"早上好，一天之计在于晨":h<14?"中午好，午休前来点学习":h<18?"下午好，来杯水继续加油":"晚上好，睡前黄金记忆时间";
 }
 function streakLine(){
-  const s=streakCount();
-  if(s===0)return "今天来打个卡，开启第一天吧！";
-  if(s<3)return "已经连续 "+s+" 天啦，继续保持！";
-  if(s<7)return "连续 "+s+" 天了，越来越稳了！";
-  return "连续 "+s+" 天！你已经超越大多数人啦 🏆";
+  const s=streakCount(),st=db.streak||{},best=st.best||0,total=st.total||0;
+  if(s===0){
+    if(total>0)return "连续断了，但累计 "+total+" 天和最长 "+best+" 天的记录都还在——今天学一点就接上 💪";
+    return "今天来打个卡，开启第一天吧！";
+  }
+  if(s<3)return "已经连续 "+s+" 天啦（累计 "+total+" 天），继续保持！";
+  if(s<7)return "连续 "+s+" 天了，越来越稳了（最长 "+best+" 天）！";
+  return "连续 "+s+" 天！累计 "+total+" 天，你已经超越大多数人啦 🏆";
 }
 function fabBubble(text,ms){
   /* 互动层接管气泡，保证全站只有一套、位置和样式统一 */
@@ -4302,6 +4396,16 @@ window.addEventListener("resize",()=>{if(fxTheme){fxResize();fxInit();}});
 function boot(){
   /* 打卡天数自愈：账本里打过卡的日子补回按天列表（存档被写坏 / 旧档迁移时救命） */
   try{streakRepair();}catch(e){}
+  /* 老存档没有 best/total，这里按现有 days 回填一次；之后只增不减 */
+  try{streakSync();}catch(e){}
+  /* 连续真的断了：轻声说一句，别让用户以为是记录丢了（每天只提示一次） */
+  try{
+    const st=db.streak||{};
+    if(!streakDoneToday()&&!streakDays().includes(yesterday())&&(st.total||0)>0&&st.gapTip!==today()){
+      st.gapTip=today();
+      setTimeout(()=>toast("连续打卡中断了，但累计 "+(st.total||0)+" 天都还在——今天学一点就重新接上"),2400);
+    }
+  }catch(e){}
   /* 浅海生态设为常态壁纸：老存档里如果还停在别的主题，这次升级后一次性切回来；
      之后用户在设置里换主题仍然作数，不会被反复改回去 */
   if(db.oceanDefault!==1){db.oceanDefault=1;db.theme="fx-ocean";db.themeInit=1;}
@@ -4375,7 +4479,7 @@ function boot(){
   const noApi=location.protocol==="file:";
   if(!noApi){
     try{
-      const r=await fetch("/api/state",{cache:"no-store"});
+      const r=await fetch(cloudUrl(),{cache:"no-store"});
       if(r.ok){
         let j=null,okJson=false;
         /* 纯静态托管会把 /api/state 兜底成首页 HTML，JSON 解析失败就别当成云端可用 */
